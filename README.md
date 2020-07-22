@@ -4,7 +4,9 @@ The Cerberus encrypts data and pushes it into [ipfs](https://ipfs.io)
 
 ## Run
 ### Docker
+#### Local image
 ```
+make image
 docker run -it --rm -e "HOST=0.0.0.0" -e "PORT=7070" -e "LOG_LEVEL=debug" -p "7070:7070" cerberus-local
 ```
 ### From source
@@ -15,7 +17,9 @@ go run cmd/cerberus/main.go \
     --log.level=debug
 ```
 ### Run Cerberus and [ipfs](https://ipfs.io) with docker-compose
+#### Local image
 ```
+make image
 docker-compose -f scripts/docker-compose.yml up
 ```
 ## Parameters
