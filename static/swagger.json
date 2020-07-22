@@ -1,0 +1,33 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "The Cerberus is an users' data keeper. The Cerberus encrypts data and pushes it into [ipfs](https://ipfs.io)",
+    "title": "Cerberus",
+    "version": "1.0.0"
+  },
+  "basePath": "/v1",
+  "paths": {},
+  "definitions": {
+    "Error": {
+      "type": "object",
+      "title": "Error ...",
+      "properties": {
+        "error": {
+          "description": "error message",
+          "type": "string",
+          "x-go-name": "Error"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/Cerberus/internal/server"
+    }
+  }
+}

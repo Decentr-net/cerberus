@@ -1,0 +1,25 @@
+version: '2.2'
+
+networks:
+  decentr-cerberus:
+    name: decentr-cerberus
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.231.0/24
+          gateway: 172.16.231.1
+
+services:
+  cerberus:
+    image: cerberus-local
+    container_name: decentr-cerberus
+    restart: always
+    environment:
+      - "HOST=0.0.0.0"
+      - "PORT=7070"
+      - "LOG_LEVEL=debug"
+    networks:
+      - decentr-cerberus
+    ports:
+      - "7070:7070"
