@@ -12,7 +12,7 @@ networks:
 
 services:
   cerberus:
-    image: cerberus-local
+    image: cerberus-local:latest
     container_name: decentr-cerberus
     restart: always
     environment:
@@ -23,3 +23,17 @@ services:
       - decentr-cerberus
     ports:
       - "7070:7070"
+
+  ipfs:
+    image: ipfs/go-ipfs:latest
+    container_name: decentr-ipfs
+    restart: always
+    volumes:
+      - "/tmp/decentr-ipfs/export:/export"
+      - "/tmp/decentr-ipfs/ipfs:/data/ipfs"
+    networks:
+      - decentr-cerberus
+    ports:
+      - "5001:5001"
+      - "4001:4001"
+      - "8080:8080"

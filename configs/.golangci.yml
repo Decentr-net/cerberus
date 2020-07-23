@@ -81,6 +81,7 @@ linters:
     - gomnd
     - funlen
     - gofumpt
+    - testpackage
 
 issues:
   exclude-rules:
