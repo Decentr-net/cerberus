@@ -24,6 +24,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//go:generate swagger generate spec -m -c . -o ../../static/swagger.json
+
 // Server ...
 type Server struct {
 }

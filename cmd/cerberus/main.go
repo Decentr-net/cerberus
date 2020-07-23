@@ -15,7 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/Decentr-net/Cerberus/internal/server"
+	"github.com/Decentr-net/cerberus/internal/server"
 )
 
 // nolint:lll
