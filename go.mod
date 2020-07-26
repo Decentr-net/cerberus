@@ -9,6 +9,7 @@ require (
 	github.com/ipfs/go-ipfs-api v0.1.0
 	github.com/ipfs/go-ipfs-files v0.0.8
 	github.com/jessevdk/go-flags v1.4.0
+	github.com/minio/sio v0.2.0
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.6.1
 	github.com/testcontainers/testcontainers-go v0.7.0
