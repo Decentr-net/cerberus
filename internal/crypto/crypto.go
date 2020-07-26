@@ -9,6 +9,6 @@ import "io"
 type Crypto interface {
 	// Encrypt returns reader with encrypted src data.
 	Encrypt(io.Reader) (io.Reader, error)
-	// Encrypt returns reader with decrypted src data.
+	// Decrypt returns reader with decrypted src data.
 	Decrypt(r io.Reader) (io.Reader, error)
 }

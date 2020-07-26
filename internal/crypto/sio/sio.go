@@ -28,7 +28,7 @@ func (c *crypto) Encrypt(src io.Reader) (io.Reader, error) {
 	return sio.EncryptReader(src, c.c)
 }
 
-// Encrypt returns reader with decrypted src data.
+// Decrypt returns reader with decrypted src data.
 func (c *crypto) Decrypt(src io.Reader) (io.Reader, error) {
 	return sio.DecryptReader(src, c.c)
 }
