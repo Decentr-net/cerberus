@@ -41,7 +41,7 @@ func (r *AuthRequest) setSignature(s Signature) {
 }
 
 // GetPublicKey returns public key.
-func (r *AuthRequest) GetPublicKey() ([]byte, error) {
+func (r AuthRequest) GetPublicKey() ([]byte, error) {
 	b, err := hex.DecodeString(r.Signature.PublicKey)
 
 	if err != nil {
@@ -52,7 +52,7 @@ func (r *AuthRequest) GetPublicKey() ([]byte, error) {
 }
 
 // GetSignature returns signature.
-func (r *AuthRequest) GetSignature() ([]byte, error) {
+func (r AuthRequest) GetSignature() ([]byte, error) {
 	b, err := hex.DecodeString(r.Signature.Signature)
 
 	if err != nil {

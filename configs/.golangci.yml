@@ -94,6 +94,8 @@ issues:
         - maligned
         - gochecknoglobals
         - lll
+        - noctx
+        - goerr113
 
     - path: _mock\.go
       linters:
@@ -136,7 +138,13 @@ issues:
     - path: pkg/api/client.go
       linters:
         - errcheck
-      text: ".Body.Close` is not checked"
+      text: ".Close` is not checked"
+
+    - path: internal/service/service.go
+      linters:
+        - errcheck
+      text: ".Close` is not checked"
+
 
   exclude-use-default: false
   max-per-linter: 0

@@ -1,5 +1,10 @@
 package api
 
+// Error ...
+type Error struct {
+	Error string `json:"error"`
+}
+
 // SendPDVResponse ...
 type SendPDVResponse struct {
 	Address string `json:"address"`

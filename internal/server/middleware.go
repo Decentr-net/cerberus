@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"net/http"
-	"runtime/debug"
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
@@ -13,19 +12,17 @@ import (
 
 type logCtxKey struct{}
 
-// Recoverer middleware handles panics.
-func Recoverer(next http.Handler) http.Handler {
+// recovererMiddleware handles panics.
+func recovererMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
-			if rvr := recover(); r != nil {
+			if rvr := recover(); rvr != nil {
 				log := getLogger(r.Context())
 				log.Error("service recovered from panic")
-				log.Error("stacktrace:")
-				log.Error(string(debug.Stack()))
 				log.Error("panic:")
 				log.Error(spew.Sdump(rvr))
 
-				writeInternalError(log, w, "panic: internal error")
+				writeError(w, http.StatusInternalServerError, "internal error")
 			}
 		}()
 
@@ -35,8 +32,8 @@ func Recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// Logger middleware puts logger with client's info into context.
-func Logger(next http.Handler) http.Handler {
+// loggerMiddleware puts logger with client's info into context.
+func loggerMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		log := logrus.WithField("ip", realip.FromRequest(r))
 
@@ -47,8 +44,8 @@ func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// SetHeaders middleware sets predefined headers to response.
-func SetHeaders(handler http.Handler) http.Handler {
+// setHeadersMiddleware sets predefined headers to response.
+func setHeadersMiddleware(handler http.Handler) http.Handler {
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -58,8 +55,8 @@ func SetHeaders(handler http.Handler) http.Handler {
 	return http.Handler(fn)
 }
 
-// Swagger middleware for swagger-ui.
-func Swagger(handler http.Handler) http.Handler {
+// swaggerMiddleware for swagger-ui.
+func swaggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Shortcut helpers for swagger-ui
 		if r.URL.Path == "/docs" {
@@ -71,6 +68,19 @@ func Swagger(handler http.Handler) http.Handler {
 			http.StripPrefix("/docs/", http.FileServer(http.Dir("static"))).ServeHTTP(w, r)
 			return
 		}
-		handler.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
 	})
+}
+
+// bodyLimiterMiddleware returns middleware which limits size of data read from request's body.
+func bodyLimiterMiddleware(maxBodySize int64) func(handler http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
+
+			next.ServeHTTP(w, r)
+		})
+
+		return fn
+	}
 }

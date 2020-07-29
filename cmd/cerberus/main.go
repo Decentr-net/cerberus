@@ -2,28 +2,38 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	shell "github.com/ipfs/go-ipfs-api"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/Decentr-net/cerberus/internal/crypto/sio"
 	"github.com/Decentr-net/cerberus/internal/server"
+	"github.com/Decentr-net/cerberus/internal/service"
+	"github.com/Decentr-net/cerberus/internal/storage/ipfs"
 )
 
 // nolint:lll
 var opts = struct {
-	Host string `long:"host" description:"the IP to listen on" default:"localhost" env:"HOST"`
-	Port int    `long:"port" description:"the port to listen on for insecure connections, defaults to a random value" default:"8080" env:"PORT"`
+	Host string `long:"host" env:"HOST" default:"localhost" description:"IP to listen on"`
+	Port int    `long:"port" env:"PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
+
+	IPFS       string `long:"ipfs" env:"IPFS" default:"localhost:5001" description:"ipfs node's address'"`
+	EncryptKey string `long:"encrypt.key" env:"ENCRYPT_KEY" description:"encrypt key in hex which will be used for encrypting and decrypting PDV"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
+
+	MaxBodySize int64 `long:"max.body.size" env:"MAX_BODY_SIZE" default:"8000000" description:"Max request's body size'"`
 }{}
 
 var errTerminated = errors.New("terminated")
@@ -48,16 +58,15 @@ func main() {
 
 	r := chi.NewMux()
 
-	r.Use(
-		server.Swagger,
-		server.Logger,
-		server.SetHeaders,
-		middleware.StripSlashes,
-		server.Recoverer,
-	)
+	sh := shell.NewShellWithClient(opts.IPFS, &http.Client{Timeout: 5 * time.Second})
+	if !sh.IsUp() {
+		logrus.Fatal("ipfs node is unavailable")
+	}
 
-	s := server.Server{}
-	s.SetupRouter(r)
+	// nolint: godox
+	// todo: add health checker
+
+	server.SetupRouter(service.New(sio.NewCrypto(mustExtractEncryptKey()), ipfs.NewStorage(sh)), r, opts.MaxBodySize)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),
@@ -85,4 +94,20 @@ func main() {
 	if err := gr.Wait(); err != nil && !errors.Is(err, errTerminated) && !errors.Is(err, http.ErrServerClosed) {
 		logrus.WithError(err).Fatal("service unexpectedly closed")
 	}
+}
+
+func mustExtractEncryptKey() [32]byte {
+	k, err := hex.DecodeString(opts.EncryptKey)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to decode encrypt key")
+	}
+
+	if len(k) != 32 {
+		logrus.Fatal("encrypt key must be 32 bytes slice")
+	}
+
+	r := [32]byte{}
+	copy(r[:], k)
+
+	return r
 }
