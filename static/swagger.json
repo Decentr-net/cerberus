@@ -21,7 +21,7 @@
         "tags": [
           "Cerberus"
         ],
-        "summary": "Checks if PDV data exists in storage.",
+        "summary": "Checks if pdv exists in storage.",
         "operationId": "DoesPDVExist",
         "parameters": [
           {
@@ -34,7 +34,7 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": "result of check",
             "schema": {
               "$ref": "#/definitions/doesPDVExistResponse"
@@ -66,7 +66,7 @@
         "tags": [
           "Cerberus"
         ],
-        "summary": "Gets and decrypts PDV data from storage.",
+        "summary": "Gets and decrypts pdv from storage.",
         "operationId": "ReceivePDV",
         "parameters": [
           {
@@ -79,8 +79,8 @@
           }
         ],
         "responses": {
-          "201": {
-            "description": "raw data from storage",
+          "200": {
+            "description": "pdv from storage",
             "schema": {
               "$ref": "#/definitions/receivePDVResponse"
             }
@@ -93,6 +93,12 @@
           },
           "401": {
             "description": "signature wasn't verified",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "403": {
+            "description": "access to file is denied",
             "schema": {
               "$ref": "#/definitions/Error"
             }
@@ -125,7 +131,7 @@
         ],
         "responses": {
           "201": {
-            "description": "data were put into storage",
+            "description": "pdv was put into storage",
             "schema": {
               "$ref": "#/definitions/sendPDVResponse"
             }
@@ -156,10 +162,10 @@
     "doesPDVExistResponse": {
       "type": "object",
       "properties": {
-        "pdv_exists": {
+        "exists": {
           "description": "Flag which means file exists or not",
           "type": "boolean",
-          "x-go-name": "PDVExists"
+          "x-go-name": "Exists"
         }
       },
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server"

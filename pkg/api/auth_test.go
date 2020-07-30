@@ -38,7 +38,9 @@ func TestVerify(t *testing.T) {
 			Signature: hex.EncodeToString(signature),
 		}
 
-		require.NoError(t, Verify(&r))
+		d, err := Verify(&r)
+		assert.NoError(t, err)
+		assert.NotNil(t, d)
 	})
 
 	t.Run("invalid key", func(t *testing.T) {
@@ -51,7 +53,7 @@ func TestVerify(t *testing.T) {
 			},
 		}
 
-		err := Verify(&r)
+		_, err := Verify(&r)
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, ErrInvalidPublicKey))
 	})
@@ -66,7 +68,7 @@ func TestVerify(t *testing.T) {
 			},
 		}
 
-		err := Verify(&r)
+		_, err := Verify(&r)
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, ErrInvalidPublicKey))
 	})
@@ -81,7 +83,7 @@ func TestVerify(t *testing.T) {
 			},
 		}
 
-		err := Verify(&r)
+		_, err := Verify(&r)
 		require.Error(t, err)
 		assert.True(t, errors.Is(err, ErrInvalidSignature))
 	})
@@ -97,7 +99,7 @@ func TestVerify(t *testing.T) {
 			},
 		}
 
-		err := Verify(&r)
+		_, err := Verify(&r)
 		require.Error(t, err)
 		assert.True(t, errors.Is(err, ErrNotVerified))
 	})

@@ -63,31 +63,31 @@ func (r AuthRequest) GetSignature() ([]byte, error) {
 }
 
 // Verify verifies request's signature with public key.
-func Verify(r signatureGetter) error {
+func Verify(r signatureGetter) ([]byte, error) {
 	b, err := r.GetPublicKey()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	k, err := amino.PubKeyFromBytes(b)
 	if err != nil {
-		return ErrInvalidPublicKey
+		return nil, ErrInvalidPublicKey
 	}
 
 	b, err = r.GetSignature()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	d, err := Digest(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !k.VerifyBytes(d, b) {
-		return ErrNotVerified
+		return nil, ErrNotVerified
 	}
 
-	return nil
+	return d, nil
 }
 
 // Digest returns sha256 of request.

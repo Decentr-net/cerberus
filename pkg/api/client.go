@@ -73,7 +73,7 @@ func (c *client) ReceivePDV(ctx context.Context, address string) ([]byte, error)
 	return resp.Data, nil
 }
 
-// DoesPDVExist returns is PDV exists in Cerberus by provided address.
+// DoesPDVExist returns is data exists in Cerberus by provided address.
 // DoesPDVExist can return ErrInvalidRequest and ErrNotFound besides general api package's errors.
 func (c *client) DoesPDVExist(ctx context.Context, address string) (bool, error) {
 	if address == "" {
@@ -90,7 +90,7 @@ func (c *client) DoesPDVExist(ctx context.Context, address string) (bool, error)
 		return false, fmt.Errorf("failed to make DoesPDVExist request: %w", err)
 	}
 
-	return resp.PDVExists, nil
+	return resp.Exists, nil
 }
 
 // sendRequest is utility method which signs request, if it's needed, and send POST request to Cerberus.

@@ -98,7 +98,7 @@ func TestClient_DoesPDVExist(t *testing.T) {
 		{
 			name:     "success",
 			code:     http.StatusOK,
-			response: `{"pdv_exists":true}`,
+			response: `{"exists":true}`,
 
 			exists: true,
 			err:    "",
@@ -207,11 +207,14 @@ func TestClient_signRequest(t *testing.T) {
 	assert.NotEmpty(t, r.AuthRequest.Signature.Signature)
 	assert.NotEmpty(t, r.AuthRequest.Signature.PublicKey)
 
-	assert.NoError(t, Verify(&r), "can not verify signed request")
+	_, err := Verify(&r)
+	assert.NoError(t, err, "can not verify signed request")
 
 	r.unexported, r.ExcludedFromJSONMarshal, r.ExcludedPtr = 1, 1, &r.StringData
-	assert.NoError(t, Verify(&r), "digest changed")
+	_, err = Verify(&r)
+	assert.NoError(t, err, "digest changed")
 
 	r.StringData = "new_string"
-	assert.True(t, errors.Is(Verify(&r), ErrNotVerified), "digest not changed")
+	_, err = Verify(&r)
+	assert.True(t, errors.Is(err, ErrNotVerified), "digest not changed")
 }

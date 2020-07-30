@@ -1,10 +1,12 @@
 package server
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
@@ -25,7 +27,7 @@ func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
 	//     '$ref': '#/definitions/sendPDVRequest'
 	// responses:
 	//   '201':
-	//     description: data were put into storage
+	//     description: pdv was put into storage
 	//     schema:
 	//       "$ref": "#/definitions/sendPDVResponse"
 	//   '401':
@@ -52,25 +54,26 @@ func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := api.Verify(req); err != nil {
+	digest, err := api.Verify(req)
+	if err != nil {
 		writeVerifyError(getLogger(r.Context()), w, err)
 		return
 	}
 
-	address, err := s.s.SendPDV(r.Context(), req.Data)
-	if err != nil {
+	filepath := fmt.Sprintf("%s/%s", req.Signature.PublicKey, hex.EncodeToString(digest))
+	if err := s.s.SendPDV(r.Context(), req.Data, filepath); err != nil {
 		writeInternalError(getLogger(r.Context()), w, err.Error())
 		return
 	}
 
-	writeOK(w, http.StatusCreated, api.SendPDVResponse{Address: address})
+	writeOK(w, http.StatusCreated, api.SendPDVResponse{Address: filepath})
 }
 
-// receivePDVHandler gets PDV data from storage and decrypts it.
+// receivePDVHandler gets pdv from storage and decrypts it.
 func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /receive-pdv Cerberus ReceivePDV
 	//
-	// Gets and decrypts PDV data from storage.
+	// Gets and decrypts pdv from storage.
 	//
 	// ---
 	// parameters:
@@ -81,11 +84,15 @@ func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
 	//     '$ref': '#/definitions/receivePDVRequest'
 	// responses:
 	//   '200':
-	//     description: raw data from storage
+	//     description: pdv from storage
 	//     schema:
 	//       "$ref": "#/definitions/receivePDVResponse"
 	//   '401':
 	//     description: signature wasn't verified
+	//     schema:
+	//       "$ref": "#/definitions/Error"
+	//   '403':
+	//     description: access to file is denied
 	//     schema:
 	//       "$ref": "#/definitions/Error"
 	//   '400':
@@ -108,8 +115,13 @@ func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := api.Verify(req); err != nil {
+	if _, err := api.Verify(req); err != nil {
 		writeVerifyError(getLogger(r.Context()), w, err)
+		return
+	}
+
+	if pk := strings.Split(req.Address, "/")[0]; pk != req.Signature.PublicKey {
+		writeError(w, http.StatusForbidden, "access denied")
 		return
 	}
 
@@ -126,11 +138,11 @@ func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
 	writeOK(w, http.StatusOK, api.ReceivePDVResponse{Data: data})
 }
 
-// DoesPDVExistHandler checks if PDV data exists in storage.
+// doesPDVExistHandler checks if pdv exists in storage.
 func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /pdv-exists Cerberus DoesPDVExist
 	//
-	// Checks if PDV data exists in storage.
+	// Checks if pdv exists in storage.
 	//
 	// ---
 	// parameters:
@@ -168,7 +180,7 @@ func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := api.Verify(req); err != nil {
+	if _, err := api.Verify(req); err != nil {
 		writeVerifyError(getLogger(r.Context()), w, err)
 		return
 	}
@@ -179,5 +191,5 @@ func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOK(w, http.StatusOK, api.DoesPDVExistResponse{PDVExists: exists})
+	writeOK(w, http.StatusOK, api.DoesPDVExistResponse{Exists: exists})
 }
