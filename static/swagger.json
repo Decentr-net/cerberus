@@ -25,12 +25,9 @@
         "operationId": "DoesPDVExist",
         "parameters": [
           {
-            "name": "request",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/doesPDVExistRequest"
-            }
+            "name": "address",
+            "in": "query",
+            "required": true
           }
         ],
         "responses": {

@@ -135,6 +135,11 @@ issues:
         - gochecknoglobals
       text: "`opts` is a global variable"
 
+    - path: pkg/api/request.go
+      linters:
+        - gochecknoglobals
+      text: "`addressRegExp` is a global variable"
+
     - path: pkg/api/client.go
       linters:
         - errcheck

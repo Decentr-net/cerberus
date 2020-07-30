@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,9 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 )
 
-func startServer(t *testing.T, c int, d string, expect string) int {
+var testAddress = "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6/eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3aeb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
+
+func startServer(t *testing.T, c int, d string, expect string, expectQuery string) int {
 	l, err := net.Listen("tcp", ":0")
 	require.NoError(t, err)
 
@@ -22,6 +25,7 @@ func startServer(t *testing.T, c int, d string, expect string) int {
 		b, err := ioutil.ReadAll(r.Body)
 		assert.NoError(t, err)
 		assert.Contains(t, string(b), expect)
+		assert.Equal(t, expectQuery, r.URL.Query().Encode())
 
 		w.WriteHeader(c)
 		w.Write([]byte(d))
@@ -42,9 +46,9 @@ func TestClient_SendPDV(t *testing.T) {
 		{
 			name:     "success",
 			code:     http.StatusCreated,
-			response: `{"address":"hash"}`,
+			response: fmt.Sprintf(`{"address":"%s"}`, testAddress),
 
-			address: "hash",
+			address: testAddress,
 			err:     "",
 		},
 		{
@@ -70,7 +74,7 @@ func TestClient_SendPDV(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := startServer(t, tc.code, tc.response, `"data":"ZGF0YQ=="`)
+			p := startServer(t, tc.code, tc.response, `"data":"ZGF0YQ=="`, "")
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
@@ -118,11 +122,11 @@ func TestClient_DoesPDVExist(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := startServer(t, tc.code, tc.response, `"address":"hash"`)
+			p := startServer(t, tc.code, tc.response, "", fmt.Sprintf(`address=%s`, url.QueryEscape(testAddress)))
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			exists, err := c.DoesPDVExist(context.Background(), "hash")
+			exists, err := c.DoesPDVExist(context.Background(), testAddress)
 			assert.Equal(t, tc.exists, exists)
 
 			if tc.err == "" {
@@ -166,11 +170,11 @@ func TestClient_ReceivePDV(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := startServer(t, tc.code, tc.response, `"address":"hash"`)
+			p := startServer(t, tc.code, tc.response, fmt.Sprintf(`"address":"%s"`, testAddress), "")
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			data, err := c.ReceivePDV(context.Background(), "hash")
+			data, err := c.ReceivePDV(context.Background(), testAddress)
 			assert.Equal(t, tc.data, data)
 
 			if tc.err == "" {
