@@ -15,11 +15,157 @@
     "version": "1.0.0"
   },
   "basePath": "/v1",
-  "paths": {},
+  "paths": {
+    "/pdv-exists": {
+      "post": {
+        "tags": [
+          "Cerberus"
+        ],
+        "summary": "Checks if PDV data exists in storage.",
+        "operationId": "DoesPDVExist",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/doesPDVExistRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "result of check",
+            "schema": {
+              "$ref": "#/definitions/doesPDVExistResponse"
+            }
+          },
+          "400": {
+            "description": "bad request",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "401": {
+            "description": "signature wasn't verified",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/receive-pdv": {
+      "post": {
+        "tags": [
+          "Cerberus"
+        ],
+        "summary": "Gets and decrypts PDV data from storage.",
+        "operationId": "ReceivePDV",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/receivePDVRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "raw data from storage",
+            "schema": {
+              "$ref": "#/definitions/receivePDVResponse"
+            }
+          },
+          "400": {
+            "description": "bad request",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "401": {
+            "description": "signature wasn't verified",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/send-pdv": {
+      "post": {
+        "tags": [
+          "Cerberus"
+        ],
+        "summary": "Encrypts and puts PDV data into storage.",
+        "operationId": "SendPDV",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/sendPDVRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "data were put into storage",
+            "schema": {
+              "$ref": "#/definitions/sendPDVResponse"
+            }
+          },
+          "400": {
+            "description": "bad request",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "401": {
+            "description": "signature wasn't verified",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    }
+  },
   "definitions": {
-    "Error": {
+    "doesPDVExistResponse": {
       "type": "object",
-      "title": "Error ...",
+      "properties": {
+        "pdv_exists": {
+          "description": "Flag which means file exists or not",
+          "type": "boolean",
+          "x-go-name": "PDVExists"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
+    },
+    "error": {
+      "type": "object",
       "properties": {
         "error": {
           "description": "error message",
@@ -27,7 +173,73 @@
           "x-go-name": "Error"
         }
       },
-      "x-go-package": "github.com/Decentr-net/Cerberus/internal/server"
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
+    },
+    "receivePDVRequest": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "description": "Requested file's address(hash in ipfs)",
+          "type": "string",
+          "x-go-name": "Address"
+        },
+        "signature": {
+          "$ref": "#/definitions/signature"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
+    },
+    "receivePDVResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "description": "Requested file's data encrypted with base64",
+          "type": "string",
+          "x-go-name": "Data"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
+    },
+    "sendPDVRequest": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "description": "Data which encrypted with base64",
+          "type": "string",
+          "x-go-name": "Data"
+        },
+        "signature": {
+          "$ref": "#/definitions/signature"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
+    },
+    "sendPDVResponse": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "description": "Put file address(hash in ipfs)",
+          "type": "string",
+          "x-go-name": "Address"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
+    },
+    "signature": {
+      "type": "object",
+      "properties": {
+        "public_key": {
+          "description": "User's public key in hex.",
+          "type": "string",
+          "x-go-name": "PublicKey"
+        },
+        "signature": {
+          "description": "Request's digest signature in hex. Digest is sha256 hash of whole request data (except signature object).\nYou must hash data in order according to request attributes order.",
+          "type": "string",
+          "x-go-name": "Signature"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
     }
   }
 }

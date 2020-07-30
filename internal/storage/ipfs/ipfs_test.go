@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+
+	"github.com/Decentr-net/cerberus/internal/storage"
 )
 
 var (
@@ -124,6 +126,7 @@ func TestIpfs_Read_FileNotFound(t *testing.T) {
 	rc, err := i.Read(ctx, "QmcrBuzrkvb4LPPcgFeH4NSvCWvABPBQtSod2PNHQnLJgN")
 	assert.Nil(t, rc)
 	assert.Error(t, err)
+	assert.Equal(t, storage.ErrNotFound, err)
 }
 
 func TestIpfs_Write_Read(t *testing.T) {
@@ -143,4 +146,28 @@ func TestIpfs_Write_Read(t *testing.T) {
 	assert.Equal(t, text, b)
 
 	assert.NoError(t, rc.Close())
+}
+
+func TestIpfs_DoesExist(t *testing.T) {
+	i := NewStorage(sh)
+
+	exists, err := i.DoesExist(ctx, "QmcrBuzrkvb4LPPcgFeH4NSvCWvABPBQtSod2PNHQnLJgV") // text file with "example" word
+	assert.NoError(t, err)
+	assert.True(t, exists)
+}
+
+func TestIpfs_DoesExist_NotFound(t *testing.T) {
+	i := NewStorage(sh)
+
+	exists, err := i.DoesExist(ctx, "QmcrBuzrkvb4LPPcgFeH4NSvCWvABPBQtSod2PNHQnLJgN")
+	assert.Nil(t, err)
+	assert.False(t, exists)
+}
+
+func TestIpfs_DoesExist_UnavailableNode(t *testing.T) {
+	i := NewStorage(shell.NewShell(""))
+
+	exists, err := i.DoesExist(ctx, "QmcrBuzrkvb4LPPcgFeH4NSvCWvABPBQtSod2PNHQnLJgN")
+	assert.False(t, exists)
+	assert.Error(t, err)
 }

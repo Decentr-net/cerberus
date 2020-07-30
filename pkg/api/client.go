@@ -28,7 +28,7 @@ func NewClient(host string, pk secp256k1.PrivKeySecp256k1) Cerberus {
 // NewClientWithHTTPClient returns client with provided http.Client.
 func NewClientWithHTTPClient(host string, pk secp256k1.PrivKeySecp256k1, c *http.Client) Cerberus {
 	return &client{
-		host: fmt.Sprintf("https://%s", host),
+		host: host,
 		pk:   pk,
 		c:    c,
 	}
@@ -67,7 +67,7 @@ func (c *client) ReceivePDV(ctx context.Context, address string) ([]byte, error)
 	resp := ReceivePDVResponse{}
 
 	if err := c.sendRequest(ctx, fmt.Sprintf("%s/%s", c.host, ReceivePDVEndpoint), &req, &resp); err != nil {
-		return nil, fmt.Errorf("failed to make SendPDV request: %w", err)
+		return nil, fmt.Errorf("failed to make ReceivePDV request: %w", err)
 	}
 
 	return resp.Data, nil
@@ -87,7 +87,7 @@ func (c *client) DoesPDVExist(ctx context.Context, address string) (bool, error)
 	resp := DoesPDVExistResponse{}
 
 	if err := c.sendRequest(ctx, fmt.Sprintf("%s/%s", c.host, DoesPDVExistEndpoint), &req, &resp); err != nil {
-		return false, fmt.Errorf("failed to make SendPDV request: %w", err)
+		return false, fmt.Errorf("failed to make DoesPDVExist request: %w", err)
 	}
 
 	return resp.PDVExists, nil
@@ -127,11 +127,15 @@ func (c *client) sendRequest(ctx context.Context, endpoint string, data interfac
 		case http.StatusBadRequest:
 			return ErrInvalidRequest
 		default:
-			return errors.Errorf("request failed with status %d", rr.StatusCode)
+			var e Error
+			if err := json.NewDecoder(rr.Body).Decode(&e); err != nil {
+				return errors.Errorf("request failed with status %d", rr.StatusCode)
+			}
+			return errors.Errorf("request failed: %s", e.Error)
 		}
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
+	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
 		return fmt.Errorf("failed to decode response: %w", err)
 	}
 

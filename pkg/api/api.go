@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/gob"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -21,17 +22,17 @@ func init() {
 	gob.Register(time.Time{})
 }
 
+// ErrInvalidRequest is returned when request is invalid.
+var ErrInvalidRequest = errors.New("invalid request")
+
 // ErrInvalidPublicKey is returned when public key is invalid.
-var ErrInvalidPublicKey = errors.New("public key is invalid")
+var ErrInvalidPublicKey = fmt.Errorf("%w: public key is invalid", ErrInvalidRequest)
 
 // ErrInvalidSignature is returned when signature is invalid.
-var ErrInvalidSignature = errors.New("signature is invalid")
+var ErrInvalidSignature = fmt.Errorf("%w: signature is invalid", ErrInvalidRequest)
 
 // ErrNotFound is returned when object is not found.
 var ErrNotFound = errors.New("not found")
-
-// ErrInvalidRequest is returned when request is invalid.
-var ErrInvalidRequest = errors.New("invalid request")
 
 // ErrNotVerified is returned when signature is wrong.
 var ErrNotVerified = errors.New("failed to verify message")
