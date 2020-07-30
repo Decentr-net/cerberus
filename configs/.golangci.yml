@@ -105,6 +105,10 @@ issues:
         - gochecknoglobals
         - typecheck
 
+    - path: pkg/api/api.go
+      linters:
+        - gochecknoinits
+
     - linters:
         - govet
       text: "declaration of \"err\" shadows declaration"
@@ -128,6 +132,11 @@ issues:
     - linters:
         - gochecknoglobals
       text: "`opts` is a global variable"
+
+    - path: pkg/api/client.go
+      linters:
+        - errcheck
+      text: ".Body.Close` is not checked"
 
   exclude-use-default: false
   max-per-linter: 0
