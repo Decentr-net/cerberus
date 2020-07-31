@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -164,7 +165,9 @@ func TestServer_SendPDVHandler(t *testing.T) {
 					next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), logCtxKey{}, log)))
 				})
 			})
-			s := server{s: srv}
+			c, err := lru.NewARC(10)
+			require.NoError(t, err)
+			s := server{s: srv, pdvExistenceCache: c}
 			router.Post(api.SendPDVEndpoint, s.sendPDVHandler)
 
 			router.ServeHTTP(w, r)
@@ -246,7 +249,9 @@ func TestServer_DoesPDVExistHandler(t *testing.T) {
 					next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), logCtxKey{}, log)))
 				})
 			})
-			s := server{s: srv}
+			c, err := lru.NewARC(10)
+			require.NoError(t, err)
+			s := server{s: srv, pdvExistenceCache: c}
 			router.Get(api.DoesPDVExistEndpoint, s.doesPDVExistHandler)
 
 			router.ServeHTTP(w, r)

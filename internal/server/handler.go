@@ -66,6 +66,8 @@ func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.pdvExistenceCache.Add(filepath, true)
+
 	writeOK(w, http.StatusCreated, api.SendPDVResponse{Address: filepath})
 }
 
@@ -174,11 +176,17 @@ func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if v, ok := s.pdvExistenceCache.Get(address); ok {
+		writeOK(w, http.StatusOK, api.DoesPDVExistResponse{Exists: v.(bool)})
+		return
+	}
+
 	exists, err := s.s.DoesPDVExist(r.Context(), address)
 	if err != nil {
 		writeInternalError(getLogger(r.Context()), w, err.Error())
 		return
 	}
 
+	s.pdvExistenceCache.Add(address, exists)
 	writeOK(w, http.StatusOK, api.DoesPDVExistResponse{Exists: exists})
 }

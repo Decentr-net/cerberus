@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Decentr-net/cerberus/internal/service"
@@ -32,8 +33,12 @@ import (
 
 //go:generate swagger generate spec -t swagger -m -c . -o ../../static/swagger.json
 
+const existenceCacheSize = 200 // we don't need store a lot keys because method used by blockchain node which validates block
+
 type server struct {
 	s service.Service
+
+	pdvExistenceCache *lru.ARCCache
 }
 
 // SetupRouter setups handlers to chi router.
@@ -47,7 +52,15 @@ func SetupRouter(s service.Service, r chi.Router, maxBodySize int64) {
 		bodyLimiterMiddleware(maxBodySize),
 	)
 
-	srv := server{s: s}
+	c, err := lru.NewARC(existenceCacheSize)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create cache")
+	}
+
+	srv := server{
+		s:                 s,
+		pdvExistenceCache: c,
+	}
 
 	r.Post(api.SendPDVEndpoint, srv.sendPDVHandler)
 	r.Post(api.ReceivePDVEndpoint, srv.receivePDVHandler)
