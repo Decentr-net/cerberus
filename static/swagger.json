@@ -30,7 +30,7 @@
           "application/octet-stream"
         ],
         "produces": [
-          "applciation/json"
+          "application/json"
         ],
         "tags": [
           "Cerberus"
