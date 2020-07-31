@@ -1,5 +1,9 @@
 package api
 
+import "regexp"
+
+var addressRegExp = regexp.MustCompile(`[0-9a-fA-F]{76}\/[0-9a-fA-F]{128}`) // public_key_hex/data_sha256_digest_hex
+
 // Validator interface provides method for validation.
 type Validator interface {
 	IsValid() bool
@@ -26,17 +30,10 @@ type ReceivePDVRequest struct {
 
 // IsValid ...
 func (r ReceivePDVRequest) IsValid() bool {
-	return len(r.Address) != 0
+	return IsAddressValid(r.Address)
 }
 
-// DoesPDVExistRequest ...
-type DoesPDVExistRequest struct {
-	AuthRequest
-
-	Address string `json:"address"`
-}
-
-// IsValid ...
-func (r DoesPDVExistRequest) IsValid() bool {
-	return len(r.Address) != 0
+// IsAddressValid check is address is matching with regexp.
+func IsAddressValid(s string) bool {
+	return addressRegExp.MatchString(s)
 }

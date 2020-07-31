@@ -25,6 +25,7 @@ import (
 	"github.com/Decentr-net/cerberus/pkg/api"
 )
 
+var testAddress = "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6/eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3aeb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
 var wrongSignature = api.Signature{
 	PublicKey: "eb5ae987210385f66f360ffc57607fc69a7b5fbd06f92841db02521853f5ebdc7bc983a35901",
 	Signature: "f8f173f2de49a6ce040fa963ff510debeadf118c8972ba1ee19310eae3dd616931b4ffabb351ce8e38ce6984dfadb5aae8e2be6d7a029346be6c8a50ace6a56f",
@@ -177,18 +178,16 @@ func TestServer_SendPDVHandler(t *testing.T) {
 
 func TestServer_DoesPDVExistHandler(t *testing.T) {
 	tt := []struct {
-		name  string
-		req   *api.DoesPDVExistRequest
-		f     func(_ context.Context, address string) (bool, error)
-		rcode int
-		rdata string
-		rlog  string
+		name    string
+		address string
+		f       func(_ context.Context, address string) (bool, error)
+		rcode   int
+		rdata   string
+		rlog    string
 	}{
 		{
-			name: "success",
-			req: &api.DoesPDVExistRequest{
-				Address: "hash",
-			},
+			name:    "success",
+			address: testAddress,
 			f: func(_ context.Context, address string) (bool, error) {
 				return true, nil
 			},
@@ -197,29 +196,16 @@ func TestServer_DoesPDVExistHandler(t *testing.T) {
 			rlog:  "",
 		},
 		{
-			name:  "invalid request",
-			req:   &api.DoesPDVExistRequest{},
-			f:     nil,
-			rcode: http.StatusBadRequest,
-			rdata: `{"error":"request is invalid"}`,
-			rlog:  "",
+			name:    "invalid request",
+			address: "invalid",
+			f:       nil,
+			rcode:   http.StatusBadRequest,
+			rdata:   `{"error":"invalid address"}`,
+			rlog:    "",
 		},
 		{
-			name: "invalid json",
-			req: &api.DoesPDVExistRequest{
-				Address:     invalidJSON,
-				AuthRequest: api.AuthRequest{Signature: wrongSignature},
-			},
-			f:     nil,
-			rcode: http.StatusBadRequest,
-			rdata: `{"error":"failed to decode json"}`,
-			rlog:  "",
-		},
-		{
-			name: "internal error",
-			req: &api.DoesPDVExistRequest{
-				Address: "address",
-			},
+			name:    "internal error",
+			address: testAddress,
 			f: func(_ context.Context, address string) (bool, error) {
 				return false, errors.New("test error")
 			},
@@ -235,11 +221,13 @@ func TestServer_DoesPDVExistHandler(t *testing.T) {
 			t.Parallel()
 
 			b, w, r := newTestParameters(t)
-			pathRequest(t, r, api.DoesPDVExistEndpoint, tc.req, &tc.req.Signature)
 
-			if tc.req.Address == invalidJSON {
-				r.Body = ioutil.NopCloser(bytes.NewBufferString(invalidJSON))
-			}
+			r.Method = http.MethodGet
+
+			var err error
+			r.Body = nil
+			r.URL, err = url.Parse(fmt.Sprintf("http://localhost%s?address=%s", api.DoesPDVExistEndpoint, url.QueryEscape(tc.address)))
+			require.NoError(t, err)
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -247,7 +235,7 @@ func TestServer_DoesPDVExistHandler(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.f != nil {
-				srv.EXPECT().DoesPDVExist(gomock.Any(), tc.req.Address).DoAndReturn(tc.f)
+				srv.EXPECT().DoesPDVExist(gomock.Any(), tc.address).DoAndReturn(tc.f)
 			}
 
 			router := chi.NewRouter()
@@ -259,7 +247,7 @@ func TestServer_DoesPDVExistHandler(t *testing.T) {
 				})
 			})
 			s := server{s: srv}
-			router.Post(api.DoesPDVExistEndpoint, s.doesPDVExistHandler)
+			router.Get(api.DoesPDVExistEndpoint, s.doesPDVExistHandler)
 
 			router.ServeHTTP(w, r)
 
@@ -282,7 +270,7 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 		{
 			name: "success",
 			req: &api.ReceivePDVRequest{
-				Address: "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6/hash",
+				Address: testAddress,
 			},
 			f: func(_ context.Context, address string) ([]byte, error) {
 				return []byte("data"), nil
@@ -313,19 +301,19 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 		{
 			name: "not found",
 			req: &api.ReceivePDVRequest{
-				Address: "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6/address",
+				Address: testAddress,
 			},
 			f: func(_ context.Context, address string) ([]byte, error) {
 				return nil, service.ErrNotFound
 			},
 			rcode: http.StatusNotFound,
-			rdata: `{"error":"PDV 'eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6/address' not found"}`,
+			rdata: fmt.Sprintf(`{"error":"PDV '%s' not found"}`, testAddress),
 			rlog:  "",
 		},
 		{
 			name: "internal error",
 			req: &api.ReceivePDVRequest{
-				Address: "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6/address",
+				Address: testAddress,
 			},
 			f: func(_ context.Context, address string) ([]byte, error) {
 				return nil, errors.New("test error")
@@ -337,7 +325,7 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 		{
 			name: "forbidden error",
 			req: &api.ReceivePDVRequest{
-				Address: "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed7/address",
+				Address: "a" + testAddress[1:],
 			},
 			f:     nil,
 			rcode: http.StatusForbidden,

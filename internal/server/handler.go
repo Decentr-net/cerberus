@@ -146,11 +146,9 @@ func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 	//
 	// ---
 	// parameters:
-	// - name: request
-	//   in: body
+	// - name: address
+	//   in: query
 	//   required: true
-	//   schema:
-	//     '$ref': '#/definitions/doesPDVExistRequest'
 	// responses:
 	//   '200':
 	//     description: result of check
@@ -168,24 +166,15 @@ func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 	//     description: internal server error
 	//     schema:
 	//       "$ref": "#/definitions/Error"
-	var req api.DoesPDVExistRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "failed to decode json")
+	address := r.URL.Query().Get("address")
+
+	if !api.IsAddressValid(address) {
+		writeError(w, http.StatusBadRequest, "invalid address")
 		return
 	}
 
-	if !req.IsValid() {
-		writeError(w, http.StatusBadRequest, "request is invalid")
-		return
-	}
-
-	if _, err := api.Verify(req); err != nil {
-		writeVerifyError(getLogger(r.Context()), w, err)
-		return
-	}
-
-	exists, err := s.s.DoesPDVExist(r.Context(), req.Address)
+	exists, err := s.s.DoesPDVExist(r.Context(), address)
 	if err != nil {
 		writeInternalError(getLogger(r.Context()), w, err.Error())
 		return

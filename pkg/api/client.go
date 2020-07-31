@@ -46,7 +46,7 @@ func (c *client) SendPDV(ctx context.Context, data []byte) (string, error) {
 	}
 	resp := SendPDVResponse{}
 
-	if err := c.sendRequest(ctx, fmt.Sprintf("%s/%s", c.host, SendPDVEndpoint), &req, &resp); err != nil {
+	if err := c.sendRequest(ctx, http.MethodPost, fmt.Sprintf("%s/%s", c.host, SendPDVEndpoint), &req, &resp); err != nil {
 		return "", fmt.Errorf("failed to make SendPDV request: %w", err)
 	}
 
@@ -66,7 +66,7 @@ func (c *client) ReceivePDV(ctx context.Context, address string) ([]byte, error)
 	}
 	resp := ReceivePDVResponse{}
 
-	if err := c.sendRequest(ctx, fmt.Sprintf("%s/%s", c.host, ReceivePDVEndpoint), &req, &resp); err != nil {
+	if err := c.sendRequest(ctx, http.MethodPost, fmt.Sprintf("%s/%s", c.host, ReceivePDVEndpoint), &req, &resp); err != nil {
 		return nil, fmt.Errorf("failed to make ReceivePDV request: %w", err)
 	}
 
@@ -76,17 +76,13 @@ func (c *client) ReceivePDV(ctx context.Context, address string) ([]byte, error)
 // DoesPDVExist returns is data exists in Cerberus by provided address.
 // DoesPDVExist can return ErrInvalidRequest and ErrNotFound besides general api package's errors.
 func (c *client) DoesPDVExist(ctx context.Context, address string) (bool, error) {
-	if address == "" {
-		// nolint:godox
-		return false, ErrInvalidRequest // todo: make a strong check
+	if !IsAddressValid(address) {
+		return false, ErrInvalidRequest
 	}
 
-	req := DoesPDVExistRequest{
-		Address: address,
-	}
 	resp := DoesPDVExistResponse{}
-
-	if err := c.sendRequest(ctx, fmt.Sprintf("%s/%s", c.host, DoesPDVExistEndpoint), &req, &resp); err != nil {
+	url := fmt.Sprintf("%s/%s?address=%s", c.host, DoesPDVExistEndpoint, address)
+	if err := c.sendRequest(ctx, http.MethodGet, url, nil, &resp); err != nil {
 		return false, fmt.Errorf("failed to make DoesPDVExist request: %w", err)
 	}
 
@@ -95,7 +91,7 @@ func (c *client) DoesPDVExist(ctx context.Context, address string) (bool, error)
 
 // sendRequest is utility method which signs request, if it's needed, and send POST request to Cerberus.
 // Also converts http.StatusCode to package's errors.
-func (c *client) sendRequest(ctx context.Context, endpoint string, data interface{}, resp interface{}) error {
+func (c *client) sendRequest(ctx context.Context, method string, endpoint string, data interface{}, resp interface{}) error {
 	if v, ok := data.(Validator); ok && !v.IsValid() {
 		return ErrInvalidRequest
 	}
@@ -109,7 +105,7 @@ func (c *client) sendRequest(ctx context.Context, endpoint string, data interfac
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	r, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/%s", c.host, endpoint), bytes.NewReader(body))
+	r, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("%s/%s", c.host, endpoint), bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

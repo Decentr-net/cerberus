@@ -51,7 +51,7 @@ func SetupRouter(s service.Service, r chi.Router, maxBodySize int64) {
 
 	r.Post(api.SendPDVEndpoint, srv.sendPDVHandler)
 	r.Post(api.ReceivePDVEndpoint, srv.receivePDVHandler)
-	r.Post(api.DoesPDVExistEndpoint, srv.doesPDVExistHandler)
+	r.Get(api.DoesPDVExistEndpoint, srv.doesPDVExistHandler)
 }
 
 func getLogger(ctx context.Context) logrus.FieldLogger {
