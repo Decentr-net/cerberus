@@ -41,7 +41,7 @@ type receivePDVResponse struct {
 	Data string `json:"data"`
 }
 
-// DoesPDVExistRequest ...
+// DoesDataExistRequest ...
 type doesPDVExistRequest struct {
 	// Request signature
 	Signature signature `json:"signature"`
@@ -53,7 +53,7 @@ type doesPDVExistRequest struct {
 // swagger:model
 type doesPDVExistResponse struct {
 	// Flag which means file exists or not
-	PDVExists bool `json:"pdv_exists"`
+	Exists bool `json:"exists"`
 }
 
 // swagger:model

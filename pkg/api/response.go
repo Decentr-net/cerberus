@@ -17,5 +17,5 @@ type ReceivePDVResponse struct {
 
 // DoesPDVExistResponse ...
 type DoesPDVExistResponse struct {
-	PDVExists bool `json:"pdv_exists"`
+	Exists bool `json:"exists"`
 }

@@ -18,11 +18,11 @@ var ErrNotFound = errors.New("not found")
 
 // Service interface provides service's logic's methods.
 type Service interface {
-	// SendPDV sends data to storage and returns address of put data.
-	SendPDV(ctx context.Context, data []byte) (string, error)
-	// ReceivePDV returns slice of bytes of data requested by address from storage.
+	// SendPDV sends PDV to storage.
+	SendPDV(ctx context.Context, data []byte, filename string) error
+	// ReceivePDV returns slice of bytes of PDV requested by address from storage.
 	ReceivePDV(ctx context.Context, address string) ([]byte, error)
-	// DoesPDVExist checks data existence by address in storage.
+	// DoesPDVExist checks PDV existence by address in storage.
 	DoesPDVExist(ctx context.Context, address string) (bool, error)
 }
 
@@ -40,29 +40,28 @@ func New(c crypto.Crypto, s storage.Storage) Service {
 	}
 }
 
-// SendPDV sends data to storage and returns address of put data.
-func (s *service) SendPDV(ctx context.Context, data []byte) (string, error) {
+// SendPDV sends PDV to storage.
+func (s *service) SendPDV(ctx context.Context, data []byte, filepath string) error {
 	enc, err := s.c.Encrypt(bytes.NewReader(data))
 	if err != nil {
-		return "", fmt.Errorf("failed to create encrypting reader: %w", err)
+		return fmt.Errorf("failed to create encrypting reader: %w", err)
 	}
 
-	hash, err := s.s.Write(ctx, enc)
-	if err != nil {
-		return "", fmt.Errorf("failed to write to storage: %w", err)
+	if err := s.s.Write(ctx, enc, filepath); err != nil {
+		return fmt.Errorf("failed to write to storage: %w", err)
 	}
 
-	return hash, nil
+	return nil
 }
 
-// ReceivePDV returns slice of bytes of data requested by address from storage.
+// ReceivePDV returns slice of bytes of PDV requested by address from storage.
 func (s *service) ReceivePDV(ctx context.Context, address string) ([]byte, error) {
 	r, err := s.s.Read(ctx, address)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return nil, ErrNotFound
 		}
-		return nil, fmt.Errorf("failed to get PDV from storage: %w", err)
+		return nil, fmt.Errorf("failed to get data from storage: %w", err)
 	}
 	defer r.Close()
 
@@ -79,7 +78,7 @@ func (s *service) ReceivePDV(ctx context.Context, address string) ([]byte, error
 	return data, nil
 }
 
-// DoesPDVExist checks data existence by address in storage.
+// DoesPDVExist checks PDV existence by address in storage.
 func (s *service) DoesPDVExist(ctx context.Context, address string) (bool, error) {
 	exists, err := s.s.DoesExist(ctx, address)
 	if err != nil {

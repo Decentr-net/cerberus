@@ -34,18 +34,17 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // SendPDV mocks base method
-func (m *MockService) SendPDV(ctx context.Context, data []byte) (string, error) {
+func (m *MockService) SendPDV(ctx context.Context, data []byte, filename string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendPDV", ctx, data)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "SendPDV", ctx, data, filename)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SendPDV indicates an expected call of SendPDV
-func (mr *MockServiceMockRecorder) SendPDV(ctx, data interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) SendPDV(ctx, data, filename interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendPDV", reflect.TypeOf((*MockService)(nil).SendPDV), ctx, data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendPDV", reflect.TypeOf((*MockService)(nil).SendPDV), ctx, data, filename)
 }
 
 // ReceivePDV mocks base method

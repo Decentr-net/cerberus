@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+//go:generate mockgen -destination=./api_mock.go -package=api -source=api.go
+
 // SendPDVEndpoint ...
 const SendPDVEndpoint = "/v1/send-pdv"
 

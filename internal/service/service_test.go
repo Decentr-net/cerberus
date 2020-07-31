@@ -39,17 +39,16 @@ func TestService_SendPDV(t *testing.T) {
 		return bytes.NewReader(testEncryptedData), nil
 	})
 
-	st.EXPECT().Write(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader) (string, error) {
+	st.EXPECT().Write(ctx, gomock.Any(), testFilename).DoAndReturn(func(_ context.Context, r io.Reader, _ string) error {
 		data, err := ioutil.ReadAll(r)
 		require.NoError(t, err)
 		require.Equal(t, testEncryptedData, data)
 
-		return testFilename, nil
+		return nil
 	})
 
-	addr, err := s.SendPDV(ctx, testData)
+	err := s.SendPDV(ctx, testData, testFilename)
 	require.NoError(t, err)
-	assert.Equal(t, testFilename, addr)
 }
 
 func TestService_SendPDV_EncryptError(t *testing.T) {
@@ -63,10 +62,9 @@ func TestService_SendPDV_EncryptError(t *testing.T) {
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, errTest)
 
-	addr, err := s.SendPDV(ctx, testData)
+	err := s.SendPDV(ctx, testData, testFilename)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
-	assert.Empty(t, addr)
 }
 
 func TestService_SendPDV_StorageError(t *testing.T) {
@@ -80,12 +78,11 @@ func TestService_SendPDV_StorageError(t *testing.T) {
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(bytes.NewReader(testEncryptedData), nil)
 
-	st.EXPECT().Write(ctx, gomock.Any()).Return("", errTest)
+	st.EXPECT().Write(ctx, gomock.Any(), testFilename).Return(errTest)
 
-	addr, err := s.SendPDV(ctx, testData)
+	err := s.SendPDV(ctx, testData, testFilename)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
-	assert.Empty(t, addr)
 }
 
 func TestService_ReceivePDV(t *testing.T) {

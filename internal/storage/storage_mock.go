@@ -35,46 +35,45 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 }
 
 // Read mocks base method
-func (m *MockStorage) Read(ctx context.Context, hash string) (io.ReadCloser, error) {
+func (m *MockStorage) Read(ctx context.Context, path string) (io.ReadCloser, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Read", ctx, hash)
+	ret := m.ctrl.Call(m, "Read", ctx, path)
 	ret0, _ := ret[0].(io.ReadCloser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Read indicates an expected call of Read
-func (mr *MockStorageMockRecorder) Read(ctx, hash interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) Read(ctx, path interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockStorage)(nil).Read), ctx, hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockStorage)(nil).Read), ctx, path)
 }
 
 // Write mocks base method
-func (m *MockStorage) Write(ctx context.Context, r io.Reader) (string, error) {
+func (m *MockStorage) Write(ctx context.Context, r io.Reader, path string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Write", ctx, r)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "Write", ctx, r, path)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Write indicates an expected call of Write
-func (mr *MockStorageMockRecorder) Write(ctx, r interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) Write(ctx, r, path interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockStorage)(nil).Write), ctx, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockStorage)(nil).Write), ctx, r, path)
 }
 
 // DoesExist mocks base method
-func (m *MockStorage) DoesExist(ctx context.Context, hash string) (bool, error) {
+func (m *MockStorage) DoesExist(ctx context.Context, path string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DoesExist", ctx, hash)
+	ret := m.ctrl.Call(m, "DoesExist", ctx, path)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DoesExist indicates an expected call of DoesExist
-func (mr *MockStorageMockRecorder) DoesExist(ctx, hash interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) DoesExist(ctx, path interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesExist", reflect.TypeOf((*MockStorage)(nil).DoesExist), ctx, hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesExist", reflect.TypeOf((*MockStorage)(nil).DoesExist), ctx, path)
 }
