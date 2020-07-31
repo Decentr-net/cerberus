@@ -63,7 +63,7 @@ func (s *service) ReceivePDV(ctx context.Context, address string) ([]byte, error
 		}
 		return nil, fmt.Errorf("failed to get data from storage: %w", err)
 	}
-	defer r.Close()
+	defer r.Close() // nolint
 
 	dr, err := s.c.Decrypt(r)
 	if err != nil {

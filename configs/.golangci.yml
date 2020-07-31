@@ -131,26 +131,6 @@ issues:
         - staticcheck
       source: "choice:\".+\""
 
-    - linters:
-        - gochecknoglobals
-      text: "`opts` is a global variable"
-
-    - path: pkg/api/request.go
-      linters:
-        - gochecknoglobals
-      text: "`addressRegExp` is a global variable"
-
-    - path: pkg/api/client.go
-      linters:
-        - errcheck
-      text: ".Close` is not checked"
-
-    - path: internal/service/service.go
-      linters:
-        - errcheck
-      text: ".Close` is not checked"
-
-
   exclude-use-default: false
   max-per-linter: 0
   max-same-issues: 0

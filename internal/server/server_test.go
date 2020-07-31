@@ -51,7 +51,7 @@ func Test_writeErrorf(t *testing.T) {
 }
 
 func Test_writeInternalError(t *testing.T) {
-	b, w, r := newTestParameters(t)
+	b, w, r := newTestParameters(t, http.MethodGet, "", nil)
 
 	writeInternalError(getLogger(r.Context()), w, "some error")
 
@@ -63,7 +63,7 @@ func Test_writeInternalError(t *testing.T) {
 
 func Test_writeVerifyError(t *testing.T) {
 	t.Run("bad request", func(t *testing.T) {
-		b, w, r := newTestParameters(t)
+		b, w, r := newTestParameters(t, http.MethodGet, "", nil)
 
 		writeVerifyError(getLogger(r.Context()), w, api.ErrInvalidPublicKey)
 
@@ -73,7 +73,7 @@ func Test_writeVerifyError(t *testing.T) {
 	})
 
 	t.Run("not verified", func(t *testing.T) {
-		b, w, r := newTestParameters(t)
+		b, w, r := newTestParameters(t, http.MethodGet, "", nil)
 		writeVerifyError(getLogger(r.Context()), w, api.ErrNotVerified)
 
 		assert.Empty(t, b.String())
@@ -82,7 +82,7 @@ func Test_writeVerifyError(t *testing.T) {
 	})
 
 	t.Run("internal error", func(t *testing.T) {
-		b, w, r := newTestParameters(t)
+		b, w, r := newTestParameters(t, http.MethodGet, "", nil)
 
 		writeVerifyError(getLogger(r.Context()), w, errors.New("some error"))
 

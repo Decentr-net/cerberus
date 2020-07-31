@@ -3,26 +3,16 @@ package api
 
 import (
 	"context"
-	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
+	"regexp"
 )
 
 //go:generate mockgen -destination=./api_mock.go -package=api -source=api.go
 
-// SendPDVEndpoint ...
-const SendPDVEndpoint = "/v1/send-pdv"
-
-// ReceivePDVEndpoint ...
-const ReceivePDVEndpoint = "/v1/receive-pdv"
-
-// DoesPDVExistEndpoint ...
-const DoesPDVExistEndpoint = "/v1/pdv-exists"
-
-func init() {
-	gob.Register(time.Time{})
-}
+// nolint: gochecknoglobals
+var addressRegExp = regexp.MustCompile(`[0-9a-fA-F]{76}-[0-9a-fA-F]{128}`) // public_key_hex/data_sha256_digest_hex
 
 // ErrInvalidRequest is returned when request is invalid.
 var ErrInvalidRequest = errors.New("invalid request")
@@ -42,6 +32,21 @@ var ErrNotVerified = errors.New("failed to verify message")
 // Cerberus provides user-friendly API methods.
 type Cerberus interface {
 	SendPDV(ctx context.Context, data []byte) (string, error)
-	ReceivePDV(ctx context.Context, address string) ([]byte, error)
+	ReceivePDV(ctx context.Context, address string) (json.RawMessage, error)
 	DoesPDVExist(ctx context.Context, address string) (bool, error)
+}
+
+// Error ...
+type Error struct {
+	Error string `json:"error"`
+}
+
+// SendPDVResponse ...
+type SendPDVResponse struct {
+	Address string `json:"address"`
+}
+
+// IsAddressValid check is address is matching with regexp.
+func IsAddressValid(s string) bool {
+	return addressRegExp.MatchString(s)
 }

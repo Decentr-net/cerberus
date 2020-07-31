@@ -6,6 +6,7 @@ package api
 
 import (
 	context "context"
+	json "encoding/json"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -49,10 +50,10 @@ func (mr *MockCerberusMockRecorder) SendPDV(ctx, data interface{}) *gomock.Call 
 }
 
 // ReceivePDV mocks base method
-func (m *MockCerberus) ReceivePDV(ctx context.Context, address string) ([]byte, error) {
+func (m *MockCerberus) ReceivePDV(ctx context.Context, address string) (json.RawMessage, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReceivePDV", ctx, address)
-	ret0, _ := ret[0].([]byte)
+	ret0, _ := ret[0].(json.RawMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
