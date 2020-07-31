@@ -7,6 +7,7 @@ require (
 	github.com/docker/go-units v0.3.3
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/mock v1.4.3
+	github.com/hashicorp/golang-lru v0.5.1
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/minio/minio-go/v7 v7.0.2
 	github.com/minio/sio v0.2.0
