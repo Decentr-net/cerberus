@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"io"
+
+	"github.com/Decentr-net/cerberus/internal/health"
 )
 
 //go:generate mockgen -destination=./storage_mock.go -package=storage -source=storage.go
@@ -14,6 +16,8 @@ var ErrNotFound = errors.New("not found")
 
 // Storage is interface which provides access to user's data.
 type Storage interface {
+	health.Pinger
+
 	Read(ctx context.Context, path string) (io.ReadCloser, error)
 	Write(ctx context.Context, r io.Reader, path string) error
 	DoesExist(ctx context.Context, path string) (bool, error)
