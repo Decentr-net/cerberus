@@ -25,6 +25,36 @@ import (
 
 const testAddress = "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3aeb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
 
+var pdv = []byte(`{
+    "version": "v1",
+    "pdv": {
+        "ip": "1.1.1.1",
+        "user_agent": "mac",
+        "data": [
+            {
+                "version": "v1",
+                "type": "cookie",
+                "name": "my cookie",
+                "value": "some value",
+                "expires": "some date",
+                "max_age": 1234,
+                "path": "path",
+                "domain": "domain"
+            },
+            {
+                "version": "v1",
+                "type": "cookie",
+                "name": "my cookie",
+                "value": "some value",
+                "expires": "some date",
+                "max_age": 1234,
+                "path": "path",
+                "domain": "domain"
+            }
+        ]
+    }
+}`)
+
 var errSkip = errors.New("fictive error")
 
 func newTestParameters(t *testing.T, method string, uri string, body []byte) (*bytes.Buffer, *httptest.ResponseRecorder, *http.Request) {
@@ -42,37 +72,6 @@ func newTestParameters(t *testing.T, method string, uri string, body []byte) (*b
 
 	return b, w, r
 }
-
-//func getSignature(t *testing.T, r interface{}) api.Signature {
-//	d, err := api.Digest(r)
-//	require.NoError(t, err)
-//
-//	pk := secp256k1.PrivKeySecp256k1{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31}
-//
-//	sign, err := pk.Sign(d)
-//	require.NoError(t, err)
-//
-//	return api.Signature{
-//		PublicKey: hex.EncodeToString(pk.PubKey().Bytes()),
-//		Signature: hex.EncodeToString(sign),
-//	}
-//}
-
-//func pathRequest(t *testing.T, r *http.Request, endpoint string, d interface{}, s *api.Signature) {
-//	var err error
-//	r.URL, err = url.Parse(fmt.Sprintf("http://localhost%s", endpoint))
-//	require.NoError(t, err)
-//
-//	// test incorrect signature
-//	if s.Signature == "" {
-//		*s = getSignature(t, d)
-//	}
-//
-//	b, err := json.Marshal(d)
-//	require.NoError(t, err)
-//
-//	r.Body = ioutil.NopCloser(bytes.NewReader(b))
-//}
 
 func TestServer_SendPDVHandler(t *testing.T) {
 	getFilename := func(r *http.Request) string {
@@ -92,31 +91,46 @@ func TestServer_SendPDVHandler(t *testing.T) {
 	}{
 		{
 			name:    "success",
-			reqBody: []byte(`{"some":"data"}`),
+			reqBody: pdv,
 			err:     nil,
 			rcode:   http.StatusCreated,
-			rdata:   `{"address":"eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-16e26396388f1233755851c39305573f221eb0e2942604f7783a8cde16893c3e"}`,
+			rdata:   `{"address":"eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-cb27e346a79b2a5dbb91e8c32ea0764cd18c13fe7d374b50a83416923ce7c181"}`,
 			rlog:    "",
 		},
-		//{
-		//	name:    "invalid request",
-		//	reqBody: nil,
-		//	err:     errSkip,
-		//	rcode:   http.StatusBadRequest,
-		//	rdata:   `{"error":"request is invalid"}`,
-		//	rlog:    "",
-		//},
-		//{
-		//	name:    "invalid json",
-		//	reqBody: []byte("some data"),
-		//	err:     errSkip,
-		//	rcode:   http.StatusBadRequest,
-		//	rdata:   `{"error":"failed to decode json"}`,
-		//	rlog:    "",
-		//},
+		{
+			name:    "invalid request",
+			reqBody: nil,
+			err:     errSkip,
+			rcode:   http.StatusBadRequest,
+			rdata:   `{"error":"request is invalid: unexpected end of JSON input"}`,
+			rlog:    "",
+		},
+		{
+			name:    "invalid json",
+			reqBody: []byte("some data"),
+			err:     errSkip,
+			rcode:   http.StatusBadRequest,
+			rdata:   `{"error":"request is invalid: invalid character 's' looking for beginning of value"}`,
+			rlog:    "",
+		},
+		{
+			name: "invalid pdv",
+			reqBody: []byte(`{
+    "version": "v1",
+    "pdv": {
+        "ip": "1.1.1.1",
+        "user_agent": "mac",
+        "data": []
+    }
+}`),
+			err:   errSkip,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"pdv data is invalid"}`,
+			rlog:  "",
+		},
 		{
 			name:    "internal error",
-			reqBody: []byte(`{"some":"data"}`),
+			reqBody: pdv,
 			err:     errors.New("test error"),
 			rcode:   http.StatusInternalServerError,
 			rdata:   `{"error":"internal error"}`,

@@ -15,6 +15,35 @@ import (
 )
 
 var testAddress = "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3aeb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
+var pdv = []byte(`{
+    "version": "v1",
+    "pdv": {
+        "ip": "1.1.1.1",
+        "user_agent": "mac",
+        "data": [
+            {
+                "version": "v1",
+                "type": "cookie",
+                "name": "my cookie",
+                "value": "some value",
+                "expires": "some date",
+                "max_age": 1234,
+                "path": "path",
+                "domain": "domain"
+            },
+            {
+                "version": "v1",
+                "type": "cookie",
+                "name": "my cookie",
+                "value": "some value",
+                "expires": "some date",
+                "max_age": 1234,
+                "path": "path",
+                "domain": "domain"
+            }
+        ]
+    }
+}`)
 
 func startServer(t *testing.T, c int, d []byte, path string, data []byte) int {
 	l, err := net.Listen("tcp", ":0")
@@ -78,11 +107,11 @@ func TestClient_SendPDV(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := startServer(t, tc.code, tc.response, "/v1/pdv", []byte(`data`))
+			p := startServer(t, tc.code, tc.response, "/v1/pdv", pdv)
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			address, err := c.SendPDV(context.Background(), []byte("data"))
+			address, err := c.SendPDV(context.Background(), pdv)
 			assert.Equal(t, tc.address, address)
 
 			if tc.err == "" {

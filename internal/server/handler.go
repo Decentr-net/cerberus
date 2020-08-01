@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 // sendPDVHandler encrypts and puts PDV data into storage.
@@ -63,6 +65,17 @@ func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "failed to read body")
 	}
 	r.Body.Close() // nolint
+
+	var p schema.PDV
+	if err := json.Unmarshal(data, &p); err != nil {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("request is invalid: %s", err.Error()))
+		return
+	}
+
+	if !p.PDV.Validate() {
+		writeError(w, http.StatusBadRequest, "pdv data is invalid")
+		return
+	}
 
 	filepath := fmt.Sprintf("%s-%s", r.Header.Get(api.PublicKeyHeader), hex.EncodeToString(digest))
 	if err := s.s.SendPDV(r.Context(), data, filepath); err != nil {

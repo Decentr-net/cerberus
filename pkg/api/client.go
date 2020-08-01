@@ -10,6 +10,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 type client struct {
@@ -37,7 +39,14 @@ func NewClientWithHTTPClient(host string, pk secp256k1.PrivKeySecp256k1, c *http
 // SendPDV sends bytes slice to Cerberus.
 // SendPDV can return ErrInvalidRequest besides general api package's errors.
 func (c *client) SendPDV(ctx context.Context, data []byte) (string, error) {
-	if len(data) == 0 {
+	// validate data
+
+	var p schema.PDV
+	if err := json.Unmarshal(data, &p); err != nil {
+		return "", fmt.Errorf("%w: %s", ErrInvalidRequest, err)
+	}
+
+	if !p.PDV.Validate() {
 		return "", ErrInvalidRequest
 	}
 
