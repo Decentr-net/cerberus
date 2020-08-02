@@ -13,7 +13,7 @@ import (
 )
 
 func Test_recovererMiddleware(t *testing.T) {
-	b, w, r := newTestParameters(t)
+	b, w, r := newTestParameters(t, http.MethodGet, "", nil)
 
 	recovererMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		panic("some panic")

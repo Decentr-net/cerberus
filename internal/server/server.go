@@ -11,6 +11,30 @@
 //     Consumes:
 //     - application/json
 //
+//     Security:
+//     - public_key:
+//     - signature:
+//
+//     SecurityDefinitions:
+//     public_key:
+//          type: apiKey
+//          name: Public-Key
+//          in: header
+//          description: Blockchain account's public key
+//     signature:
+//          type: apiKey
+//          name: Signature
+//          in: header
+//          description: |-
+//            Signature of request digest.
+//            Digest is sha256 sum of request: {body as is}+{request uri}.
+//            For example:
+//               Private key in hex: 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20
+//               Request url: localhost/v1/pdv/123-321
+//               Body: {"some":"file"}
+//               Digest will be made from `{"some":"file"}v1/pdv/123-321`
+//               Digest in hex: 772d91d6dd8ff9c93cbd3bc888825f932964b301b32581c1e1dc36cdb5a5d869
+//
 // swagger:meta
 package server
 
@@ -62,9 +86,9 @@ func SetupRouter(s service.Service, r chi.Router, maxBodySize int64) {
 		pdvExistenceCache: c,
 	}
 
-	r.Post(api.SendPDVEndpoint, srv.sendPDVHandler)
-	r.Post(api.ReceivePDVEndpoint, srv.receivePDVHandler)
-	r.Get(api.DoesPDVExistEndpoint, srv.doesPDVExistHandler)
+	r.Post("/v1/pdv", srv.sendPDVHandler)
+	r.Get("/v1/pdv/{address}", srv.receivePDVHandler)
+	r.Head("/v1/pdv/{address}", srv.doesPDVExistHandler)
 }
 
 func getLogger(ctx context.Context) logrus.FieldLogger {

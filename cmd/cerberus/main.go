@@ -23,7 +23,7 @@ import (
 	"github.com/Decentr-net/cerberus/internal/storage/s3"
 )
 
-// nolint:lll
+// nolint:lll,gochecknoglobals
 var opts = struct {
 	Host string `long:"host" env:"HOST" default:"localhost" description:"IP to listen on"`
 	Port int    `long:"port" env:"PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`

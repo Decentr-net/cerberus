@@ -3,78 +3,63 @@ package api
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/gob"
 	"encoding/hex"
 	"fmt"
-	"reflect"
-	"unicode"
+	"io/ioutil"
+	"net/http"
 
+	"github.com/tendermint/tendermint/crypto"
 	amino "github.com/tendermint/tendermint/crypto/encoding/amino"
 )
 
-// Signature contains signature and public key for proving it.
-type Signature struct {
-	PublicKey string `json:"public_key"`
-	Signature string `json:"signature"`
-}
+// PublicKeyHeader is name for public key http header.
+const PublicKeyHeader = "Public-Key"
 
-// AuthRequest is signature and public key keeper.
-type AuthRequest struct {
-	Signature Signature `json:"signature"`
-}
+// SignatureHeader is name for signature http header.
+const SignatureHeader = "Signature"
 
-// signatureGetter used in Verify method.
-type signatureGetter interface {
-	// GetPublicKey returns public key.
-	GetPublicKey() ([]byte, error)
-	// GetSignature returns signature.
-	GetSignature() ([]byte, error)
-}
-
-// signatureSetter used in signRequest to set signature in request.
-type signatureSetter interface {
-	setSignature(s Signature)
-}
-
-func (r *AuthRequest) setSignature(s Signature) {
-	r.Signature = s
-}
-
-// GetPublicKey returns public key.
-func (r AuthRequest) GetPublicKey() ([]byte, error) {
-	b, err := hex.DecodeString(r.Signature.PublicKey)
+func getSignature(r *http.Request) (crypto.PubKey, []byte, error) {
+	s, err := hex.DecodeString(r.Header.Get(SignatureHeader))
 
 	if err != nil {
-		return nil, ErrInvalidPublicKey
+		return nil, nil, ErrInvalidSignature
 	}
 
-	return b, nil
-}
+	k, err := hex.DecodeString(r.Header.Get(PublicKeyHeader))
+	if err != nil {
+		return nil, nil, ErrInvalidPublicKey
+	}
 
-// GetSignature returns signature.
-func (r AuthRequest) GetSignature() ([]byte, error) {
-	b, err := hex.DecodeString(r.Signature.Signature)
+	pk, err := amino.PubKeyFromBytes(k)
 
 	if err != nil {
-		return nil, ErrInvalidSignature
+		return nil, nil, ErrInvalidPublicKey
 	}
 
-	return b, nil
+	return pk, s, nil
+}
+
+// Sign signs http request.
+func Sign(r *http.Request, pk crypto.PrivKey) error {
+	d, err := Digest(r)
+	if err != nil {
+		return fmt.Errorf("failed to get digest: %w", err)
+	}
+
+	s, err := pk.Sign(d)
+	if err != nil {
+		return fmt.Errorf("failed to sign digest: %w", err)
+	}
+
+	r.Header.Set(PublicKeyHeader, hex.EncodeToString(pk.PubKey().Bytes()))
+	r.Header.Set(SignatureHeader, hex.EncodeToString(s))
+
+	return nil
 }
 
 // Verify verifies request's signature with public key.
-func Verify(r signatureGetter) ([]byte, error) {
-	b, err := r.GetPublicKey()
-	if err != nil {
-		return nil, err
-	}
-
-	k, err := amino.PubKeyFromBytes(b)
-	if err != nil {
-		return nil, ErrInvalidPublicKey
-	}
-
-	b, err = r.GetSignature()
+func Verify(r *http.Request) ([]byte, error) {
+	k, s, err := getSignature(r)
 	if err != nil {
 		return nil, err
 	}
@@ -83,50 +68,23 @@ func Verify(r signatureGetter) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !k.VerifyBytes(d, b) {
+	if !k.VerifyBytes(d, s) {
 		return nil, ErrNotVerified
 	}
 
 	return d, nil
 }
 
-// Digest returns sha256 of request.
-// Digest will not be taken from unexported and non-marshaling(json) fields.
-func Digest(r interface{}) ([]byte, error) {
-	v := reflect.ValueOf(r)
-
-	if v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
-		v = v.Elem()
+// Digest returns sha256 of request body.
+func Digest(r *http.Request) ([]byte, error) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read request body: %w", err)
 	}
+	r.Body = ioutil.NopCloser(bytes.NewReader(body))
 
-	b := bytes.NewBuffer([]byte{})
-	e := gob.NewEncoder(b)
+	body = append(body, []byte(r.URL.Path)...)
 
-	if v.Type().Kind() != reflect.Struct {
-		panic("digest only can be taken from struct")
-	}
-
-	for i := 0; i < v.NumField(); i++ {
-		f := v.Field(i)
-		t := v.Type().Field(i)
-
-		// We want to skip embedded AuthRequest and fields which won't be marshaled by JsonMarshaller.
-		if f.Type().Name() == reflect.TypeOf(AuthRequest{}).Name() ||
-			isUnexportedField(&t) ||
-			t.Tag.Get("json") == "-" {
-			continue
-		}
-
-		if err := e.EncodeValue(f); err != nil {
-			return nil, fmt.Errorf("failed to get digest from %s: %w", v.Type().Field(i).Name, err)
-		}
-	}
-
-	d := sha256.Sum256(b.Bytes())
-
+	d := sha256.Sum256(body)
 	return d[:], nil
-}
-
-func isUnexportedField(t *reflect.StructField) bool {
-	return unicode.IsLower(rune(t.Name[0]))
 }

@@ -2,11 +2,13 @@ package server
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/go-chi/chi"
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
@@ -14,22 +16,29 @@ import (
 
 // sendPDVHandler encrypts and puts PDV data into storage.
 func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /send-pdv Cerberus SendPDV
+	// swagger:operation POST /pdv Cerberus SendPDV
 	//
 	// Encrypts and puts PDV data into storage.
 	//
 	// ---
+	// security:
+	// - public_key: []
+	// - signature: []
+	// produces:
+	// - application/json
+	// consumes:
+	// - application/octet-stream
 	// parameters:
 	// - name: request
 	//   in: body
 	//   required: true
 	//   schema:
-	//     '$ref': '#/definitions/sendPDVRequest'
+	//     type: file
 	// responses:
 	//   '201':
 	//     description: pdv was put into storage
 	//     schema:
-	//       "$ref": "#/definitions/sendPDVResponse"
+	//       "$ref": "#/definitions/SendPDVResponse"
 	//   '401':
 	//     description: signature wasn't verified
 	//     schema:
@@ -42,26 +51,21 @@ func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
 	//     description: internal server error
 	//     schema:
 	//       "$ref": "#/definitions/Error"
-	var req api.SendPDVRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "failed to decode json")
-		return
-	}
-
-	if !req.IsValid() {
-		writeError(w, http.StatusBadRequest, "request is invalid")
-		return
-	}
-
-	digest, err := api.Verify(req)
+	digest, err := api.Verify(r)
 	if err != nil {
 		writeVerifyError(getLogger(r.Context()), w, err)
 		return
 	}
 
-	filepath := fmt.Sprintf("%s/%s", req.Signature.PublicKey, hex.EncodeToString(digest))
-	if err := s.s.SendPDV(r.Context(), req.Data, filepath); err != nil {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "failed to read body")
+	}
+	r.Body.Close() // nolint
+
+	filepath := fmt.Sprintf("%s-%s", r.Header.Get(api.PublicKeyHeader), hex.EncodeToString(digest))
+	if err := s.s.SendPDV(r.Context(), data, filepath); err != nil {
 		writeInternalError(getLogger(r.Context()), w, err.Error())
 		return
 	}
@@ -73,22 +77,28 @@ func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
 
 // receivePDVHandler gets pdv from storage and decrypts it.
 func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /receive-pdv Cerberus ReceivePDV
+	// swagger:operation GET /pdv/{address} Cerberus ReceivePDV
 	//
-	// Gets and decrypts pdv from storage.
+	// Gets and decrypts PDV from storage.
 	//
 	// ---
+	// produces:
+	// - application/octet-stream
+	// - application/json
+	// security:
+	// - public_key: []
+	// - signature: []
 	// parameters:
-	// - name: request
-	//   in: body
+	// - name: address
+	//   description: PDV's address
+	//   in: path
 	//   required: true
-	//   schema:
-	//     '$ref': '#/definitions/receivePDVRequest'
+	//   type: string
 	// responses:
 	//   '200':
-	//     description: pdv from storage
+	//     description: PDV from storage
 	//     schema:
-	//       "$ref": "#/definitions/receivePDVResponse"
+	//       type: file
 	//   '401':
 	//     description: signature wasn't verified
 	//     schema:
@@ -105,57 +115,54 @@ func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
 	//     description: internal server error
 	//     schema:
 	//       "$ref": "#/definitions/Error"
-	var req api.ReceivePDVRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "failed to decode json")
+	address := chi.URLParam(r, "address")
+	if !api.IsAddressValid(address) {
+		writeError(w, http.StatusBadRequest, "invalid address")
 		return
 	}
 
-	if !req.IsValid() {
-		writeError(w, http.StatusBadRequest, "request is invalid")
-		return
-	}
-
-	if _, err := api.Verify(req); err != nil {
+	if _, err := api.Verify(r); err != nil {
 		writeVerifyError(getLogger(r.Context()), w, err)
 		return
 	}
 
-	if pk := strings.Split(req.Address, "/")[0]; pk != req.Signature.PublicKey {
+	if pk := strings.Split(address, "-")[0]; pk != r.Header.Get(api.PublicKeyHeader) {
 		writeError(w, http.StatusForbidden, "access denied")
 		return
 	}
 
-	data, err := s.s.ReceivePDV(r.Context(), req.Address)
+	data, err := s.s.ReceivePDV(r.Context(), address)
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
-			writeErrorf(w, http.StatusNotFound, fmt.Sprintf("PDV '%s' not found", req.Address))
+			writeErrorf(w, http.StatusNotFound, fmt.Sprintf("PDV '%s' not found", address))
 		} else {
 			writeInternalError(getLogger(r.Context()), w, err.Error())
 		}
 		return
 	}
 
-	writeOK(w, http.StatusOK, api.ReceivePDVResponse{Data: data})
+	w.Write(data) // nolint
 }
 
 // doesPDVExistHandler checks if pdv exists in storage.
 func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /pdv-exists Cerberus DoesPDVExist
+	// swagger:operation HEAD /pdv/{address} Cerberus DoesPDVExist
 	//
-	// Checks if pdv exists in storage.
+	// Checks if PDV exists in storage.
 	//
 	// ---
 	// parameters:
 	// - name: address
-	//   in: query
+	//   description: PDV's address
+	//   in: path
 	//   required: true
+	//   type: string
 	// responses:
 	//   '200':
-	//     description: result of check
-	//     schema:
-	//       "$ref": "#/definitions/doesPDVExistResponse"
+	//     description: PDV exists
+	//   '404':
+	//     description: PDV doesn't exist
 	//   '401':
 	//     description: signature wasn't verified
 	//     schema:
@@ -169,24 +176,29 @@ func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 	//     schema:
 	//       "$ref": "#/definitions/Error"
 
-	address := r.URL.Query().Get("address")
+	address := chi.URLParam(r, "address")
 
 	if !api.IsAddressValid(address) {
 		writeError(w, http.StatusBadRequest, "invalid address")
 		return
 	}
 
+	var exists bool
 	if v, ok := s.pdvExistenceCache.Get(address); ok {
-		writeOK(w, http.StatusOK, api.DoesPDVExistResponse{Exists: v.(bool)})
-		return
+		exists = v.(bool) // nolint
+	} else {
+		var err error
+		exists, err = s.s.DoesPDVExist(r.Context(), address)
+		if err != nil {
+			writeInternalError(getLogger(r.Context()), w, err.Error())
+			return
+		}
+		s.pdvExistenceCache.Add(address, exists)
 	}
 
-	exists, err := s.s.DoesPDVExist(r.Context(), address)
-	if err != nil {
-		writeInternalError(getLogger(r.Context()), w, err.Error())
-		return
+	if exists {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
 	}
-
-	s.pdvExistenceCache.Add(address, exists)
-	writeOK(w, http.StatusOK, api.DoesPDVExistResponse{Exists: exists})
 }
