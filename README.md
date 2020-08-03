@@ -1,4 +1,5 @@
 # Cerberus
+![img](https://img.shields.io/docker/build/decentr/cerberus)
 
 The Cerberus encrypts data and pushes it into [ipfs](https://ipfs.io) 
 
