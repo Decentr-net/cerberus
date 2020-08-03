@@ -12,7 +12,9 @@ networks:
 
 services:
   cerberus:
-    image: cerberus-local:latest
+    # use this image for local image
+    # image: cerberus-local:latest
+    image: decentr:cerberus
     container_name: decentr-cerberus
     restart: always
     environment:
