@@ -86,7 +86,7 @@ func SetupRouter(s service.Service, r chi.Router, maxBodySize int64) {
 		pdvExistenceCache: c,
 	}
 
-	r.Post("/v1/pdv", srv.sendPDVHandler)
+	r.Post("/v1/pdv", srv.savePDVHandler)
 	r.Get("/v1/pdv/{address}", srv.receivePDVHandler)
 	r.Head("/v1/pdv/{address}", srv.doesPDVExistHandler)
 }

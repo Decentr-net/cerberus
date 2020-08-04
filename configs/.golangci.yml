@@ -131,6 +131,10 @@ issues:
         - staticcheck
       source: "choice:\".+\""
 
+    - path: "pkg/schema"
+      linters:
+        - goerr113
+
   exclude-use-default: false
   max-per-linter: 0
   max-same-issues: 0

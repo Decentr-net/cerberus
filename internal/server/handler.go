@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -9,14 +10,26 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/tomasen/realip"
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
-// sendPDVHandler encrypts and puts PDV data into storage.
-func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /pdv Cerberus SendPDV
+type metaPDVData struct {
+	IP        string `json:"ip"`
+	UserAgent string `json:"user_agent"`
+}
+
+type serverPDV struct {
+	UserData schema.PDV  `json:"user_data"`
+	MetaData metaPDVData `json:"calculated_data"`
+}
+
+// savePDVHandler encrypts and puts PDV data into storage.
+func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation POST /pdv Cerberus SavePDV
 	//
 	// Encrypts and puts PDV data into storage.
 	//
@@ -38,7 +51,7 @@ func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
 	//   '201':
 	//     description: pdv was put into storage
 	//     schema:
-	//       "$ref": "#/definitions/SendPDVResponse"
+	//       "$ref": "#/definitions/SavePDVResponse"
 	//   '401':
 	//     description: signature wasn't verified
 	//     schema:
@@ -64,15 +77,39 @@ func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	r.Body.Close() // nolint
 
+	var p schema.PDV
+	if err := json.Unmarshal(data, &p); err != nil {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("request is invalid: %s", err.Error()))
+		return
+	}
+
+	if !p.PDV.Validate() {
+		writeError(w, http.StatusBadRequest, "pdv data is invalid")
+		return
+	}
+
 	filepath := fmt.Sprintf("%s-%s", r.Header.Get(api.PublicKeyHeader), hex.EncodeToString(digest))
-	if err := s.s.SendPDV(r.Context(), data, filepath); err != nil {
+
+	spdv, err := json.Marshal(serverPDV{
+		UserData: p,
+		MetaData: metaPDVData{
+			IP:        realip.FromRequest(r),
+			UserAgent: r.UserAgent(),
+		},
+	})
+	if err != nil {
+		writeInternalError(getLogger(r.Context()), w, fmt.Sprintf("failed to marshal modified PDV: %s", err.Error()))
+		return
+	}
+
+	if err := s.s.SavePDV(r.Context(), spdv, filepath); err != nil {
 		writeInternalError(getLogger(r.Context()), w, err.Error())
 		return
 	}
 
 	s.pdvExistenceCache.Add(filepath, true)
 
-	writeOK(w, http.StatusCreated, api.SendPDVResponse{Address: filepath})
+	writeOK(w, http.StatusCreated, api.SavePDVResponse{Address: filepath})
 }
 
 // receivePDVHandler gets pdv from storage and decrypts it.

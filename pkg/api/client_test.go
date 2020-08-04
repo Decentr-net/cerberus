@@ -12,9 +12,55 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 var testAddress = "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3aeb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
+
+var rawPDV = []byte(`{
+    "version": "v1",
+	"pdv": {
+	    "domain": "decentr.net",
+	    "path": "/",
+		"data": [
+	        {
+	            "version": "v1",
+	            "type": "cookie",
+	            "name": "my cookie",
+	            "value": "some value",
+	            "domain": "*",
+	            "host_only": true,
+	            "path": "*",
+	            "secure": true,
+	            "same_site": "None",
+	            "expiration_date": 1861920000
+	        }
+	    ]
+	}
+}`)
+
+var pdv = schema.PDV{
+	Version: schema.PDVv1,
+	PDV: &schema.PDVObjectV1{
+		PDVObjectMetaV1: schema.PDVObjectMetaV1{
+			Host: "decentr.net",
+			Path: "/",
+		},
+		Data: []schema.PDVData{
+			&schema.PDVDataCookieV1{
+				Name:           "my cookie",
+				Value:          "some value",
+				Domain:         "*",
+				HostOnly:       true,
+				Path:           "*",
+				Secure:         true,
+				SameSite:       "None",
+				ExpirationDate: 1861920000,
+			},
+		},
+	},
+}
 
 func startServer(t *testing.T, c int, d []byte, path string, data []byte) int {
 	l, err := net.Listen("tcp", ":0")
@@ -28,7 +74,7 @@ func startServer(t *testing.T, c int, d []byte, path string, data []byte) int {
 		} else {
 			b, err := ioutil.ReadAll(r.Body)
 			assert.NoError(t, err)
-			assert.Equal(t, data, b)
+			assert.JSONEq(t, string(data), string(b))
 		}
 
 		w.WriteHeader(c)
@@ -38,7 +84,7 @@ func startServer(t *testing.T, c int, d []byte, path string, data []byte) int {
 	return l.Addr().(*net.TCPAddr).Port
 }
 
-func TestClient_SendPDV(t *testing.T) {
+func TestClient_SavePDV(t *testing.T) {
 	tt := []struct {
 		name     string
 		code     int
@@ -61,7 +107,7 @@ func TestClient_SendPDV(t *testing.T) {
 			response: []byte(`{"error":"something went wrong"}`),
 
 			address: "",
-			err:     "failed to make SendPDV request: request failed: something went wrong",
+			err:     "failed to make SavePDV request: request failed: something went wrong",
 		},
 		{
 			name:     "bad request",
@@ -69,7 +115,7 @@ func TestClient_SendPDV(t *testing.T) {
 			response: []byte(`{"error":"something went wrong"}`),
 
 			address: "",
-			err:     "failed to make SendPDV request: invalid request",
+			err:     "failed to make SavePDV request: invalid request",
 		},
 	}
 
@@ -78,11 +124,11 @@ func TestClient_SendPDV(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := startServer(t, tc.code, tc.response, "/v1/pdv", []byte(`data`))
+			p := startServer(t, tc.code, tc.response, "/v1/pdv", rawPDV)
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			address, err := c.SendPDV(context.Background(), []byte("data"))
+			address, err := c.SavePDV(context.Background(), &pdv)
 			assert.Equal(t, tc.address, address)
 
 			if tc.err == "" {

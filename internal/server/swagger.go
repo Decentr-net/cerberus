@@ -2,8 +2,8 @@
 
 package server
 
-// swagger:model SendPDVResponse
-type sendPDVResponse struct {
+// swagger:model SavePDVResponse
+type savePDVResponse struct {
 	// Put file address
 	Address string `json:"address"`
 }

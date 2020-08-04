@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/go-units"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -50,7 +49,7 @@ func TestCrypto_Decrypt(t *testing.T) {
 }
 
 func TestCrypto_Encrypt_Decrypt(t *testing.T) {
-	exp := make([]byte, units.MB)
+	exp := make([]byte, 1024*1024)
 	n, err := rand.Read(exp)
 	require.NoError(t, err)
 	require.NotZero(t, n)

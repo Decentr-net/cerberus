@@ -10,6 +10,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 type client struct {
@@ -34,19 +36,26 @@ func NewClientWithHTTPClient(host string, pk secp256k1.PrivKeySecp256k1, c *http
 	}
 }
 
-// SendPDV sends bytes slice to Cerberus.
-// SendPDV can return ErrInvalidRequest besides general api package's errors.
-func (c *client) SendPDV(ctx context.Context, data []byte) (string, error) {
-	if len(data) == 0 {
+// SavePDV sends bytes slice to Cerberus.
+// SavePDV can return ErrInvalidRequest besides general api package's errors.
+func (c *client) SavePDV(ctx context.Context, p *schema.PDV) (string, error) {
+	// validate data
+
+	if !p.PDV.Validate() {
 		return "", ErrInvalidRequest
 	}
 
-	data, err := c.sendRequest(ctx, http.MethodPost, "v1/pdv", data)
+	data, err := json.Marshal(p)
 	if err != nil {
-		return "", fmt.Errorf("failed to make SendPDV request: %w", err)
+		return "", fmt.Errorf("failed to decode pdv: %w", err)
 	}
 
-	resp := SendPDVResponse{}
+	data, err = c.sendRequest(ctx, http.MethodPost, "v1/pdv", data)
+	if err != nil {
+		return "", fmt.Errorf("failed to make SavePDV request: %w", err)
+	}
+
+	resp := SavePDVResponse{}
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return "", fmt.Errorf("failed to decode json: %w", err)
 	}
