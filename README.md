@@ -1,5 +1,5 @@
 # Cerberus
-![img](https://img.shields.io/docker/build/decentr/cerberus)
+![img](https://img.shields.io/docker/cloud/build/decentr/cerberus.svg)
 
 The Cerberus encrypts data and pushes it into S3 storage.
 
