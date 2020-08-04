@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -21,38 +22,48 @@ import (
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 const testAddress = "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3aeb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
 
 var pdv = []byte(`{
     "version": "v1",
-    "pdv": {
-        "ip": "1.1.1.1",
-        "user_agent": "mac",
-        "data": [
-            {
-                "version": "v1",
-                "type": "cookie",
-                "name": "my cookie",
-                "value": "some value",
-                "expires": "some date",
-                "max_age": 1234,
-                "path": "path",
-                "domain": "domain"
-            },
-            {
-                "version": "v1",
-                "type": "cookie",
-                "name": "my cookie",
-                "value": "some value",
-                "expires": "some date",
-                "max_age": 1234,
-                "path": "path",
-                "domain": "domain"
-            }
-        ]
-    }
+	"pdv": {
+	    "domain": "decentr.net",
+	    "path": "/",
+	    "user_agent": "mac",
+	    "data": [
+	        {
+	            "version": "v1",
+	            "type": "cookie",
+	            "name": "my cookie",
+	            "value": "some value",
+	            "domain": "*",
+	            "host_only": true,
+	            "path": "*",
+	            "secure": true,
+	            "http_only": true,
+	            "same_site": "None",
+	            "session": false,
+	            "expiration_date": 1861920000
+	        },
+	        {
+	            "version": "v1",
+	            "type": "cookie",
+	            "name": "my cookie 2",
+	            "value": "some value 2",
+	            "domain": "*",
+	            "host_only": true,
+	            "path": "*",
+	            "secure": true,
+	            "http_only": true,
+	            "same_site": "None",
+	            "session": false,
+	            "expiration_date": 1861920000
+	        }
+	    ]
+	}
 }`)
 
 var errSkip = errors.New("fictive error")
@@ -66,6 +77,9 @@ func newTestParameters(t *testing.T, method string, uri string, body []byte) (*b
 	ctx := context.WithValue(context.Background(), logCtxKey{}, l)
 	r, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("http://localhost/%s", uri), bytes.NewReader(body))
 	require.NoError(t, err)
+
+	r.Header.Set("X-Forwarded-For", "1.2.3.4")
+	r.Header.Set("User-Agent", "mac")
 
 	pk := secp256k1.PrivKeySecp256k1{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31}
 	require.NoError(t, api.Sign(r, pk))
@@ -94,7 +108,7 @@ func TestServer_SendPDVHandler(t *testing.T) {
 			reqBody: pdv,
 			err:     nil,
 			rcode:   http.StatusCreated,
-			rdata:   `{"address":"eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-cb27e346a79b2a5dbb91e8c32ea0764cd18c13fe7d374b50a83416923ce7c181"}`,
+			rdata:   `{"address":"eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-c195a39e888faf730316b59a00b612fa130b4178240091a570eaf74c57feccf0"}`,
 			rlog:    "",
 		},
 		{
@@ -116,13 +130,14 @@ func TestServer_SendPDVHandler(t *testing.T) {
 		{
 			name: "invalid pdv",
 			reqBody: []byte(`{
-    "version": "v1",
-    "pdv": {
-        "ip": "1.1.1.1",
-        "user_agent": "mac",
-        "data": []
-    }
-}`),
+		   "version": "v1",
+		   "pdv": {
+		       "host": "decentr.net",
+				"path": "",
+		       "user_agent": "mac",
+		       "data": []
+		   }
+		}`),
 			err:   errSkip,
 			rcode: http.StatusBadRequest,
 			rdata: `{"error":"pdv data is invalid"}`,
@@ -151,7 +166,17 @@ func TestServer_SendPDVHandler(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.err != errSkip {
-				srv.EXPECT().SendPDV(gomock.Any(), tc.reqBody, getFilename(r)).Return(tc.err)
+				srv.EXPECT().SendPDV(gomock.Any(), gomock.Any(), getFilename(r)).DoAndReturn(func(_ context.Context, d []byte, _ string) error {
+					var pdv schema.PDV
+					require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
+					var spdv serverPDV
+					require.NoError(t, json.Unmarshal(d, &spdv))
+
+					assert.Equal(t, pdv, spdv.UserData)
+					assert.Equal(t, calculatedPDVData{IP: "1.2.3.4", UserAgent: "mac"}, spdv.CalculatedData)
+
+					return tc.err
+				})
 			}
 
 			router := chi.NewRouter()

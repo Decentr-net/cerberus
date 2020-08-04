@@ -7,6 +7,7 @@ package api
 import (
 	context "context"
 	json "encoding/json"
+	schema "github.com/Decentr-net/cerberus/pkg/schema"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -35,18 +36,18 @@ func (m *MockCerberus) EXPECT() *MockCerberusMockRecorder {
 }
 
 // SendPDV mocks base method
-func (m *MockCerberus) SendPDV(ctx context.Context, data []byte) (string, error) {
+func (m *MockCerberus) SendPDV(ctx context.Context, p *schema.PDV) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendPDV", ctx, data)
+	ret := m.ctrl.Call(m, "SendPDV", ctx, p)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SendPDV indicates an expected call of SendPDV
-func (mr *MockCerberusMockRecorder) SendPDV(ctx, data interface{}) *gomock.Call {
+func (mr *MockCerberusMockRecorder) SendPDV(ctx, p interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendPDV", reflect.TypeOf((*MockCerberus)(nil).SendPDV), ctx, data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendPDV", reflect.TypeOf((*MockCerberus)(nil).SendPDV), ctx, p)
 }
 
 // ReceivePDV mocks base method

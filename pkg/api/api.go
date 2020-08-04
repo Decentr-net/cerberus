@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 //go:generate mockgen -destination=./api_mock.go -package=api -source=api.go
@@ -31,7 +33,7 @@ var ErrNotVerified = errors.New("failed to verify message")
 
 // Cerberus provides user-friendly API methods.
 type Cerberus interface {
-	SendPDV(ctx context.Context, data []byte) (string, error)
+	SendPDV(ctx context.Context, p *schema.PDV) (string, error)
 	ReceivePDV(ctx context.Context, address string) (json.RawMessage, error)
 	DoesPDVExist(ctx context.Context, address string) (bool, error)
 }

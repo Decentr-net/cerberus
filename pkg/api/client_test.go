@@ -12,38 +12,59 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 var testAddress = "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3aeb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
-var pdv = []byte(`{
+
+var rawPDV = []byte(`{
     "version": "v1",
-    "pdv": {
-        "ip": "1.1.1.1",
-        "user_agent": "mac",
-        "data": [
-            {
-                "version": "v1",
-                "type": "cookie",
-                "name": "my cookie",
-                "value": "some value",
-                "expires": "some date",
-                "max_age": 1234,
-                "path": "path",
-                "domain": "domain"
-            },
-            {
-                "version": "v1",
-                "type": "cookie",
-                "name": "my cookie",
-                "value": "some value",
-                "expires": "some date",
-                "max_age": 1234,
-                "path": "path",
-                "domain": "domain"
-            }
-        ]
-    }
+	"pdv": {
+	    "domain": "decentr.net",
+	    "path": "/",
+		"data": [
+	        {
+	            "version": "v1",
+	            "type": "cookie",
+	            "name": "my cookie",
+	            "value": "some value",
+	            "domain": "*",
+	            "host_only": true,
+	            "path": "*",
+	            "secure": true,
+	            "http_only": true,
+	            "same_site": "None",
+	            "session": false,
+	            "expiration_date": 1861920000
+	        }
+	    ]
+	}
 }`)
+
+var pdv = schema.PDV{
+	Version: schema.PDVv1,
+	PDV: &schema.PDVObjectV1{
+		PDVObjectMetaV1: schema.PDVObjectMetaV1{
+			Host: "decentr.net",
+			Path: "/",
+		},
+		Data: []schema.PDVData{
+			&schema.PDVDataCookieV1{
+				Name:           "my cookie",
+				Value:          "some value",
+				Domain:         "*",
+				HostOnly:       true,
+				Path:           "*",
+				Secure:         true,
+				HTTPOnly:       true,
+				SameSite:       "None",
+				Session:        false,
+				ExpirationDate: 1861920000,
+			},
+		},
+	},
+}
 
 func startServer(t *testing.T, c int, d []byte, path string, data []byte) int {
 	l, err := net.Listen("tcp", ":0")
@@ -57,7 +78,7 @@ func startServer(t *testing.T, c int, d []byte, path string, data []byte) int {
 		} else {
 			b, err := ioutil.ReadAll(r.Body)
 			assert.NoError(t, err)
-			assert.Equal(t, data, b)
+			assert.JSONEq(t, string(data), string(b))
 		}
 
 		w.WriteHeader(c)
@@ -107,11 +128,11 @@ func TestClient_SendPDV(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := startServer(t, tc.code, tc.response, "/v1/pdv", pdv)
+			p := startServer(t, tc.code, tc.response, "/v1/pdv", rawPDV)
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			address, err := c.SendPDV(context.Background(), pdv)
+			address, err := c.SendPDV(context.Background(), &pdv)
 			assert.Equal(t, tc.address, address)
 
 			if tc.err == "" {

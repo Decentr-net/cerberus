@@ -10,11 +10,22 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/tomasen/realip"
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
 	"github.com/Decentr-net/cerberus/pkg/schema"
 )
+
+type calculatedPDVData struct {
+	IP        string `json:"ip"`
+	UserAgent string `json:"user_agent"`
+}
+
+type serverPDV struct {
+	UserData       schema.PDV        `json:"user_data"`
+	CalculatedData calculatedPDVData `json:"calculated_data"`
+}
 
 // sendPDVHandler encrypts and puts PDV data into storage.
 func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +89,20 @@ func (s *server) sendPDVHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filepath := fmt.Sprintf("%s-%s", r.Header.Get(api.PublicKeyHeader), hex.EncodeToString(digest))
-	if err := s.s.SendPDV(r.Context(), data, filepath); err != nil {
+
+	spdv, err := json.Marshal(serverPDV{
+		UserData: p,
+		CalculatedData: calculatedPDVData{
+			IP:        realip.FromRequest(r),
+			UserAgent: r.UserAgent(),
+		},
+	})
+	if err != nil {
+		writeInternalError(getLogger(r.Context()), w, fmt.Sprintf("failed to marshal modified PDV: %s", err.Error()))
+		return
+	}
+
+	if err := s.s.SendPDV(r.Context(), spdv, filepath); err != nil {
 		writeInternalError(getLogger(r.Context()), w, err.Error())
 		return
 	}

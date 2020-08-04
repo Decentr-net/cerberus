@@ -38,19 +38,19 @@ func NewClientWithHTTPClient(host string, pk secp256k1.PrivKeySecp256k1, c *http
 
 // SendPDV sends bytes slice to Cerberus.
 // SendPDV can return ErrInvalidRequest besides general api package's errors.
-func (c *client) SendPDV(ctx context.Context, data []byte) (string, error) {
+func (c *client) SendPDV(ctx context.Context, p *schema.PDV) (string, error) {
 	// validate data
-
-	var p schema.PDV
-	if err := json.Unmarshal(data, &p); err != nil {
-		return "", fmt.Errorf("%w: %s", ErrInvalidRequest, err)
-	}
 
 	if !p.PDV.Validate() {
 		return "", ErrInvalidRequest
 	}
 
-	data, err := c.sendRequest(ctx, http.MethodPost, "v1/pdv", data)
+	data, err := json.Marshal(p)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode pdv: %w", err)
+	}
+
+	data, err = c.sendRequest(ctx, http.MethodPost, "v1/pdv", data)
 	if err != nil {
 		return "", fmt.Errorf("failed to make SendPDV request: %w", err)
 	}
