@@ -103,15 +103,15 @@ func setup() func() {
 }
 
 func TestS3_Write(t *testing.T) {
-	s := NewStorage(c, bucket)
+	s, err := NewStorage(c, bucket)
+	require.NoError(t, err)
 
-	err := s.Write(ctx, strings.NewReader("example"), "file")
-
-	assert.NoError(t, err)
+	assert.NoError(t, s.Write(ctx, strings.NewReader("example"), "file"))
 }
 
 func TestS3_Read(t *testing.T) {
-	s := NewStorage(c, bucket)
+	s, err := NewStorage(c, bucket)
+	require.NoError(t, err)
 
 	rc, err := s.Read(ctx, testFile) // text file with "example" word
 	require.NoError(t, err)
@@ -124,7 +124,8 @@ func TestS3_Read(t *testing.T) {
 }
 
 func TestS3_Read_FileNotFound(t *testing.T) {
-	s := NewStorage(c, bucket)
+	s, err := NewStorage(c, bucket)
+	require.NoError(t, err)
 
 	rc, err := s.Read(ctx, "not_found")
 	assert.Nil(t, rc)
@@ -133,12 +134,12 @@ func TestS3_Read_FileNotFound(t *testing.T) {
 }
 
 func TestS3_Write_Read(t *testing.T) {
-	s := NewStorage(c, bucket)
+	s, err := NewStorage(c, bucket)
+	require.NoError(t, err)
 
 	text := []byte("cerberus")
-	err := s.Write(ctx, bytes.NewReader(text), "cerberus")
 
-	require.NoError(t, err)
+	require.NoError(t, s.Write(ctx, bytes.NewReader(text), "cerberus"))
 
 	rc, err := s.Read(ctx, "cerberus")
 	require.NoError(t, err)
@@ -151,7 +152,8 @@ func TestS3_Write_Read(t *testing.T) {
 }
 
 func TestS3_DoesExist(t *testing.T) {
-	s := NewStorage(c, bucket)
+	s, err := NewStorage(c, bucket)
+	require.NoError(t, err)
 
 	exists, err := s.DoesExist(ctx, testFile) // text file with "example" word
 	assert.NoError(t, err)
@@ -159,7 +161,8 @@ func TestS3_DoesExist(t *testing.T) {
 }
 
 func TestS3_DoesExist_NotFound(t *testing.T) {
-	s := NewStorage(c, bucket)
+	s, err := NewStorage(c, bucket)
+	require.NoError(t, err)
 
 	exists, err := s.DoesExist(ctx, "not_found")
 	assert.Nil(t, err)

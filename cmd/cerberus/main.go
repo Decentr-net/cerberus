@@ -18,6 +18,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/Decentr-net/cerberus/internal/crypto/sio"
+	"github.com/Decentr-net/cerberus/internal/health"
 	"github.com/Decentr-net/cerberus/internal/server"
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/internal/storage/s3"
@@ -25,8 +26,9 @@ import (
 
 // nolint:lll,gochecknoglobals
 var opts = struct {
-	Host string `long:"host" env:"HOST" default:"localhost" description:"IP to listen on"`
-	Port int    `long:"port" env:"PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
+	Host        string `long:"http.host" env:"HTTP_HOST" default:"localhost" description:"IP to listen on"`
+	Port        int    `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
+	MaxBodySize int64  `long:"http.max-body-size" env:"HTTP_MAX_BODY_SIZE" default:"8000000" description:"Max request's body size'"`
 
 	S3Endpoint        string `long:"s3.endpoint" env:"S3_ENDPOINT" default:"localhost:9000" description:"s3 endpoint'"`
 	S3AccessKeyID     string `long:"s3.access-key-id" env:"S3_ACCESS_KEY_ID" description:"access key id for S3 storage'"`
@@ -37,8 +39,6 @@ var opts = struct {
 	EncryptKey string `long:"encrypt-key" env:"ENCRYPT_KEY" description:"encrypt key in hex which will be used for encrypting and decrypting user's data"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
-
-	MaxBodySize int64 `long:"max.body.size" env:"MAX_BODY_SIZE" default:"8000000" description:"Max request's body size'"`
 }{}
 
 var errTerminated = errors.New("terminated")
@@ -66,7 +66,7 @@ func main() {
 
 	r := chi.NewMux()
 
-	storage, err := minio.New(opts.S3Endpoint, &minio.Options{
+	s3client, err := minio.New(opts.S3Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(opts.S3AccessKeyID, opts.S3SecretAccessKey, ""),
 		Secure: opts.S3UseSSL,
 	})
@@ -74,10 +74,13 @@ func main() {
 		logrus.WithError(err).Fatal("failed to connect to S3 storage")
 	}
 
-	// nolint: godox
-	// todo: add health checker
+	storage, err := s3.NewStorage(s3client, opts.S3Bucket)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create storage")
+	}
 
-	server.SetupRouter(service.New(sio.NewCrypto(mustExtractEncryptKey()), s3.NewStorage(storage, opts.S3Bucket)), r, opts.MaxBodySize)
+	server.SetupRouter(service.New(sio.NewCrypto(mustExtractEncryptKey()), storage), r, opts.MaxBodySize)
+	health.SetupRouter(r, storage)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),
@@ -101,6 +104,8 @@ func main() {
 
 		return errTerminated
 	})
+
+	logrus.Info("service started")
 
 	if err := gr.Wait(); err != nil && !errors.Is(err, errTerminated) && !errors.Is(err, http.ErrServerClosed) {
 		logrus.WithError(err).Fatal("service unexpectedly closed")

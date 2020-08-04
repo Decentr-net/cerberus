@@ -18,9 +18,9 @@ services:
     container_name: decentr-cerberus
     restart: always
     environment:
-      - "HOST=0.0.0.0"
-      - "PORT=7070"
-      - "S3_ENDPOINT=s3"
+      - "HTTP_HOST=0.0.0.0"
+      - "HTTP_PORT=7070"
+      - "S3_ENDPOINT=s3:9000"
       - "S3_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE"
       - "S3_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
       - "S3_USE_SSL=false"

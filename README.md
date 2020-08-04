@@ -1,34 +1,48 @@
 # Cerberus
 ![img](https://img.shields.io/docker/build/decentr/cerberus)
 
-The Cerberus encrypts data and pushes it into [ipfs](https://ipfs.io) 
+The Cerberus encrypts data and pushes it into S3 storage.
 
 ## Run
 ### Docker
 #### Local image
 ```
 make image
-docker run -it --rm -e "HOST=0.0.0.0" -e "PORT=7070" -e "LOG_LEVEL=debug" -p "7070:7070" cerberus-local
+docker run -it --rm -e "HTTP_HOST=0.0.0.0" -e "HTTP_PORT=7070" -e "LOG_LEVEL=debug" -e "S3_ENDPOINT=localhost:9000" -e "S3_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE" -e "S3_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" -e "S3_USE_SSL=false" -e "S3_BUCKET=cerberus" -e "ENCRYPT_KEY=0102030405060708090a0b0c0d0e0f10201f1e1d1c1b1a191817161514131211" -p "7070:7070" cerberus-local
+```
+#### Docker Compose
+```
+make image
+docker-compose -f scripts/docker-compose.yml up -d
 ```
 ### From source
 ```
 go run cmd/cerberus/main.go \
-    --host=0.0.0.0 \
-    --port=8080 \
+    --http.host=0.0.0.0 \
+    --http.port=8080 \
+    --s3.endpoint=localhost:9000 \
+    --s3.access-key-id=AKIAIOSFODNN7EXAMPLE \
+    --s3.secret-access-key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
+    --s3.use-ssl=false \
+    --s3.bucket=cerberus \
+    --encrypt-key=0102030405060708090a0b0c0d0e0f10201f1e1d1c1b1a191817161514131211 \
     --log.level=debug
 ```
-### Run Cerberus and [ipfs](https://ipfs.io) with docker-compose
-#### Local image
-```
-make image
-docker-compose -f scripts/docker-compose.yml up
-```
+
 ## Parameters
 | CLI param         | Environment var          | Default | Description
 |---------------|------------------|---------------|---------------------------------
-| host         | HOST         | 0.0.0.0  | host to bind server
-| port    | PORT    | 8080  | port to listen
+| http.host         | HTTP_HOST         | 0.0.0.0  | host to bind server
+| http.port    | HTTP_PORT    | 8080  | port to listen
+| http.max-body-size    | HTTP_MAX_BODY_SIZE    | 8000000  | max requests' body size in bytes
+| s3.endpoint    | S3_ENDPOINT    | localhost:9000  | s3 storage endpoint
+| s3.access-key-id    | S3_ACCESS_KEY_ID    |  | Access KeyID for S3 storage
+| s3.secret-access-key    | S3_SECRET_ACCESS_KEY    |   | Secret Key for S3 storage
+| s3.use-ssl    | S3_USE_SSL    | false  | do use ssl for S3 storage connection?
+| s3.bucket    | S3_BUCKET    | cerberus  | bucket name for S3 storage
+| encrypt-key    | ENCRYPT_KEY    |   | private key for data encryption in hex
 | log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
+
 
 ## Development
 ### Makefile

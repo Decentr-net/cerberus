@@ -43,9 +43,7 @@ var pdv = []byte(`{
 	            "host_only": true,
 	            "path": "*",
 	            "secure": true,
-	            "http_only": true,
 	            "same_site": "None",
-	            "session": false,
 	            "expiration_date": 1861920000
 	        },
 	        {
@@ -57,9 +55,7 @@ var pdv = []byte(`{
 	            "host_only": true,
 	            "path": "*",
 	            "secure": true,
-	            "http_only": true,
 	            "same_site": "None",
-	            "session": false,
 	            "expiration_date": 1861920000
 	        }
 	    ]
@@ -108,7 +104,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			reqBody: pdv,
 			err:     nil,
 			rcode:   http.StatusCreated,
-			rdata:   `{"address":"eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-c195a39e888faf730316b59a00b612fa130b4178240091a570eaf74c57feccf0"}`,
+			rdata:   `{"address":"eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-0b92493137383d45cef406df8c34dc13391f91aa2aadd79f966ca90e936aa7a7"}`,
 			rlog:    "",
 		},
 		{
