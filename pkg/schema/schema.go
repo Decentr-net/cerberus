@@ -98,8 +98,6 @@ type PDVDataCookieV1 struct {
 	SameSite       string `json:"same_site"`
 	HostOnly       bool   `json:"host_only"`
 	Secure         bool   `json:"secure"`
-	HTTPOnly       bool   `json:"http_only"`
-	Session        bool   `json:"session"`
 	ExpirationDate uint64 `json:"expiration_date,omitempty"`
 }
 

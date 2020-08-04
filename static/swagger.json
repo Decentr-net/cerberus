@@ -36,7 +36,7 @@
           "Cerberus"
         ],
         "summary": "Encrypts and puts PDV data into storage.",
-        "operationId": "SendPDV",
+        "operationId": "SavePDV",
         "parameters": [
           {
             "name": "request",
@@ -51,7 +51,7 @@
           "201": {
             "description": "pdv was put into storage",
             "schema": {
-              "$ref": "#/definitions/SendPDVResponse"
+              "$ref": "#/definitions/SavePDVResponse"
             }
           },
           "400": {
@@ -193,7 +193,7 @@
       "x-go-name": "error",
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
     },
-    "SendPDVResponse": {
+    "SavePDVResponse": {
       "type": "object",
       "properties": {
         "address": {
@@ -202,7 +202,7 @@
           "x-go-name": "Address"
         }
       },
-      "x-go-name": "sendPDVResponse",
+      "x-go-name": "savePDVResponse",
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
     }
   },

@@ -22,7 +22,7 @@ var testData = []byte("data")
 var testEncryptedData = []byte("data_encrypted")
 var errTest = errors.New("test")
 
-func TestService_SendPDV(t *testing.T) {
+func TestService_SavePDV(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -47,11 +47,11 @@ func TestService_SendPDV(t *testing.T) {
 		return nil
 	})
 
-	err := s.SendPDV(ctx, testData, testFilename)
+	err := s.SavePDV(ctx, testData, testFilename)
 	require.NoError(t, err)
 }
 
-func TestService_SendPDV_EncryptError(t *testing.T) {
+func TestService_SavePDV_EncryptError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -62,12 +62,12 @@ func TestService_SendPDV_EncryptError(t *testing.T) {
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, errTest)
 
-	err := s.SendPDV(ctx, testData, testFilename)
+	err := s.SavePDV(ctx, testData, testFilename)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }
 
-func TestService_SendPDV_StorageError(t *testing.T) {
+func TestService_SavePDV_StorageError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -80,7 +80,7 @@ func TestService_SendPDV_StorageError(t *testing.T) {
 
 	st.EXPECT().Write(ctx, gomock.Any(), testFilename).Return(errTest)
 
-	err := s.SendPDV(ctx, testData, testFilename)
+	err := s.SavePDV(ctx, testData, testFilename)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }

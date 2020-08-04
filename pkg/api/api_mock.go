@@ -35,19 +35,19 @@ func (m *MockCerberus) EXPECT() *MockCerberusMockRecorder {
 	return m.recorder
 }
 
-// SendPDV mocks base method
-func (m *MockCerberus) SendPDV(ctx context.Context, p *schema.PDV) (string, error) {
+// SavePDV mocks base method
+func (m *MockCerberus) SavePDV(ctx context.Context, p *schema.PDV) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendPDV", ctx, p)
+	ret := m.ctrl.Call(m, "SavePDV", ctx, p)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SendPDV indicates an expected call of SendPDV
-func (mr *MockCerberusMockRecorder) SendPDV(ctx, p interface{}) *gomock.Call {
+// SavePDV indicates an expected call of SavePDV
+func (mr *MockCerberusMockRecorder) SavePDV(ctx, p interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendPDV", reflect.TypeOf((*MockCerberus)(nil).SendPDV), ctx, p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePDV", reflect.TypeOf((*MockCerberus)(nil).SavePDV), ctx, p)
 }
 
 // ReceivePDV mocks base method

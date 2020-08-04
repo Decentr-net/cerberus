@@ -18,8 +18,8 @@ var ErrNotFound = errors.New("not found")
 
 // Service interface provides service's logic's methods.
 type Service interface {
-	// SendPDV sends PDV to storage.
-	SendPDV(ctx context.Context, data []byte, filename string) error
+	// SavePDV sends PDV to storage.
+	SavePDV(ctx context.Context, data []byte, filename string) error
 	// ReceivePDV returns slice of bytes of PDV requested by address from storage.
 	ReceivePDV(ctx context.Context, address string) ([]byte, error)
 	// DoesPDVExist checks PDV existence by address in storage.
@@ -40,8 +40,8 @@ func New(c crypto.Crypto, s storage.Storage) Service {
 	}
 }
 
-// SendPDV sends PDV to storage.
-func (s *service) SendPDV(ctx context.Context, data []byte, filepath string) error {
+// SavePDV sends PDV to storage.
+func (s *service) SavePDV(ctx context.Context, data []byte, filepath string) error {
 	enc, err := s.c.Encrypt(bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("failed to create encrypting reader: %w", err)

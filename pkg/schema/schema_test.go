@@ -30,9 +30,7 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 	            "host_only": true,
 	            "path": "*",
 	            "secure": true,
-	            "http_only": true,
 	            "same_site": "None",
-	            "session": false,
 	            "expiration_date": 1861920000
 	        },
 	        {
@@ -44,9 +42,7 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 	            "host_only": true,
 	            "path": "*",
 	            "secure": true,
-	            "http_only": true,
 	            "same_site": "None",
-	            "session": false,
 	            "expiration_date": 1861920000
 	        }
 	    ]

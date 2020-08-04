@@ -33,9 +33,7 @@ var rawPDV = []byte(`{
 	            "host_only": true,
 	            "path": "*",
 	            "secure": true,
-	            "http_only": true,
 	            "same_site": "None",
-	            "session": false,
 	            "expiration_date": 1861920000
 	        }
 	    ]
@@ -57,9 +55,7 @@ var pdv = schema.PDV{
 				HostOnly:       true,
 				Path:           "*",
 				Secure:         true,
-				HTTPOnly:       true,
 				SameSite:       "None",
-				Session:        false,
 				ExpirationDate: 1861920000,
 			},
 		},
@@ -88,7 +84,7 @@ func startServer(t *testing.T, c int, d []byte, path string, data []byte) int {
 	return l.Addr().(*net.TCPAddr).Port
 }
 
-func TestClient_SendPDV(t *testing.T) {
+func TestClient_SavePDV(t *testing.T) {
 	tt := []struct {
 		name     string
 		code     int
@@ -111,7 +107,7 @@ func TestClient_SendPDV(t *testing.T) {
 			response: []byte(`{"error":"something went wrong"}`),
 
 			address: "",
-			err:     "failed to make SendPDV request: request failed: something went wrong",
+			err:     "failed to make SavePDV request: request failed: something went wrong",
 		},
 		{
 			name:     "bad request",
@@ -119,7 +115,7 @@ func TestClient_SendPDV(t *testing.T) {
 			response: []byte(`{"error":"something went wrong"}`),
 
 			address: "",
-			err:     "failed to make SendPDV request: invalid request",
+			err:     "failed to make SavePDV request: invalid request",
 		},
 	}
 
@@ -132,7 +128,7 @@ func TestClient_SendPDV(t *testing.T) {
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			address, err := c.SendPDV(context.Background(), &pdv)
+			address, err := c.SavePDV(context.Background(), &pdv)
 			assert.Equal(t, tc.address, address)
 
 			if tc.err == "" {

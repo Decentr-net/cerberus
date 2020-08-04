@@ -87,7 +87,7 @@ func newTestParameters(t *testing.T, method string, uri string, body []byte) (*b
 	return b, w, r
 }
 
-func TestServer_SendPDVHandler(t *testing.T) {
+func TestServer_SavePDVHandler(t *testing.T) {
 	getFilename := func(r *http.Request) string {
 		d, err := api.Digest(r)
 		require.NoError(t, err)
@@ -166,14 +166,14 @@ func TestServer_SendPDVHandler(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.err != errSkip {
-				srv.EXPECT().SendPDV(gomock.Any(), gomock.Any(), getFilename(r)).DoAndReturn(func(_ context.Context, d []byte, _ string) error {
+				srv.EXPECT().SavePDV(gomock.Any(), gomock.Any(), getFilename(r)).DoAndReturn(func(_ context.Context, d []byte, _ string) error {
 					var pdv schema.PDV
 					require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
 					var spdv serverPDV
 					require.NoError(t, json.Unmarshal(d, &spdv))
 
 					assert.Equal(t, pdv, spdv.UserData)
-					assert.Equal(t, calculatedPDVData{IP: "1.2.3.4", UserAgent: "mac"}, spdv.CalculatedData)
+					assert.Equal(t, metaPDVData{IP: "1.2.3.4", UserAgent: "mac"}, spdv.MetaData)
 
 					return tc.err
 				})
@@ -190,7 +190,7 @@ func TestServer_SendPDVHandler(t *testing.T) {
 			c, err := lru.NewARC(10)
 			require.NoError(t, err)
 			s := server{s: srv, pdvExistenceCache: c}
-			router.Post("/v1/pdv", s.sendPDVHandler)
+			router.Post("/v1/pdv", s.savePDVHandler)
 
 			router.ServeHTTP(w, r)
 
