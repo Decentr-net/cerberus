@@ -1,7 +1,7 @@
 # Cerberus
 ![img](https://img.shields.io/docker/cloud/build/decentr/cerberus.svg)
 
-The Cerberus encrypts data and pushes it into S3 storage.
+Cerberus is a Decentr oracle. Cerberus stores and validates PDV (private data value).
 
 ## Run
 ### Docker
