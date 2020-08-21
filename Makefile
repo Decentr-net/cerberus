@@ -23,7 +23,7 @@ default: build
 .PHONY: build
 build:
 	@echo BUILDING $(OUT)
-	$(V)go build -mod=vendor -ldflags "-s -w" -o $(OUT) $(MAIN_PKG)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "-s -w" -o $(OUT) $(MAIN_PKG)
 	@echo DONE
 
 .PHONY: linux
@@ -32,11 +32,10 @@ linux: export GOARCH := amd64
 linux: LINUX_OUT := $(OUT)-$(GOOS)-$(GOARCH)
 linux:
 	@echo BUILDING $(LINUX_OUT)
-	$(V)go build -mod=vendor -ldflags "-s -w" -o $(LINUX_OUT) $(MAIN_PKG)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "-s -w" -o $(LINUX_OUT) $(MAIN_PKG)
 	@echo DONE
 
 .PHONY: image
-image: linux
 image:
 	docker build -t cerberus-local -f scripts/Dockerfile .
 
