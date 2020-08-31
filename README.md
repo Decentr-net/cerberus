@@ -21,6 +21,7 @@ go run cmd/cerberus/main.go \
     --http.host=0.0.0.0 \
     --http.port=8080 \
     --s3.endpoint=localhost:9000 \
+    --s3.region=us-east-2 \
     --s3.access-key-id=AKIAIOSFODNN7EXAMPLE \
     --s3.secret-access-key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
     --s3.use-ssl=false \
@@ -36,6 +37,7 @@ go run cmd/cerberus/main.go \
 | http.port    | HTTP_PORT    | 8080  | port to listen
 | http.max-body-size    | HTTP_MAX_BODY_SIZE    | 8000000  | max requests' body size in bytes
 | s3.endpoint    | S3_ENDPOINT    | localhost:9000  | s3 storage endpoint
+| s3.region    | S3_REGION    |  | s3 storage region
 | s3.access-key-id    | S3_ACCESS_KEY_ID    |  | Access KeyID for S3 storage
 | s3.secret-access-key    | S3_SECRET_ACCESS_KEY    |   | Secret Key for S3 storage
 | s3.use-ssl    | S3_USE_SSL    | false  | do use ssl for S3 storage connection?
