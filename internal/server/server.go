@@ -50,6 +50,8 @@ import (
 	"github.com/go-chi/chi/middleware"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/sirupsen/logrus"
+	"github.com/tendermint/go-amino"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
@@ -58,6 +60,13 @@ import (
 //go:generate swagger generate spec -t swagger -m -c . -o ../../static/swagger.json
 
 const existenceCacheSize = 200 // we don't need store a lot keys because method used by blockchain node which validates block
+
+var cdc = amino.NewCodec() // nolint:gochecknoglobals
+
+func init() { // nolint:gochecknoinits
+	cdc.RegisterConcrete(secp256k1.PubKeySecp256k1{},
+		secp256k1.PubKeyAminoName, nil)
+}
 
 type server struct {
 	s service.Service

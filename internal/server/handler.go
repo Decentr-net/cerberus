@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"github.com/tomasen/realip"
 
 	"github.com/Decentr-net/cerberus/internal/service"
@@ -88,7 +89,12 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filepath := fmt.Sprintf("%s-%s", r.Header.Get(api.PublicKeyHeader), hex.EncodeToString(digest))
+	address, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to generate address")
+	}
+
+	filepath := fmt.Sprintf("%s-%s", address, hex.EncodeToString(digest))
 
 	spdv, err := json.Marshal(serverPDV{
 		UserData: p,
@@ -164,7 +170,12 @@ func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if pk := strings.Split(address, "-")[0]; pk != r.Header.Get(api.PublicKeyHeader) {
+	ownerAddress, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to generate address")
+	}
+
+	if strings.Split(address, "-")[0] != ownerAddress {
 		writeError(w, http.StatusForbidden, "access denied")
 		return
 	}
@@ -238,4 +249,13 @@ func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 	}
+}
+
+func getAddressFromPubKey(k string) (string, error) {
+	var pk secp256k1.PubKeySecp256k1
+	b, _ := hex.DecodeString(k)
+	if err := cdc.UnmarshalBinaryBare(b, &pk); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(pk.Address()), nil
 }
