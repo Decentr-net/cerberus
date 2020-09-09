@@ -25,7 +25,7 @@ import (
 	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
-const testAddress = "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
+const testAddress = "e161f70a30964f22d7180bbf0fa7e87d1fa260e4-eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
 
 var pdv = []byte(`{
     "version": "v1",
@@ -88,7 +88,10 @@ func TestServer_SavePDVHandler(t *testing.T) {
 		d, err := api.Digest(r)
 		require.NoError(t, err)
 
-		return fmt.Sprintf("%s-%s", r.Header.Get(api.PublicKeyHeader), hex.EncodeToString(d))
+		address, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
+		require.NoError(t, err)
+
+		return fmt.Sprintf("%s-%s", address, hex.EncodeToString(d))
 	}
 
 	tt := []struct {
@@ -104,7 +107,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			reqBody: pdv,
 			err:     nil,
 			rcode:   http.StatusCreated,
-			rdata:   `{"address":"eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-0b92493137383d45cef406df8c34dc13391f91aa2aadd79f966ca90e936aa7a7"}`,
+			rdata:   `{"address":"e161f70a30964f22d7180bbf0fa7e87d1fa260e4-0b92493137383d45cef406df8c34dc13391f91aa2aadd79f966ca90e936aa7a7"}`,
 			rlog:    "",
 		},
 		{
