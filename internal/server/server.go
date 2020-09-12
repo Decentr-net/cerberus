@@ -1,6 +1,6 @@
 // Package server Cerberus
 //
-// The Cerberus is an users' data keeper. The Cerberus encrypts data and pushes it into [ipfs](https://ipfs.io)
+// The Cerberus is an users' data keeper. The Cerberus encrypts data and pushes it into S3.
 //
 //     Schemes: https
 //     BasePath: /v1

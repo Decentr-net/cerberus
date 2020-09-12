@@ -44,10 +44,12 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	// - application/octet-stream
 	// parameters:
 	// - name: request
+	//   description: file's raw bytes
 	//   in: body
 	//   required: true
 	//   schema:
-	//     type: file
+	//     type: string
+	//     format: binary
 	// responses:
 	//   '201':
 	//     description: pdv was put into storage
@@ -58,13 +60,13 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	//     schema:
 	//       "$ref": "#/definitions/Error"
 	//   '400':
-	//     description: bad request
-	//     schema:
-	//       "$ref": "#/definitions/Error"
+	//      description: bad request
+	//      schema:
+	//        "$ref": "#/definitions/Error"
 	//   '500':
-	//     description: internal server error
-	//     schema:
-	//       "$ref": "#/definitions/Error"
+	//      description: internal server error
+	//      schema:
+	//        "$ref": "#/definitions/Error"
 
 	digest, err := api.Verify(r)
 	if err != nil {

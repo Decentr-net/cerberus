@@ -10,7 +10,7 @@
   ],
   "swagger": "2.0",
   "info": {
-    "description": "The Cerberus is an users' data keeper. The Cerberus encrypts data and pushes it into [ipfs](https://ipfs.io)",
+    "description": "The Cerberus is an users' data keeper. The Cerberus encrypts data and pushes it into S3.",
     "title": "Cerberus",
     "version": "1.0.0"
   },
@@ -39,11 +39,13 @@
         "operationId": "SavePDV",
         "parameters": [
           {
+            "description": "file's raw bytes",
             "name": "request",
             "in": "body",
             "required": true,
             "schema": {
-              "type": "file"
+              "type": "string",
+              "format": "binary"
             }
           }
         ],
