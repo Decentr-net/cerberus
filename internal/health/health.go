@@ -14,6 +14,18 @@ import (
 	"github.com/Decentr-net/cerberus/pkg/api"
 )
 
+// nolint:gochecknoglobals
+var (
+	version = "dev"
+	commit  = "unknown"
+)
+
+// VersionResponse ...
+type VersionResponse struct {
+	Version string `json:"version"`
+	Commit  string `json:"commit"`
+}
+
 // Pinger pings external service.
 type Pinger interface {
 	Ping(ctx context.Context) error
@@ -37,9 +49,21 @@ func SetupRouter(r chi.Router, p ...Pinger) {
 		}
 
 		if err := gr.Wait(); err != nil {
-			data, _ := json.Marshal(api.Error{Error: err.Error()})
+			data, _ := json.Marshal(struct {
+				api.Error
+				VersionResponse
+			}{
+				Error:           api.Error{Error: err.Error()},
+				VersionResponse: VersionResponse{Version: version, Commit: commit},
+			})
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write(data) // nolint
+
+			return
 		}
+		data, _ := json.Marshal(VersionResponse{Version: version, Commit: commit})
+
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(data) // nolint
 	})
 }

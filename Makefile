@@ -7,7 +7,12 @@ MAIN_PKG := ./cmd/cerberus
 
 GOBIN := $(shell go env GOPATH)/bin
 
-GOBIN := $(shell go env GOPATH)/bin
+VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+COMMIT := $(shell git log -1 --format='%H')
+
+LDFLAGS = -s -w -X github.com/Decentr-net/cerberus/internal/health.version=$(VERSION) \
+	-X github.com/Decentr-net/cerberus/internal/health.commit=$(COMMIT)
+
 
 LINTER_NAME := golangci-lint
 LINTER_VERSION := v1.29.0
@@ -23,7 +28,7 @@ default: build
 .PHONY: build
 build:
 	@echo BUILDING $(OUT)
-	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "-s -w" -o $(OUT) $(MAIN_PKG)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(OUT) $(MAIN_PKG)
 	@echo DONE
 
 .PHONY: linux
@@ -32,7 +37,7 @@ linux: export GOARCH := amd64
 linux: LINUX_OUT := $(OUT)-$(GOOS)-$(GOARCH)
 linux:
 	@echo BUILDING $(LINUX_OUT)
-	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "-s -w" -o $(LINUX_OUT) $(MAIN_PKG)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_OUT) $(MAIN_PKG)
 	@echo DONE
 
 .PHONY: image
