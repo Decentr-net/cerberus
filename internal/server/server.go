@@ -34,6 +34,7 @@
 //               Body: {"some":"file"}
 //               Digest will be made from `{"some":"file"}v1/pdv/123-321`
 //               Digest in hex: 772d91d6dd8ff9c93cbd3bc888825f932964b301b32581c1e1dc36cdb5a5d869
+//               Signature in hex: ed86462c638afca2f4c09c92982cd3b95c4a2b1e97ea7deffab662d156360f5455c9b72f07890a287f407ad252628f78d41edeee711274bfa62d98c64c376ed4
 //
 // swagger:meta
 package server

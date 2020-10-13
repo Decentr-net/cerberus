@@ -14,7 +14,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.6.1
-	github.com/tendermint/go-amino v0.15.1 // indirect
+	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.33.2
 	github.com/testcontainers/testcontainers-go v0.7.0
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
