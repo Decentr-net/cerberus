@@ -216,7 +216,7 @@
       "in": "header"
     },
     "signature": {
-      "description": "Signature of request digest.\nDigest is sha256 sum of request: {body as is}+{request uri}.\nFor example:\n   Private key in hex: 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20\n   Request url: localhost/v1/pdv/123-321\n   Body: {\"some\":\"file\"}\n   Digest will be made from `{\"some\":\"file\"}v1/pdv/123-321`\n   Digest in hex: 772d91d6dd8ff9c93cbd3bc888825f932964b301b32581c1e1dc36cdb5a5d869\n   Signature in hex: ed86462c638afca2f4c09c92982cd3b95c4a2b1e97ea7deffab662d156360f5455c9b72f07890a287f407ad252628f78d41edeee711274bfa62d98c64c376ed4",
+      "description": "Signature of request digest.\nDigest is sha256 sum of request: {body as is}+{request uri}.\nFor example:\n   Private key in hex: 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20\n   Request url: localhost/v1/pdv/123-321\n   Body: {\"some\":\"file\"}\n   Digest will be made from `{\"some\":\"file\"}v1/pdv/123-321`\n   Digest in hex:\n     772d91d6dd8ff9c93cbd3bc888825f932964b301b32581c1e1dc36cdb5a5d869\n   Signature in hex:\n     ed86462c638afca2f4c09c92982cd3b95c4a2b1e97ea7deffab662d156360f5455c9b72f07890a287f407ad252628f78d41edeee711274bfa62d98c64c376ed4",
       "type": "apiKey",
       "name": "Signature",
       "in": "header"
