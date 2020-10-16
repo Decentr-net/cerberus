@@ -1,5 +1,8 @@
 # github.com/ChainSafe/go-schnorrkel v0.0.0-20200102211924-4bcbc698314f
 github.com/ChainSafe/go-schnorrkel
+# github.com/Decentr-net/logrus v0.7.1
+## explicit
+github.com/Decentr-net/logrus/sentry
 # github.com/Microsoft/go-winio v0.4.11
 github.com/Microsoft/go-winio
 # github.com/Microsoft/hcsshim v0.8.6
@@ -58,6 +61,9 @@ github.com/docker/go-connections/sockets
 github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-units v0.3.3
 github.com/docker/go-units
+# github.com/getsentry/sentry-go v0.7.0
+## explicit
+github.com/getsentry/sentry-go
 # github.com/go-chi/chi v4.1.2+incompatible
 ## explicit
 github.com/go-chi/chi

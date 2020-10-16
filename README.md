@@ -36,6 +36,7 @@ go run cmd/cerberus/main.go \
 | http.host         | HTTP_HOST         | 0.0.0.0  | host to bind server
 | http.port    | HTTP_PORT    | 8080  | port to listen
 | http.max-body-size    | HTTP_MAX_BODY_SIZE    | 8000000  | max requests' body size in bytes
+| sentry.dsn    | SENTRY_DSN    |  | sentry dsn
 | s3.endpoint    | S3_ENDPOINT    | localhost:9000  | s3 storage endpoint
 | s3.region    | S3_REGION    |  | s3 storage region
 | s3.access-key-id    | S3_ACCESS_KEY_ID    |  | Access KeyID for S3 storage

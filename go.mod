@@ -3,8 +3,10 @@ module github.com/Decentr-net/cerberus
 go 1.14
 
 require (
+	github.com/Decentr-net/logrus v0.7.1
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/davecgh/go-spew v1.1.1
+	github.com/getsentry/sentry-go v0.7.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/mock v1.4.3
 	github.com/hashicorp/golang-lru v0.5.1

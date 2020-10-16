@@ -4,6 +4,7 @@ package health
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -19,6 +20,11 @@ var (
 	version = "dev"
 	commit  = "unknown"
 )
+
+// GetVersion returns service's version and commit.
+func GetVersion() string {
+	return fmt.Sprintf("%s-%s", version, commit)
+}
 
 // VersionResponse ...
 type VersionResponse struct {
