@@ -30,8 +30,11 @@ func getSignature(r *http.Request) (crypto.PubKey, []byte, error) {
 		return nil, nil, ErrInvalidPublicKey
 	}
 
-	pk, err := amino.PubKeyFromBytes(k)
+	if len(k) != 33 {
+		return nil, nil, ErrInvalidPublicKey
+	}
 
+	pk, err := amino.PubKeyFromBytes(GetAminoSecp256k1PubKey(k))
 	if err != nil {
 		return nil, nil, ErrInvalidPublicKey
 	}
@@ -51,7 +54,7 @@ func Sign(r *http.Request, pk crypto.PrivKey) error {
 		return fmt.Errorf("failed to sign digest: %w", err)
 	}
 
-	r.Header.Set(PublicKeyHeader, hex.EncodeToString(pk.PubKey().Bytes()))
+	r.Header.Set(PublicKeyHeader, hex.EncodeToString(pk.PubKey().Bytes()[5:])) // truncate amino codec prefix
 	r.Header.Set(SignatureHeader, hex.EncodeToString(s))
 
 	return nil
@@ -87,4 +90,9 @@ func Digest(r *http.Request) ([]byte, error) {
 
 	d := sha256.Sum256(body)
 	return d[:], nil
+}
+
+// GetAminoSecp256k1PubKey adds amino secp256k1 pubkey prefix to pubkey(including length-prefix).
+func GetAminoSecp256k1PubKey(k []byte) []byte {
+	return append([]byte{235, 90, 233, 135, 33}, k...)
 }
