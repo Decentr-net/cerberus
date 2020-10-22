@@ -135,7 +135,7 @@ func TestSign(t *testing.T) {
 
 			require.NoError(t, Sign(r, key))
 
-			assert.Equal(t, hex.EncodeToString(key.PubKey().Bytes()), r.Header.Get(PublicKeyHeader))
+			assert.Equal(t, hex.EncodeToString(key.PubKey().Bytes()[5:]), r.Header.Get(PublicKeyHeader))
 			assert.Equal(t, tc.signature, r.Header.Get(SignatureHeader))
 		})
 	}

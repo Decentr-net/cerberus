@@ -256,7 +256,7 @@ func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 func getAddressFromPubKey(k string) (string, error) {
 	var pk secp256k1.PubKeySecp256k1
 	b, _ := hex.DecodeString(k)
-	if err := cdc.UnmarshalBinaryBare(b, &pk); err != nil {
+	if err := cdc.UnmarshalBinaryBare(api.GetAminoSecp256k1PubKey(b), &pk); err != nil {
 		return "", err
 	}
 	return hex.EncodeToString(pk.Address()), nil
