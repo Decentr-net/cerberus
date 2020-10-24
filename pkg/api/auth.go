@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -44,7 +43,7 @@ func getSignature(r *http.Request) (crypto.PubKey, []byte, error) {
 
 // Sign signs http request.
 func Sign(r *http.Request, pk crypto.PrivKey) error {
-	d, err := Digest(r)
+	d, err := GetMessageToSign(r)
 	if err != nil {
 		return fmt.Errorf("failed to get digest: %w", err)
 	}
@@ -61,35 +60,32 @@ func Sign(r *http.Request, pk crypto.PrivKey) error {
 }
 
 // Verify verifies request's signature with public key.
-func Verify(r *http.Request) ([]byte, error) {
+func Verify(r *http.Request) error {
 	k, s, err := getSignature(r)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	d, err := Digest(r)
+	d, err := GetMessageToSign(r)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if !k.VerifyBytes(d, s) {
-		return nil, ErrNotVerified
+		return ErrNotVerified
 	}
 
-	return d, nil
+	return nil
 }
 
-// Digest returns sha256 of request body.
-func Digest(r *http.Request) ([]byte, error) {
+// GetMessageToSign returns message to sign.
+func GetMessageToSign(r *http.Request) ([]byte, error) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read request body: %w", err)
 	}
 	r.Body = ioutil.NopCloser(bytes.NewReader(body))
 
-	body = append(body, []byte(r.URL.Path)...)
-
-	d := sha256.Sum256(body)
-	return d[:], nil
+	return append(body, []byte(r.URL.Path)...), nil
 }
 
 // GetAminoSecp256k1PubKey adds amino secp256k1 pubkey prefix to pubkey(including length-prefix).

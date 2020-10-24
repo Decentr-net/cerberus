@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -84,16 +83,6 @@ func newTestParameters(t *testing.T, method string, uri string, body []byte) (*b
 }
 
 func TestServer_SavePDVHandler(t *testing.T) {
-	getFilename := func(r *http.Request) string {
-		d, err := api.Digest(r)
-		require.NoError(t, err)
-
-		address, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
-		require.NoError(t, err)
-
-		return fmt.Sprintf("%s-%s", address, hex.EncodeToString(d))
-	}
-
 	tt := []struct {
 		name    string
 		reqBody []byte
@@ -107,7 +96,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			reqBody: pdv,
 			err:     nil,
 			rcode:   http.StatusCreated,
-			rdata:   `{"address":"e161f70a30964f22d7180bbf0fa7e87d1fa260e4-0b92493137383d45cef406df8c34dc13391f91aa2aadd79f966ca90e936aa7a7"}`,
+			rdata:   `{"address":"e161f70a30964f22d7180bbf0fa7e87d1fa260e4-57d274ad6d9226a499bc67cb67aa1770ad0f09df6014064035d77dd0d1ac2fb4"}`,
 			rlog:    "",
 		},
 		{
@@ -165,7 +154,10 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.err != errSkip {
-				srv.EXPECT().SavePDV(gomock.Any(), gomock.Any(), getFilename(r)).DoAndReturn(func(_ context.Context, d []byte, _ string) error {
+				filepath, err := getPDVFilepath(r.Header.Get(api.PublicKeyHeader), tc.reqBody)
+				require.NoError(t, err)
+
+				srv.EXPECT().SavePDV(gomock.Any(), gomock.Any(), filepath).DoAndReturn(func(_ context.Context, d []byte, _ string) error {
 					var pdv schema.PDV
 					require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
 					var spdv serverPDV

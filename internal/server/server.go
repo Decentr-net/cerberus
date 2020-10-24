@@ -29,14 +29,14 @@
 //            Signature of request digest.
 //            Digest is sha256 sum of request: {body as is}+{request uri}.
 //            For example:
-//               Private key in hex: 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20
-//               Request url: localhost/v1/pdv/123-321
+//               Private key in hex: cfe43c70347c7e39084612d9448f3ed86ed733a33a67de35c7e335b3c4edc37d
+//               Request url: http://localhost/v1/pdv
 //               Body: {"some":"file"}
-//               Digest will be made from `{"some":"file"}v1/pdv/123-321`
+//               Digest will be made from `{"some":"file"}/v1/pdv`
 //               Digest in hex:
-//                 772d91d6dd8ff9c93cbd3bc888825f932964b301b32581c1e1dc36cdb5a5d869
+//                 4a1084d05820d60aee9ce600227ca2290ef63e80e5227215b58b023ec6876799
 //               Signature in hex:
-//                 ed86462c638afca2f4c09c92982cd3b95c4a2b1e97ea7deffab662d156360f5455c9b72f07890a287f407ad252628f78d41edeee711274bfa62d98c64c376ed4
+//                 28eff4676d7839648dda925ba92d447dd7552e177a302f32681fc76278088f9f1fb98051666aa02dd80f7d9b7c01d42ea1abbb3e65de8f1fd04be7b747fb0692
 //
 // swagger:meta
 package server
