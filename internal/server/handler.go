@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -68,8 +69,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	//      schema:
 	//        "$ref": "#/definitions/Error"
 
-	digest, err := api.Verify(r)
-	if err != nil {
+	if err := api.Verify(r); err != nil {
 		writeVerifyError(getLogger(r.Context()), w, err)
 		return
 	}
@@ -91,12 +91,11 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	address, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
+	filepath, err := getPDVFilepath(r.Header.Get(api.PublicKeyHeader), data)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to generate address")
+		writeInternalError(getLogger(r.Context()), w, fmt.Sprintf("failed to get filepath: %s", err.Error()))
+		return
 	}
-
-	filepath := fmt.Sprintf("%s-%s", address, hex.EncodeToString(digest))
 
 	spdv, err := json.Marshal(serverPDV{
 		UserData: p,
@@ -167,7 +166,7 @@ func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := api.Verify(r); err != nil {
+	if err := api.Verify(r); err != nil {
 		writeVerifyError(getLogger(r.Context()), w, err)
 		return
 	}
@@ -260,4 +259,14 @@ func getAddressFromPubKey(k string) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(pk.Address()), nil
+}
+
+func getPDVFilepath(pk string, pdv []byte) (string, error) {
+	address, err := getAddressFromPubKey(pk)
+	if err != nil {
+		return "", fmt.Errorf("failed to get address from pubkey: %w", err)
+	}
+
+	hash := sha256.Sum256(pdv)
+	return fmt.Sprintf("%s-%s", address, hex.EncodeToString(hash[:])), nil
 }

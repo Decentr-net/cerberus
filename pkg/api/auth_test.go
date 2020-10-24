@@ -24,9 +24,7 @@ func TestVerify(t *testing.T) {
 		key := secp256k1.GenPrivKey()
 		require.NoError(t, Sign(r, key))
 
-		d, err := Verify(r)
-		assert.NoError(t, err)
-		assert.NotNil(t, d)
+		assert.NoError(t, Verify(r))
 	})
 
 	t.Run("invalid key", func(t *testing.T) {
@@ -38,7 +36,7 @@ func TestVerify(t *testing.T) {
 
 		r.Header.Set(PublicKeyHeader, "invalid")
 
-		_, err = Verify(r)
+		err = Verify(r)
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, ErrInvalidPublicKey))
 	})
@@ -52,7 +50,7 @@ func TestVerify(t *testing.T) {
 
 		r.Header.Set(PublicKeyHeader, testSignature)
 
-		_, err = Verify(r)
+		err = Verify(r)
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, ErrInvalidPublicKey))
 	})
@@ -66,7 +64,7 @@ func TestVerify(t *testing.T) {
 
 		r.Header.Set(SignatureHeader, "invalid")
 
-		_, err = Verify(r)
+		err = Verify(r)
 		require.Error(t, err)
 		assert.True(t, errors.Is(err, ErrInvalidSignature))
 	})
@@ -79,19 +77,19 @@ func TestVerify(t *testing.T) {
 		require.NoError(t, Sign(r, key))
 		r.Header.Set(SignatureHeader, testSignature)
 
-		_, err = Verify(r)
+		err = Verify(r)
 		require.Error(t, err)
 		assert.True(t, errors.Is(err, ErrNotVerified))
 	})
 }
 
-func TestDigest(t *testing.T) {
+func TestGetMessageToSign(t *testing.T) {
 	r, err := http.NewRequest(http.MethodPost, "https://localhost/path/to/file", bytes.NewBufferString("some/body"))
 	require.NoError(t, err)
 
-	b, err := Digest(r)
+	b, err := GetMessageToSign(r)
 	require.NoError(t, err)
-	assert.Equal(t, "1d6fb0a9196ef05aabda9d9c2461e5eb152cbb81911d133a80f9bfdf8a5181ac", hex.EncodeToString(b))
+	assert.Equal(t, "some/body/path/to/file", string(b))
 }
 
 func TestSign(t *testing.T) {
@@ -109,21 +107,21 @@ func TestSign(t *testing.T) {
 			path: "",
 			body: []byte{1, 2, 3, 2, 1},
 
-			signature: "dea757c817bf4c38ce43f8234663f20feb144768906f2dec0d9f01d3ed14fd7f43df99efb094d46ed26109a682beeab1259bf6be1d35a7495d6be04846808fef",
+			signature: "9ebf708f5d0eeda13c27c2ee2324bc7c9ce62e404bba5febfb12408fb5026eca46a588ea7aac181f47bbeb261b899e411d7dd1a6e5a71cd832bb7bd6127868d9",
 		},
 		{
 			name: "path",
 			path: "file",
 			body: nil,
 
-			signature: "1eefbc1f355f00e27c14362119614e231d128d040dd46140571ead9f82392e0b60d60d7afb888ac19dd4a732a7756ed2f04e61a8a7266c095c4f8158bcad5172",
+			signature: "08618c88842a20c360a3a52a996707bcb235dbc0a85473989d0e2d3d99ffb2564bec3f8b42aeb2c91cbf64b856ee6c534558c32ff65cb352ed1f2ef96b2d2478",
 		},
 		{
 			name: "path+body",
 			path: "path",
 			body: []byte{1, 2, 3, 2, 1},
 
-			signature: "2632c0fc23c21ab5e432a1607815f13bcd815a6a851a0541c508131101ecd92417ab40e955982bee85a73b2bb344bb27e30933bd5da44be1c75a55af49b49762",
+			signature: "efa3aba44216d69a6bae488f02b334c292f0449247e47fd8ef8c3cb6bb43adbe406c3bc05cbb7009c2f3c69cf8ac5df9d190bba07c952057f62d314f85fa6417",
 		},
 	}
 
