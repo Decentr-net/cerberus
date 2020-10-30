@@ -66,9 +66,8 @@ func (s s3) Read(ctx context.Context, path string) (io.ReadCloser, error) {
 }
 
 // Write puts file into s3 storage.
-func (s s3) Write(ctx context.Context, r io.Reader, path string) error {
-	_, err := s.c.PutObject(ctx, s.b, path, r, -1, minio.PutObjectOptions{ContentType: "binary/octet-stream"})
-
+func (s s3) Write(ctx context.Context, r io.Reader, size int64, path string) error {
+	_, err := s.c.PutObject(ctx, s.b, path, r, size, minio.PutObjectOptions{DisableMultipart: true, ContentType: "binary/octet-stream"})
 	return err
 }
 

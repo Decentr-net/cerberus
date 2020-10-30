@@ -34,12 +34,13 @@ func (m *MockCrypto) EXPECT() *MockCryptoMockRecorder {
 }
 
 // Encrypt mocks base method
-func (m *MockCrypto) Encrypt(arg0 io.Reader) (io.Reader, error) {
+func (m *MockCrypto) Encrypt(arg0 io.Reader) (io.Reader, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Encrypt", arg0)
 	ret0, _ := ret[0].(io.Reader)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Encrypt indicates an expected call of Encrypt
@@ -49,16 +50,16 @@ func (mr *MockCryptoMockRecorder) Encrypt(arg0 interface{}) *gomock.Call {
 }
 
 // Decrypt mocks base method
-func (m *MockCrypto) Decrypt(r io.Reader) (io.Reader, error) {
+func (m *MockCrypto) Decrypt(arg0 io.Reader) (io.Reader, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Decrypt", r)
+	ret := m.ctrl.Call(m, "Decrypt", arg0)
 	ret0, _ := ret[0].(io.Reader)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Decrypt indicates an expected call of Decrypt
-func (mr *MockCryptoMockRecorder) Decrypt(r interface{}) *gomock.Call {
+func (mr *MockCryptoMockRecorder) Decrypt(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Decrypt", reflect.TypeOf((*MockCrypto)(nil).Decrypt), r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Decrypt", reflect.TypeOf((*MockCrypto)(nil).Decrypt), arg0)
 }

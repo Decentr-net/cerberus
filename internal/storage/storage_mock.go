@@ -64,17 +64,17 @@ func (mr *MockStorageMockRecorder) Read(ctx, path interface{}) *gomock.Call {
 }
 
 // Write mocks base method
-func (m *MockStorage) Write(ctx context.Context, r io.Reader, path string) error {
+func (m *MockStorage) Write(ctx context.Context, data io.Reader, size int64, path string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Write", ctx, r, path)
+	ret := m.ctrl.Call(m, "Write", ctx, data, size, path)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Write indicates an expected call of Write
-func (mr *MockStorageMockRecorder) Write(ctx, r, path interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) Write(ctx, data, size, path interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockStorage)(nil).Write), ctx, r, path)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockStorage)(nil).Write), ctx, data, size, path)
 }
 
 // DoesExist mocks base method
