@@ -22,13 +22,14 @@ func TestCrypto_Encrypt(t *testing.T) {
 
 	src := strings.NewReader("example")
 
-	dst, err := c.Encrypt(src)
+	dst, n, err := c.Encrypt(src)
 	require.NoError(t, err)
 	assert.NotNil(t, dst)
 
 	act, err := ioutil.ReadAll(dst)
 	require.NoError(t, err)
 	assert.NotNil(t, act)
+	require.EqualValues(t, n, len(act))
 }
 
 func TestCrypto_Decrypt(t *testing.T) {
@@ -56,7 +57,7 @@ func TestCrypto_Encrypt_Decrypt(t *testing.T) {
 
 	c := NewCrypto(key)
 
-	enc, err := c.Encrypt(bytes.NewReader(exp))
+	enc, _, err := c.Encrypt(bytes.NewReader(exp))
 	require.NoError(t, err)
 	require.NotNil(t, enc)
 

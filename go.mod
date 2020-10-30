@@ -11,10 +11,10 @@ require (
 	github.com/golang/mock v1.4.3
 	github.com/hashicorp/golang-lru v0.5.1
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/minio/minio-go/v7 v7.0.2
+	github.com/minio/minio-go/v7 v7.0.5
 	github.com/minio/sio v0.2.0
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.6.0
+	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.33.7

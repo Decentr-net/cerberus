@@ -31,18 +31,19 @@ func TestService_SavePDV(t *testing.T) {
 
 	s := New(cr, st)
 
-	cr.EXPECT().Encrypt(gomock.Any()).DoAndReturn(func(r io.Reader) (io.Reader, error) {
+	cr.EXPECT().Encrypt(gomock.Any()).DoAndReturn(func(r io.Reader) (io.Reader, int64, error) {
 		data, err := ioutil.ReadAll(r)
 		require.NoError(t, err)
 		require.Equal(t, testData, data)
 
-		return bytes.NewReader(testEncryptedData), nil
+		return bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil
 	})
 
-	st.EXPECT().Write(ctx, gomock.Any(), testFilename).DoAndReturn(func(_ context.Context, r io.Reader, _ string) error {
+	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), testFilename).DoAndReturn(func(_ context.Context, r io.Reader, size int64, _ string) error {
 		data, err := ioutil.ReadAll(r)
 		require.NoError(t, err)
 		require.Equal(t, testEncryptedData, data)
+		require.EqualValues(t, len(data), size)
 
 		return nil
 	})
@@ -60,7 +61,7 @@ func TestService_SavePDV_EncryptError(t *testing.T) {
 
 	s := New(cr, st)
 
-	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, errTest)
+	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, int64(0), errTest)
 
 	err := s.SavePDV(ctx, testData, testFilename)
 	require.Error(t, err)
@@ -76,9 +77,9 @@ func TestService_SavePDV_StorageError(t *testing.T) {
 
 	s := New(cr, st)
 
-	cr.EXPECT().Encrypt(gomock.Any()).Return(bytes.NewReader(testEncryptedData), nil)
+	cr.EXPECT().Encrypt(gomock.Any()).Return(bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil)
 
-	st.EXPECT().Write(ctx, gomock.Any(), testFilename).Return(errTest)
+	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), testFilename).Return(errTest)
 
 	err := s.SavePDV(ctx, testData, testFilename)
 	require.Error(t, err)

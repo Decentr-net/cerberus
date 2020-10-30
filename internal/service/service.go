@@ -42,12 +42,12 @@ func New(c crypto.Crypto, s storage.Storage) Service {
 
 // SavePDV sends PDV to storage.
 func (s *service) SavePDV(ctx context.Context, data []byte, filepath string) error {
-	enc, err := s.c.Encrypt(bytes.NewReader(data))
+	enc, size, err := s.c.Encrypt(bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("failed to create encrypting reader: %w", err)
 	}
 
-	if err := s.s.Write(ctx, enc, filepath); err != nil {
+	if err := s.s.Write(ctx, enc, size, filepath); err != nil {
 		return fmt.Errorf("failed to write to storage: %w", err)
 	}
 

@@ -2,6 +2,7 @@
 package sio
 
 import (
+	"bytes"
 	"io"
 
 	"github.com/minio/sio"
@@ -24,8 +25,13 @@ func NewCrypto(key [32]byte) icrypto.Crypto {
 }
 
 // Encrypt returns reader with encrypted src data.
-func (c *crypto) Encrypt(src io.Reader) (io.Reader, error) {
-	return sio.EncryptReader(src, c.c)
+func (c *crypto) Encrypt(src io.Reader) (io.Reader, int64, error) {
+	buf := bytes.NewBuffer([]byte{})
+	n, err := sio.Encrypt(buf, src, c.c)
+	if err != nil {
+		return nil, 0, err
+	}
+	return buf, n, nil
 }
 
 // Decrypt returns reader with decrypted src data.

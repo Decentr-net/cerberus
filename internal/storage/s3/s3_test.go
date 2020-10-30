@@ -106,7 +106,7 @@ func TestS3_Write(t *testing.T) {
 	s, err := NewStorage(c, bucket)
 	require.NoError(t, err)
 
-	assert.NoError(t, s.Write(ctx, strings.NewReader("example"), "file"))
+	assert.NoError(t, s.Write(ctx, strings.NewReader("example"), 7, "file"))
 }
 
 func TestS3_Read(t *testing.T) {
@@ -139,7 +139,7 @@ func TestS3_Write_Read(t *testing.T) {
 
 	text := []byte("cerberus")
 
-	require.NoError(t, s.Write(ctx, bytes.NewReader(text), "cerberus"))
+	require.NoError(t, s.Write(ctx, bytes.NewReader(text), 8, "cerberus"))
 
 	rc, err := s.Read(ctx, "cerberus")
 	require.NoError(t, err)
