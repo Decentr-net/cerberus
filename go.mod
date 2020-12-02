@@ -17,7 +17,7 @@ require (
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/go-amino v0.15.1
-	github.com/tendermint/tendermint v0.33.7
+	github.com/tendermint/tendermint v0.33.9
 	github.com/testcontainers/testcontainers-go v0.7.0
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381

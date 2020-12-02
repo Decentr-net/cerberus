@@ -152,7 +152,7 @@ github.com/stretchr/testify/require
 # github.com/tendermint/go-amino v0.15.1
 ## explicit
 github.com/tendermint/go-amino
-# github.com/tendermint/tendermint v0.33.7
+# github.com/tendermint/tendermint v0.33.9
 ## explicit
 github.com/tendermint/tendermint/crypto
 github.com/tendermint/tendermint/crypto/ed25519
