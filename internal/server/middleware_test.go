@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,12 +38,17 @@ func Test_loggerMiddleware(t *testing.T) {
 
 func Test_setHeadersMiddleware(t *testing.T) {
 	w := httptest.NewRecorder()
-	r, err := http.NewRequest(http.MethodPost, "", nil)
+	r, err := http.NewRequest(http.MethodGet, "/", nil)
 	require.NoError(t, err)
 
-	setHeadersMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, ir *http.Request) {})).ServeHTTP(w, r)
+	m := chi.NewMux()
+	m.Use(setHeadersMiddleware)
+	m.Get("/", func(writer http.ResponseWriter, _ *http.Request) {
+		writer.Write([]byte(`{"json": "json"}`))
+	})
+	m.ServeHTTP(w, r)
 
-	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+	assert.Equal(t, "application/json", w.Result().Header.Get("Content-Type")) // nolint
 }
 
 func Test_bodyLimiterMiddleware(t *testing.T) {

@@ -47,11 +47,8 @@ func loggerMiddleware(next http.Handler) http.Handler {
 // setHeadersMiddleware sets predefined headers to response.
 func setHeadersMiddleware(handler http.Handler) http.Handler {
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		handler.ServeHTTP(w, r)
-
-		if w.Header().Get("Content-Type") == "" {
-			w.Header().Set("Content-Type", "application/json")
-		}
 	})
 
 	return http.Handler(fn)
