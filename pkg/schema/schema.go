@@ -17,8 +17,6 @@ const (
 	PDVCookieType PDVType = "cookie"
 )
 const (
-	// DataPerPDVLimit is limit how much data we allow per PDV.
-	DataPerPDVLimit = 20
 	// PDVDataSizeLimit is limit to PDVData's size.
 	PDVDataSizeLimit = 8 * 1024
 )
@@ -139,10 +137,6 @@ func (o *PDVObjectV1) UnmarshalJSON(b []byte) error {
 
 	if err := json.Unmarshal(b, &i); err != nil {
 		return err
-	}
-
-	if len(i.PDVData) > DataPerPDVLimit {
-		return errors.New("too much data in PDV")
 	}
 
 	*o = PDVObjectV1{
