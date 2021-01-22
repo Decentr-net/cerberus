@@ -12,22 +12,11 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
-	"github.com/tomasen/realip"
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
 	"github.com/Decentr-net/cerberus/pkg/schema"
 )
-
-type metaPDVData struct {
-	IP        string `json:"ip"`
-	UserAgent string `json:"user_agent"`
-}
-
-type serverPDV struct {
-	UserData schema.PDV  `json:"user_data"`
-	MetaData metaPDVData `json:"calculated_data"`
-}
 
 // savePDVHandler encrypts and puts PDV data into storage.
 func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
@@ -86,8 +75,13 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !p.PDV.Validate() {
+	if !p.Validate() {
 		writeError(w, http.StatusBadRequest, "pdv data is invalid")
+		return
+	}
+
+	if l := uint16(len(p.PDV)); l < s.minPDVCount || l > s.maxPDVCount {
+		writeError(w, http.StatusBadRequest, "forbidden pdv count")
 		return
 	}
 
@@ -97,24 +91,18 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	spdv, err := json.Marshal(serverPDV{
-		UserData: p,
-		MetaData: metaPDVData{
-			IP:        realip.FromRequest(r),
-			UserAgent: r.UserAgent(),
-		},
-	})
-	if err != nil {
-		writeInternalError(getLogger(r.Context()), w, fmt.Sprintf("failed to marshal modified PDV: %s", err.Error()))
-		return
-	}
-
-	if err := s.s.SavePDV(r.Context(), spdv, filepath); err != nil {
+	if err := s.s.SavePDV(r.Context(), p, filepath); err != nil {
 		writeInternalError(getLogger(r.Context()), w, err.Error())
 		return
 	}
 
-	s.pdvExistenceCache.Add(filepath, true)
+	meta, err := s.s.GetPDVMeta(r.Context(), filepath)
+	if err != nil {
+		writeInternalError(getLogger(r.Context()), w, fmt.Sprintf("failed to get pdv meta: %s", err.Error()))
+		return
+	}
+
+	s.pdvMetaCache.Add(filepath, meta)
 
 	writeOK(w, http.StatusCreated, api.SavePDVResponse{Address: filepath})
 }
@@ -194,11 +182,11 @@ func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(data) // nolint
 }
 
-// doesPDVExistHandler checks if pdv exists in storage.
-func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation HEAD /pdv/{address} Cerberus DoesPDVExist
+// getPDVMetaHandler returns PDVs meta by address.
+func (s *server) getPDVMetaHandler(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /pdv/{address}/meta Cerberus GetPDVMeta
 	//
-	// Checks if PDV exists in storage.
+	// Return PDVs meta.
 	//
 	// ---
 	// parameters:
@@ -209,7 +197,7 @@ func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 	//   type: string
 	// responses:
 	//   '200':
-	//     description: PDV exists
+	//     "$ref": "#/definitions/PDVMeta"
 	//   '404':
 	//     description: PDV doesn't exist
 	//   '401':
@@ -232,24 +220,24 @@ func (s *server) doesPDVExistHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var exists bool
-	if v, ok := s.pdvExistenceCache.Get(address); ok {
-		exists = v.(bool) // nolint
+	var m api.PDVMeta
+	if v, ok := s.pdvMetaCache.Get(address); ok {
+		m = v.(api.PDVMeta) // nolint
 	} else {
 		var err error
-		exists, err = s.s.DoesPDVExist(r.Context(), address)
+		m, err = s.s.GetPDVMeta(r.Context(), address)
 		if err != nil {
+			if errors.Is(err, service.ErrNotFound) {
+				writeErrorf(w, http.StatusNotFound, fmt.Sprintf("PDV '%s' not found", address))
+				return
+			}
 			writeInternalError(getLogger(r.Context()), w, err.Error())
 			return
 		}
-		s.pdvExistenceCache.Add(address, exists)
+		s.pdvMetaCache.Add(address, m)
 	}
 
-	if exists {
-		w.WriteHeader(http.StatusOK)
-	} else {
-		w.WriteHeader(http.StatusNotFound)
-	}
+	writeOK(w, http.StatusOK, m)
 }
 
 func getAddressFromPubKey(k string) (string, error) {

@@ -3,12 +3,15 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 
 	"github.com/Decentr-net/cerberus/internal/crypto"
 	"github.com/Decentr-net/cerberus/internal/storage"
+	"github.com/Decentr-net/cerberus/pkg/api"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 //go:generate mockgen -destination=./service_mock.go -package=service -source=service.go
@@ -16,14 +19,16 @@ import (
 // ErrNotFound means that requested object is not found.
 var ErrNotFound = errors.New("not found")
 
+const metaFilepathTpl = "%s/meta.json"
+
 // Service interface provides service's logic's methods.
 type Service interface {
 	// SavePDV sends PDV to storage.
-	SavePDV(ctx context.Context, data []byte, filename string) error
+	SavePDV(ctx context.Context, p schema.PDV, filename string) error
 	// ReceivePDV returns slice of bytes of PDV requested by address from storage.
 	ReceivePDV(ctx context.Context, address string) ([]byte, error)
-	// DoesPDVExist checks PDV existence by address in storage.
-	DoesPDVExist(ctx context.Context, address string) (bool, error)
+	// GetPDVMeta returns PDVs meta.
+	GetPDVMeta(ctx context.Context, address string) (api.PDVMeta, error)
 }
 
 // service is Service interface implementation.
@@ -41,14 +46,29 @@ func New(c crypto.Crypto, s storage.Storage) Service {
 }
 
 // SavePDV sends PDV to storage.
-func (s *service) SavePDV(ctx context.Context, data []byte, filepath string) error {
+func (s *service) SavePDV(ctx context.Context, p schema.PDV, filepath string) error {
+	meta, err := json.Marshal(getMeta(p))
+	if err != nil {
+		return fmt.Errorf("failed to marshal pdv meta: %w", err)
+	}
+
+	data, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Errorf("failed to marshal pdv: %w", err)
+	}
+
 	enc, size, err := s.c.Encrypt(bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("failed to create encrypting reader: %w", err)
 	}
 
 	if err := s.s.Write(ctx, enc, size, filepath); err != nil {
-		return fmt.Errorf("failed to write to storage: %w", err)
+		return fmt.Errorf("failed to write pdv data to storage: %w", err)
+	}
+
+	mr := bytes.NewReader(meta)
+	if err := s.s.Write(ctx, mr, mr.Size(), fmt.Sprintf(metaFilepathTpl, filepath)); err != nil {
+		return fmt.Errorf("failed to write pdv meta to storage: %w", err)
 	}
 
 	return nil
@@ -78,12 +98,38 @@ func (s *service) ReceivePDV(ctx context.Context, address string) ([]byte, error
 	return data, nil
 }
 
-// DoesPDVExist checks PDV existence by address in storage.
-func (s *service) DoesPDVExist(ctx context.Context, address string) (bool, error) {
-	exists, err := s.s.DoesExist(ctx, address)
+// GetPDVMeta returns pdv meta.
+func (s *service) GetPDVMeta(ctx context.Context, address string) (api.PDVMeta, error) {
+	r, err := s.s.Read(ctx, fmt.Sprintf(metaFilepathTpl, address))
 	if err != nil {
-		return false, fmt.Errorf("failed to check PDV existatnce in storage: %w", err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return api.PDVMeta{}, ErrNotFound
+		}
+		return api.PDVMeta{}, fmt.Errorf("failed to get meta from storage: %w", err)
 	}
 
-	return exists, nil
+	var m api.PDVMeta
+	if err := json.NewDecoder(r).Decode(&m); err != nil {
+		return api.PDVMeta{}, fmt.Errorf("failed to unmarshal meta: %w", err)
+	}
+
+	return m, nil
+}
+
+func getMeta(p schema.PDV) api.PDVMeta {
+	t := make(map[schema.PDVType]uint16)
+
+	for _, v := range p.PDV {
+		switch p.Version {
+		case schema.PDVV1:
+			o := v.(*schema.PDVObjectV1) // nolint:errcheck
+			for _, d := range o.Data {
+				t[d.Type()] = t[d.Type()] + 1
+			}
+		default:
+			continue
+		}
+	}
+
+	return api.PDVMeta{ObjectTypes: t}
 }

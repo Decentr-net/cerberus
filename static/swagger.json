@@ -137,13 +137,15 @@
             }
           }
         }
-      },
-      "head": {
+      }
+    },
+    "/pdv/{address}/meta": {
+      "get": {
         "tags": [
           "Cerberus"
         ],
-        "summary": "Checks if PDV exists in storage.",
-        "operationId": "DoesPDVExist",
+        "summary": "Return PDVs meta.",
+        "operationId": "GetPDVMeta",
         "parameters": [
           {
             "type": "string",
@@ -155,7 +157,7 @@
         ],
         "responses": {
           "200": {
-            "description": "PDV exists"
+            "$ref": "#/definitions/PDVMeta"
           },
           "400": {
             "description": "bad request",
@@ -216,7 +218,7 @@
       "in": "header"
     },
     "signature": {
-      "description": "Signature of request digest.\nGetMessageToSign is sha256 sum of request: {body as is}+{request uri}.\nFor example:\n   Private key in hex: cfe43c70347c7e39084612d9448f3ed86ed733a33a67de35c7e335b3c4edc37d\n   Request url: http://localhost/v1/pdv\n   Body: {\"some\":\"file\"}\n   Digest will be made from `{\"some\":\"file\"}/v1/pdv`\n   Digest in hex:\n     4a1084d05820d60aee9ce600227ca2290ef63e80e5227215b58b023ec6876799\n   Signature in hex:\n     28eff4676d7839648dda925ba92d447dd7552e177a302f32681fc76278088f9f1fb98051666aa02dd80f7d9b7c01d42ea1abbb3e65de8f1fd04be7b747fb0692",
+      "description": "Signature of request digest.\nDigest is sha256 sum of request: {body as is}+{request uri}.\nFor example:\n   Private key in hex: cfe43c70347c7e39084612d9448f3ed86ed733a33a67de35c7e335b3c4edc37d\n   Request url: http://localhost/v1/pdv\n   Body: {\"some\":\"file\"}\n   Digest will be made from `{\"some\":\"file\"}/v1/pdv`\n   Digest in hex:\n     4a1084d05820d60aee9ce600227ca2290ef63e80e5227215b58b023ec6876799\n   Signature in hex:\n     28eff4676d7839648dda925ba92d447dd7552e177a302f32681fc76278088f9f1fb98051666aa02dd80f7d9b7c01d42ea1abbb3e65de8f1fd04be7b747fb0692",
       "type": "apiKey",
       "name": "Signature",
       "in": "header"

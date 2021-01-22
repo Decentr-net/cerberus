@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -20,43 +19,47 @@ var testAddress = "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165da
 
 var rawPDV = []byte(`{
     "version": "v1",
-	"pdv": {
-	    "domain": "decentr.net",
-	    "path": "/",
-		"data": [
-	        {
-	            "version": "v1",
-	            "type": "cookie",
-	            "name": "my cookie",
-	            "value": "some value",
-	            "domain": "*",
-	            "host_only": true,
-	            "path": "*",
-	            "secure": true,
-	            "same_site": "None",
-	            "expiration_date": 1861920000
-	        }
-	    ]
-	}
+	"pdv": [
+		{
+		    "domain": "decentr.net",
+		    "path": "/",
+			"data": [
+		        {
+		            "version": "v1",
+		            "type": "cookie",
+		            "name": "my cookie",
+		            "value": "some value",
+		            "domain": "*",
+		            "host_only": true,
+		            "path": "*",
+		            "secure": true,
+		            "same_site": "None",
+		            "expiration_date": 1861920000
+		        }
+		    ]
+		}
+	]
 }`)
 
 var pdv = schema.PDV{
-	Version: schema.PDVv1,
-	PDV: &schema.PDVObjectV1{
-		PDVObjectMetaV1: schema.PDVObjectMetaV1{
-			Host: "decentr.net",
-			Path: "/",
-		},
-		Data: []schema.PDVData{
-			&schema.PDVDataCookieV1{
-				Name:           "my cookie",
-				Value:          "some value",
-				Domain:         "*",
-				HostOnly:       true,
-				Path:           "*",
-				Secure:         true,
-				SameSite:       "None",
-				ExpirationDate: 1861920000,
+	Version: schema.PDVV1,
+	PDV: []schema.PDVObject{
+		&schema.PDVObjectV1{
+			PDVObjectMetaV1: schema.PDVObjectMetaV1{
+				Host: "decentr.net",
+				Path: "/",
+			},
+			Data: []schema.PDVData{
+				&schema.PDVDataCookieV1{
+					Name:           "my cookie",
+					Value:          "some value",
+					Domain:         "*",
+					HostOnly:       true,
+					Path:           "*",
+					Secure:         true,
+					SameSite:       "None",
+					ExpirationDate: 1861920000,
+				},
 			},
 		},
 	},
@@ -128,7 +131,7 @@ func TestClient_SavePDV(t *testing.T) {
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			address, err := c.SavePDV(context.Background(), &pdv)
+			address, err := c.SavePDV(context.Background(), pdv)
 			assert.Equal(t, tc.address, address)
 
 			if tc.err == "" {
@@ -140,34 +143,43 @@ func TestClient_SavePDV(t *testing.T) {
 	}
 }
 
-func TestClient_DoesPDVExist(t *testing.T) {
+func TestClient_GetPDVMeta(t *testing.T) {
 	tt := []struct {
-		name string
-		code int
+		name     string
+		code     int
+		response []byte
 
-		exists bool
-		err    string
+		meta PDVMeta
+		err  string
 	}{
 		{
 			name: "success",
 			code: http.StatusOK,
+			response: []byte(`{
+	"object_types": {
+		"cookie": 5,
+		"login_cookie": 1
+	}
+}
+`),
 
-			exists: true,
-			err:    "",
+			meta: PDVMeta{ObjectTypes: map[schema.PDVType]uint16{
+				schema.PDVCookieType:      5,
+				schema.PDVLoginCookieType: 1,
+			}},
+			err: "",
 		},
 		{
 			name: "false",
 			code: http.StatusNotFound,
 
-			exists: false,
-			err:    "",
+			err: "failed to make GetPDVMeta request: not found",
 		},
 		{
 			name: "unknown error",
 			code: http.StatusInternalServerError,
 
-			exists: false,
-			err:    "failed to make DoesPDVExist request: request failed with status 500",
+			err: "failed to make GetPDVMeta request: request failed with status 500",
 		},
 	}
 
@@ -176,12 +188,12 @@ func TestClient_DoesPDVExist(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := startServer(t, tc.code, nil, fmt.Sprintf("/v1/pdv/%s", testAddress), nil)
+			p := startServer(t, tc.code, tc.response, fmt.Sprintf("/v1/pdv/%s/meta", testAddress), nil)
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			exists, err := c.DoesPDVExist(context.Background(), testAddress)
-			assert.Equal(t, tc.exists, exists)
+			m, err := c.GetPDVMeta(context.Background(), testAddress)
+			assert.Equal(t, tc.meta, m)
 
 			if tc.err == "" {
 				assert.NoError(t, err)
@@ -198,15 +210,15 @@ func TestClient_ReceivePDV(t *testing.T) {
 		code     int
 		response []byte
 
-		data json.RawMessage
+		data schema.PDV
 		err  string
 	}{
 		{
 			name:     "success",
 			code:     http.StatusOK,
-			response: []byte(`{"json":"yes"}`),
+			response: rawPDV,
 
-			data: json.RawMessage(`{"json":"yes"}`),
+			data: pdv,
 			err:  "",
 		},
 		{
@@ -214,7 +226,7 @@ func TestClient_ReceivePDV(t *testing.T) {
 			code:     http.StatusNotFound,
 			response: []byte(`{"error":"not found"}`),
 
-			data: nil,
+			data: schema.PDV{},
 			err:  "failed to make ReceivePDV request: not found",
 		},
 	}

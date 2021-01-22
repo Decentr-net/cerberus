@@ -26,7 +26,7 @@ import (
 	"github.com/Decentr-net/cerberus/internal/storage/s3"
 )
 
-// nolint:lll,gochecknoglobals
+// nolint:lll,gochecknoglobals,maligned
 var opts = struct {
 	Host        string `long:"http.host" env:"HTTP_HOST" default:"localhost" description:"IP to listen on"`
 	Port        int    `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
@@ -41,7 +41,9 @@ var opts = struct {
 	S3UseSSL          bool   `long:"s3.use-ssl" env:"S3_USE_SSL" description:"use ssl for S3 storage connection'"`
 	S3Bucket          string `long:"s3.bucket" env:"S3_BUCKET" default:"cerberus" description:"S3 bucket for Cerberus files'"`
 
-	EncryptKey string `long:"encrypt-key" env:"ENCRYPT_KEY" description:"encrypt key in hex which will be used for encrypting and decrypting user's data"`
+	MinPDVCount uint16 `long:"min-pdv-count" env:"MIN_PDV_COUNT" default:"100" description:"minimal count of pdv to save"`
+	MaxPDVCount uint16 `long:"max-pdv-count" env:"MAX_PDV_COUNT" default:"100" description:"maximal count of pdv to save"`
+	EncryptKey  string `long:"encrypt-key" env:"ENCRYPT_KEY" description:"encrypt key in hex which will be used for encrypting and decrypting user's data"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 }{}
@@ -102,7 +104,8 @@ func main() {
 		logrus.WithError(err).Fatal("failed to create storage")
 	}
 
-	server.SetupRouter(service.New(sio.NewCrypto(mustExtractEncryptKey()), storage), r, opts.MaxBodySize)
+	server.SetupRouter(service.New(sio.NewCrypto(mustExtractEncryptKey()), storage), r,
+		opts.MaxBodySize, opts.MinPDVCount, opts.MaxPDVCount)
 	health.SetupRouter(r, storage)
 
 	srv := http.Server{

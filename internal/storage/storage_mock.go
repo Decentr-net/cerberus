@@ -76,18 +76,3 @@ func (mr *MockStorageMockRecorder) Write(ctx, data, size, path interface{}) *gom
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockStorage)(nil).Write), ctx, data, size, path)
 }
-
-// DoesExist mocks base method
-func (m *MockStorage) DoesExist(ctx context.Context, path string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DoesExist", ctx, path)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DoesExist indicates an expected call of DoesExist
-func (mr *MockStorageMockRecorder) DoesExist(ctx, path interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesExist", reflect.TypeOf((*MockStorage)(nil).DoesExist), ctx, path)
-}

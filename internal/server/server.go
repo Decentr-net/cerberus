@@ -74,11 +74,14 @@ func init() { // nolint:gochecknoinits
 type server struct {
 	s service.Service
 
-	pdvExistenceCache *lru.ARCCache
+	pdvMetaCache *lru.ARCCache
+
+	minPDVCount uint16
+	maxPDVCount uint16
 }
 
 // SetupRouter setups handlers to chi router.
-func SetupRouter(s service.Service, r chi.Router, maxBodySize int64) {
+func SetupRouter(s service.Service, r chi.Router, maxBodySize int64, minPDVCount, maxPDVCount uint16) {
 	r.Use(
 		swaggerMiddleware,
 		loggerMiddleware,
@@ -94,13 +97,16 @@ func SetupRouter(s service.Service, r chi.Router, maxBodySize int64) {
 	}
 
 	srv := server{
-		s:                 s,
-		pdvExistenceCache: c,
+		s:            s,
+		pdvMetaCache: c,
+
+		minPDVCount: minPDVCount,
+		maxPDVCount: maxPDVCount,
 	}
 
 	r.Post("/v1/pdv", srv.savePDVHandler)
 	r.Get("/v1/pdv/{address}", srv.receivePDVHandler)
-	r.Head("/v1/pdv/{address}", srv.doesPDVExistHandler)
+	r.Get("/v1/pdv/{address}/meta", srv.getPDVMetaHandler)
 }
 
 func getLogger(ctx context.Context) logrus.FieldLogger {

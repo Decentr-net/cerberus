@@ -150,21 +150,3 @@ func TestS3_Write_Read(t *testing.T) {
 
 	assert.NoError(t, rc.Close())
 }
-
-func TestS3_DoesExist(t *testing.T) {
-	s, err := NewStorage(c, bucket)
-	require.NoError(t, err)
-
-	exists, err := s.DoesExist(ctx, testFile) // text file with "example" word
-	assert.NoError(t, err)
-	assert.True(t, exists)
-}
-
-func TestS3_DoesExist_NotFound(t *testing.T) {
-	s, err := NewStorage(c, bucket)
-	require.NoError(t, err)
-
-	exists, err := s.DoesExist(ctx, "not_found")
-	assert.Nil(t, err)
-	assert.False(t, exists)
-}

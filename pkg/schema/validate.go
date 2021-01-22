@@ -12,6 +12,21 @@ type Validate interface {
 }
 
 // Validate ...
+func (p *PDV) Validate() bool {
+	if _, ok := pdvObjectSchemes[p.Version]; !ok {
+		return false
+	}
+
+	for _, v := range p.PDV {
+		if !v.Validate() {
+			return false
+		}
+	}
+
+	return len(p.PDV) > 0
+}
+
+// Validate ...
 func (o *PDVObjectV1) Validate() bool {
 	if !valid.IsURL(fmt.Sprintf("%s/%s", o.Host, o.Path)) {
 		return false
@@ -26,4 +41,9 @@ func (d *PDVDataCookieV1) Validate() bool {
 	}
 
 	return true
+}
+
+// Validate ...
+func (d *PDVDataLoginCookieV1) Validate() bool {
+	return (*PDVDataCookieV1)(d).Validate()
 }
