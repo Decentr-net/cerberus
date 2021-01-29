@@ -120,14 +120,8 @@ func getMeta(p schema.PDV) api.PDVMeta {
 	t := make(map[schema.PDVType]uint16)
 
 	for _, v := range p.PDV {
-		switch p.Version {
-		case schema.PDVV1:
-			o := v.(*schema.PDVObjectV1) // nolint:errcheck
-			for _, d := range o.Data {
-				t[d.Type()] = t[d.Type()] + 1
-			}
-		default:
-			continue
+		for _, d := range v.GetData() {
+			t[d.Type()] = t[d.Type()] + 1
 		}
 	}
 

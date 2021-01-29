@@ -20,26 +20,25 @@ import (
 
 // savePDVHandler encrypts and puts PDV data into storage.
 func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /pdv Cerberus SavePDV
+	// swagger:operation POST /pdv PDV Save
 	//
-	// Encrypts and puts PDV data into storage.
+	// Encrypts and saves PDV
 	//
 	// ---
 	// security:
 	// - public_key: []
-	// - signature: []
+	//   signature: []
 	// produces:
 	// - application/json
 	// consumes:
-	// - application/octet-stream
+	// - application/json
 	// parameters:
 	// - name: request
-	//   description: file's raw bytes
+	//   description: batch of pdv
 	//   in: body
 	//   required: true
 	//   schema:
-	//     type: string
-	//     format: binary
+	//     "$ref": "#/definitions/PDV"
 	// responses:
 	//   '201':
 	//     description: pdv was put into storage
@@ -107,19 +106,18 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	writeOK(w, http.StatusCreated, api.SavePDVResponse{Address: filepath})
 }
 
-// receivePDVHandler gets pdv from storage and decrypts it.
-func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /pdv/{address} Cerberus ReceivePDV
+// getPDVHandler gets pdv from storage and decrypts it.
+func (s *server) getPDVHandler(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /pdv/{address} PDV Get
 	//
-	// Gets and decrypts PDV from storage.
+	// Returns plain PDV
 	//
 	// ---
 	// produces:
-	// - application/octet-stream
 	// - application/json
 	// security:
 	// - public_key: []
-	// - signature: []
+	//   signature: []
 	// parameters:
 	// - name: address
 	//   description: PDV's address
@@ -128,9 +126,9 @@ func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
 	//   type: string
 	// responses:
 	//   '200':
-	//     description: PDV from storage
+	//     description: PDV
 	//     schema:
-	//       type: file
+	//       "$ref": "#/definitions/PDV"
 	//   '401':
 	//     description: signature wasn't verified
 	//     schema:
@@ -184,9 +182,11 @@ func (s *server) receivePDVHandler(w http.ResponseWriter, r *http.Request) {
 
 // getPDVMetaHandler returns PDVs meta by address.
 func (s *server) getPDVMetaHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /pdv/{address}/meta Cerberus GetPDVMeta
+	// swagger:operation GET /pdv/{address}/meta PDV GetMeta
 	//
-	// Return PDVs meta.
+	// Get meta
+	//
+	// Returns metadata of PDV
 	//
 	// ---
 	// parameters:
@@ -197,11 +197,11 @@ func (s *server) getPDVMetaHandler(w http.ResponseWriter, r *http.Request) {
 	//   type: string
 	// responses:
 	//   '200':
-	//     "$ref": "#/definitions/PDVMeta"
+	//     description: metadata of pdv
+	//     schema:
+	//       "$ref": "#/definitions/PDVMeta"
 	//   '404':
 	//     description: PDV doesn't exist
-	//   '401':
-	//     description: signature wasn't verified
 	//     schema:
 	//       "$ref": "#/definitions/Error"
 	//   '400':

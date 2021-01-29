@@ -38,16 +38,19 @@ type Cerberus interface {
 }
 
 // Error ...
+// swagger:model Error
 type Error struct {
 	Error string `json:"error"`
 }
 
 // SavePDVResponse ...
+// swagger:model SavePDVResponse
 type SavePDVResponse struct {
 	Address string `json:"address"`
 }
 
 // PDVMeta contains info about PDV.
+// swagger:model PDVMeta
 type PDVMeta struct {
 	// ObjectTypes represents how much certain pdv data pdv contains.
 	ObjectTypes map[schema.PDVType]uint16 `json:"object_types"`

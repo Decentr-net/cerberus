@@ -260,7 +260,7 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 				})
 			})
 			s := server{s: srv}
-			router.Get("/v1/pdv/{address}", s.receivePDVHandler)
+			router.Get("/v1/pdv/{address}", s.getPDVHandler)
 
 			router.ServeHTTP(w, r)
 

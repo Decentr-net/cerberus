@@ -34,7 +34,7 @@ var pdv = schema.PDV{
 				Path: "/",
 			},
 			Data: []schema.PDVData{
-				&schema.PDVDataCookieV1{
+				&schema.PDVDataCookie{
 					Name:           "my cookie",
 					Value:          "some value",
 					Domain:         "*",

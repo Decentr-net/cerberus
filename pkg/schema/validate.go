@@ -33,17 +33,3 @@ func (o *PDVObjectV1) Validate() bool {
 	}
 	return len(o.Data) > 0
 }
-
-// Validate ...
-func (d *PDVDataCookieV1) Validate() bool {
-	if d.Name == "" || d.Value == "" {
-		return false
-	}
-
-	return true
-}
-
-// Validate ...
-func (d *PDVDataLoginCookieV1) Validate() bool {
-	return (*PDVDataCookieV1)(d).Validate()
-}

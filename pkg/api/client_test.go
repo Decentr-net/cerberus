@@ -25,7 +25,6 @@ var rawPDV = []byte(`{
 		    "path": "/",
 			"data": [
 		        {
-		            "version": "v1",
 		            "type": "cookie",
 		            "name": "my cookie",
 		            "value": "some value",
@@ -50,7 +49,7 @@ var pdv = schema.PDV{
 				Path: "/",
 			},
 			Data: []schema.PDVData{
-				&schema.PDVDataCookieV1{
+				&schema.PDVDataCookie{
 					Name:           "my cookie",
 					Value:          "some value",
 					Domain:         "*",

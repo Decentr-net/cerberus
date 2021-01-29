@@ -17,7 +17,6 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 	        "path": "/",
 		    "data": [
 		        {
-		            "version": "v1",
 		            "type": "cookie",
 		            "name": "my cookie",
 		            "value": "some value",
@@ -29,7 +28,6 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 		            "expiration_date": 1861920000
 		        },
 		        {
-		            "version": "v1",
 		            "type": "login_cookie",
 		            "name": "my cookie 2",
 		            "value": "some value 2",
@@ -47,7 +45,6 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 	        "path": "/",
 		    "data": [
 		        {
-		            "version": "v1",
 		            "type": "cookie",
 		            "name": "my cookie",
 		            "value": "some value",
