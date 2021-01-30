@@ -2,6 +2,7 @@ package schema
 
 import (
 	"encoding/json"
+	"errors"
 	"reflect"
 )
 
@@ -102,4 +103,16 @@ func (d PDVDataLoginCookie) MarshalJSON() ([]byte, error) { // nolint:gocritic
 // Validate ...
 func (d *PDVDataLoginCookie) Validate() bool {
 	return (*PDVDataCookie)(d).Validate()
+}
+
+// UnmarshalText ...
+func (t *PDVType) UnmarshalText(b []byte) error {
+	s := PDVType(b)
+	switch s {
+	case PDVCookieType, PDVLoginCookieType:
+	default:
+		return errors.New("unknown PDVType")
+	}
+	*t = s
+	return nil
 }

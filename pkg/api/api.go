@@ -54,6 +54,7 @@ type SavePDVResponse struct {
 type PDVMeta struct {
 	// ObjectTypes represents how much certain pdv data pdv contains.
 	ObjectTypes map[schema.PDVType]uint16 `json:"object_types"`
+	Reward      uint64                    `json:"reward"`
 }
 
 // IsAddressValid check is address is matching with regexp.
