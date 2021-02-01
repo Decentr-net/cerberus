@@ -1,6 +1,6 @@
 module github.com/Decentr-net/cerberus
 
-go 1.14
+go 1.15
 
 require (
 	github.com/Decentr-net/logrus v0.7.1
