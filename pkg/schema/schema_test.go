@@ -8,63 +8,63 @@ import (
 )
 
 func TestPDV_UnmarshalJSON(t *testing.T) {
-	tt := []struct {
-		name        string
-		data        string
-		unmarshaled bool
-	}{
-		{
-			name: "cookie",
-			data: `{
+	data := `
+{
     "version": "v1",
-	"pdv": {
-	    "domain": "decentr.net",
-	    "path": "/",
-	    "data": [
-	        {
-	            "version": "v1",
-	            "type": "cookie",
-	            "name": "my cookie",
-	            "value": "some value",
-	            "domain": "*",
-	            "host_only": true,
-	            "path": "*",
-	            "secure": true,
-	            "same_site": "None",
-	            "expiration_date": 1861920000
-	        },
-	        {
-	            "version": "v1",
-	            "type": "cookie",
-	            "name": "my cookie 2",
-	            "value": "some value 2",
-	            "domain": "*",
-	            "host_only": true,
-	            "path": "*",
-	            "secure": true,
-	            "same_site": "None",
-	            "expiration_date": 1861920000
-	        }
-	    ]
-	}
-}`,
-			unmarshaled: true,
+	"pdv": [
+		{
+	        "domain": "decentr.net",
+	        "path": "/",
+		    "data": [
+		        {
+		            "type": "cookie",
+		            "name": "my cookie",
+		            "value": "some value",
+		            "domain": "*",
+		            "host_only": true,
+		            "path": "*",
+		            "secure": true,
+		            "same_site": "None",
+		            "expiration_date": 1861920000
+		        },
+		        {
+		            "type": "login_cookie",
+		            "name": "my cookie 2",
+		            "value": "some value 2",
+		            "domain": "*",
+		            "host_only": true,
+		            "path": "*",
+		            "secure": true,
+		            "same_site": "None",
+		            "expiration_date": 1861920000
+		        }
+		    ]
 		},
-	}
+		{
+	        "domain": "mydomain.net",
+	        "path": "/",
+		    "data": [
+		        {
+		            "type": "cookie",
+		            "name": "my cookie",
+		            "value": "some value",
+		            "domain": "*",
+		            "host_only": true,
+		            "path": "*",
+		            "secure": true,
+		            "same_site": "None",
+		            "expiration_date": 1861920000
+		        }
+		    ]
+		}
+	]
+}`
 
-	for i := range tt {
-		tc := tt[i]
+	var p PDV
+	require.NoError(t, json.Unmarshal([]byte(data), &p))
 
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+	d, err := json.Marshal(p)
+	require.NoError(t, err)
 
-			var p PDV
-			require.Equal(t, tc.unmarshaled, json.Unmarshal([]byte(tc.data), &p) == nil)
-
-			d, err := json.Marshal(p)
-			require.NoError(t, err)
-
-			require.JSONEq(t, tc.data, string(d))
-		})
-	}
+	require.JSONEq(t, data, string(d))
 }

@@ -21,7 +21,7 @@ MOCKGEN_NAME := mockgen
 MOCKGEN_VERSION := v1.4.3
 
 SWAGGER_NAME := swagger
-SWAGGER_VERSION := v0.25.0
+SWAGGER_VERSION := v0.26.0
 
 default: build
 
@@ -125,9 +125,9 @@ check-mockgen-version:
 	fi
 
 .PHONY: check-swagger-version
-check-swagger-version: ACTUAL_SWAGGER_VERSION := $(shell $(SWAGGER_NAME) version 2>/dev/null)
+check-swagger-version: ACTUAL_SWAGGER_VERSION := $(shell $(SWAGGER_NAME) version 2>/dev/null | grep version | cut -c 10-17)
 # hack version, see https://github.com/go-swagger/go-swagger/issues/1712#issuecomment-422981313
-check-swagger-version: WANT_SWAGGER_VERSION := dev
+check-swagger-version: WANT_SWAGGER_VERSION := $(SWAGGER_VERSION)
 check-swagger-version:
 	$(V) [ -z $(ACTUAL_SWAGGER_VERSION) ] && \
 	 echo 'Swagger is not installed, run `make swagger-install`' && \
@@ -141,7 +141,7 @@ check-swagger-version:
 	fi
 
 .PHONY: check-all
-check-all: check-swagger-version check-mockgen-version check-swagger-version
+check-all: check-swagger-version check-mockgen-version
 
 .PHONY: install-all
 install-all: install-linter install-mockgen install-swagger

@@ -6,6 +6,8 @@ package service
 
 import (
 	context "context"
+	api "github.com/Decentr-net/cerberus/pkg/api"
+	schema "github.com/Decentr-net/cerberus/pkg/schema"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,17 +36,17 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // SavePDV mocks base method
-func (m *MockService) SavePDV(ctx context.Context, data []byte, filename string) error {
+func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, filename string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePDV", ctx, data, filename)
+	ret := m.ctrl.Call(m, "SavePDV", ctx, p, filename)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SavePDV indicates an expected call of SavePDV
-func (mr *MockServiceMockRecorder) SavePDV(ctx, data, filename interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) SavePDV(ctx, p, filename interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePDV", reflect.TypeOf((*MockService)(nil).SavePDV), ctx, data, filename)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePDV", reflect.TypeOf((*MockService)(nil).SavePDV), ctx, p, filename)
 }
 
 // ReceivePDV mocks base method
@@ -62,17 +64,17 @@ func (mr *MockServiceMockRecorder) ReceivePDV(ctx, address interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceivePDV", reflect.TypeOf((*MockService)(nil).ReceivePDV), ctx, address)
 }
 
-// DoesPDVExist mocks base method
-func (m *MockService) DoesPDVExist(ctx context.Context, address string) (bool, error) {
+// GetPDVMeta mocks base method
+func (m *MockService) GetPDVMeta(ctx context.Context, address string) (api.PDVMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DoesPDVExist", ctx, address)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "GetPDVMeta", ctx, address)
+	ret0, _ := ret[0].(api.PDVMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// DoesPDVExist indicates an expected call of DoesPDVExist
-func (mr *MockServiceMockRecorder) DoesPDVExist(ctx, address interface{}) *gomock.Call {
+// GetPDVMeta indicates an expected call of GetPDVMeta
+func (mr *MockServiceMockRecorder) GetPDVMeta(ctx, address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesPDVExist", reflect.TypeOf((*MockService)(nil).DoesPDVExist), ctx, address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVMeta", reflect.TypeOf((*MockService)(nil).GetPDVMeta), ctx, address)
 }

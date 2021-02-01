@@ -6,6 +6,61 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestPDV_Validate(t *testing.T) {
+	o := PDVObjectV1{
+		PDVObjectMetaV1: PDVObjectMetaV1{
+			Host: "decentr.net",
+			Path: "path",
+		},
+		Data: []PDVData{
+			&PDVDataCookie{
+				Name:  "name",
+				Value: "value",
+			},
+		},
+	}
+
+	tt := []struct {
+		name  string
+		p     PDV
+		valid bool
+	}{
+		{
+			name: "valid",
+			p: PDV{
+				Version: PDVV1,
+				PDV:     []PDVObject{&o},
+			},
+			valid: true,
+		},
+		{
+			name: "wrong_version",
+			p: PDV{
+				Version: "wrong",
+				PDV:     []PDVObject{&o},
+			},
+			valid: false,
+		},
+		{
+			name: "empty_data",
+			p: PDV{
+				Version: PDVV1,
+				PDV:     []PDVObject{},
+			},
+			valid: false,
+		},
+	}
+
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tc.valid, tc.p.Validate())
+		})
+	}
+}
+
 func TestPDVObjectV1_Validate(t *testing.T) {
 	tt := []struct {
 		name  string
@@ -20,7 +75,7 @@ func TestPDVObjectV1_Validate(t *testing.T) {
 					Path: "path",
 				},
 				Data: []PDVData{
-					&PDVDataCookieV1{
+					&PDVDataCookie{
 						Name:  "name",
 						Value: "value",
 					},
@@ -36,7 +91,7 @@ func TestPDVObjectV1_Validate(t *testing.T) {
 					Path: "/path",
 				},
 				Data: []PDVData{
-					&PDVDataCookieV1{
+					&PDVDataCookie{
 						Name:  "name",
 						Value: "value",
 					},
@@ -52,7 +107,7 @@ func TestPDVObjectV1_Validate(t *testing.T) {
 					Path: "",
 				},
 				Data: []PDVData{
-					&PDVDataCookieV1{
+					&PDVDataCookie{
 						Name:  "name",
 						Value: "value",
 					},
@@ -68,7 +123,7 @@ func TestPDVObjectV1_Validate(t *testing.T) {
 					Path: "",
 				},
 				Data: []PDVData{
-					&PDVDataCookieV1{
+					&PDVDataCookie{
 						Name:  "name",
 						Value: "value",
 					},
@@ -77,7 +132,7 @@ func TestPDVObjectV1_Validate(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "empty data",
+			name: "empty Data",
 			o: PDVObjectV1{
 				PDVObjectMetaV1: PDVObjectMetaV1{
 					Host: "decentr.net",
@@ -95,7 +150,7 @@ func TestPDVObjectV1_Validate(t *testing.T) {
 					Path: "path",
 				},
 				Data: []PDVData{
-					&PDVDataCookieV1{
+					&PDVDataCookie{
 						Name:  "name",
 						Value: "value",
 					},
@@ -111,7 +166,7 @@ func TestPDVObjectV1_Validate(t *testing.T) {
 					Path: "path",
 				},
 				Data: []PDVData{
-					&PDVDataCookieV1{
+					&PDVDataCookie{
 						Name:  "name",
 						Value: "value",
 					},
@@ -127,7 +182,7 @@ func TestPDVObjectV1_Validate(t *testing.T) {
 					Path: "path",
 				},
 				Data: []PDVData{
-					&PDVDataCookieV1{
+					&PDVDataCookie{
 						Name:  "name",
 						Value: "value",
 					},
@@ -143,7 +198,7 @@ func TestPDVObjectV1_Validate(t *testing.T) {
 					Path: string([]byte{0x7f}),
 				},
 				Data: []PDVData{
-					&PDVDataCookieV1{
+					&PDVDataCookie{
 						Name:  "name",
 						Value: "value",
 					},
@@ -159,60 +214,6 @@ func TestPDVObjectV1_Validate(t *testing.T) {
 			t.Parallel()
 
 			assert.Equal(t, tc.valid, tc.o.Validate())
-		})
-	}
-}
-
-func TestPDVDataCookieV1_Validate(t *testing.T) {
-	tt := []struct {
-		name  string
-		c     PDVDataCookieV1
-		valid bool
-	}{
-		{
-			name: "valid",
-			c: PDVDataCookieV1{
-				Name:           "name",
-				Value:          "value",
-				Domain:         "decentr.net",
-				HostOnly:       true,
-				Path:           "*",
-				Secure:         true,
-				SameSite:       "*",
-				ExpirationDate: 123413412,
-			},
-			valid: true,
-		},
-		{
-			name: "valid minimal",
-			c: PDVDataCookieV1{
-				Name:  "name",
-				Value: "value",
-			},
-			valid: true,
-		},
-		{
-			name: "without name",
-			c: PDVDataCookieV1{
-				Value: "value",
-			},
-			valid: false,
-		},
-		{
-			name: "without value",
-			c: PDVDataCookieV1{
-				Name: "name",
-			},
-			valid: false,
-		},
-	}
-
-	for i := range tt {
-		tc := tt[i]
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			assert.Equal(t, tc.valid, tc.c.Validate())
 		})
 	}
 }

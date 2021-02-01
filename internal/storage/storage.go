@@ -20,5 +20,4 @@ type Storage interface {
 
 	Read(ctx context.Context, path string) (io.ReadCloser, error)
 	Write(ctx context.Context, data io.Reader, size int64, path string) error
-	DoesExist(ctx context.Context, path string) (bool, error)
 }

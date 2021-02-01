@@ -24,41 +24,42 @@ import (
 	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
-const testAddress = "e161f70a30964f22d7180bbf0fa7e87d1fa260e4-eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
+const testAddress = "e161f70a30964f22d7180bbf0fa7e87d1fa260e4-e28a9046f00164596e02bf45d719d292afbef285fe3198316c0f843cedd2d89a"
 
 var pdv = []byte(`{
     "version": "v1",
-	"pdv": {
-	    "domain": "decentr.net",
-	    "path": "/",
-	    "user_agent": "mac",
-	    "data": [
-	        {
-	            "version": "v1",
-	            "type": "cookie",
-	            "name": "my cookie",
-	            "value": "some value",
-	            "domain": "*",
-	            "host_only": true,
-	            "path": "*",
-	            "secure": true,
-	            "same_site": "None",
-	            "expiration_date": 1861920000
-	        },
-	        {
-	            "version": "v1",
-	            "type": "cookie",
-	            "name": "my cookie 2",
-	            "value": "some value 2",
-	            "domain": "*",
-	            "host_only": true,
-	            "path": "*",
-	            "secure": true,
-	            "same_site": "None",
-	            "expiration_date": 1861920000
-	        }
-	    ]
-	}
+	"pdv": [
+		{
+		    "domain": "decentr.net",
+		    "path": "/",
+		    "data": [
+		        {
+		            "version": "v1",
+		            "type": "cookie",
+		            "name": "my cookie",
+		            "value": "some value",
+		            "domain": "*",
+		            "host_only": true,
+		            "path": "*",
+		            "secure": true,
+		            "same_site": "None",
+		            "expiration_date": 1861920000
+		        },
+		        {
+		            "version": "v1",
+		            "type": "cookie",
+		            "name": "my cookie 2",
+		            "value": "some value 2",
+		            "domain": "*",
+		            "host_only": true,
+		            "path": "*",
+		            "secure": true,
+		            "same_site": "None",
+		            "expiration_date": 1861920000
+		        }
+		    ]
+		}
+	]
 }`)
 
 var errSkip = errors.New("fictive error")
@@ -72,9 +73,6 @@ func newTestParameters(t *testing.T, method string, uri string, body []byte) (*b
 	ctx := context.WithValue(context.Background(), logCtxKey{}, l)
 	r, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("http://localhost/%s", uri), bytes.NewReader(body))
 	require.NoError(t, err)
-
-	r.Header.Set("X-Forwarded-For", "1.2.3.4")
-	r.Header.Set("User-Agent", "mac")
 
 	pk := secp256k1.PrivKeySecp256k1{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31}
 	require.NoError(t, api.Sign(r, pk))
@@ -96,7 +94,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			reqBody: pdv,
 			err:     nil,
 			rcode:   http.StatusCreated,
-			rdata:   `{"address":"e161f70a30964f22d7180bbf0fa7e87d1fa260e4-57d274ad6d9226a499bc67cb67aa1770ad0f09df6014064035d77dd0d1ac2fb4"}`,
+			rdata:   `{"address":"e161f70a30964f22d7180bbf0fa7e87d1fa260e4-e28a9046f00164596e02bf45d719d292afbef285fe3198316c0f843cedd2d89a"}`,
 			rlog:    "",
 		},
 		{
@@ -116,20 +114,12 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			rlog:    "",
 		},
 		{
-			name: "invalid pdv",
-			reqBody: []byte(`{
-		   "version": "v1",
-		   "pdv": {
-		       "host": "decentr.net",
-				"path": "",
-		       "user_agent": "mac",
-		       "data": []
-		   }
-		}`),
-			err:   errSkip,
-			rcode: http.StatusBadRequest,
-			rdata: `{"error":"pdv data is invalid"}`,
-			rlog:  "",
+			name:    "invalid pdv",
+			reqBody: []byte(`{"version": "v1"}`),
+			err:     errSkip,
+			rcode:   http.StatusBadRequest,
+			rdata:   `{"error":"pdv data is invalid"}`,
+			rlog:    "",
 		},
 		{
 			name:    "internal error",
@@ -157,17 +147,13 @@ func TestServer_SavePDVHandler(t *testing.T) {
 				filepath, err := getPDVFilepath(r.Header.Get(api.PublicKeyHeader), tc.reqBody)
 				require.NoError(t, err)
 
-				srv.EXPECT().SavePDV(gomock.Any(), gomock.Any(), filepath).DoAndReturn(func(_ context.Context, d []byte, _ string) error {
-					var pdv schema.PDV
-					require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
-					var spdv serverPDV
-					require.NoError(t, json.Unmarshal(d, &spdv))
+				var pdv schema.PDV
+				require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
 
-					assert.Equal(t, pdv, spdv.UserData)
-					assert.Equal(t, metaPDVData{IP: "1.2.3.4", UserAgent: "mac"}, spdv.MetaData)
-
-					return tc.err
-				})
+				srv.EXPECT().SavePDV(gomock.Any(), pdv, filepath).Return(tc.err)
+				if tc.err == nil {
+					srv.EXPECT().GetPDVMeta(gomock.Any(), filepath).Return(api.PDVMeta{ObjectTypes: map[schema.PDVType]uint16{}}, nil)
+				}
 			}
 
 			router := chi.NewRouter()
@@ -180,7 +166,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			})
 			c, err := lru.NewARC(10)
 			require.NoError(t, err)
-			s := server{s: srv, pdvExistenceCache: c}
+			s := server{s: srv, pdvMetaCache: c, maxPDVCount: 100}
 			router.Post("/v1/pdv", s.savePDVHandler)
 
 			router.ServeHTTP(w, r)
@@ -274,7 +260,7 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 				})
 			})
 			s := server{s: srv}
-			router.Get("/v1/pdv/{address}", s.receivePDVHandler)
+			router.Get("/v1/pdv/{address}", s.getPDVHandler)
 
 			router.ServeHTTP(w, r)
 
@@ -285,11 +271,11 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 	}
 }
 
-func TestServer_DoesPDVExistHandler(t *testing.T) {
+func TestServer_GetPDVMeta(t *testing.T) {
 	tt := []struct {
 		name    string
 		address string
-		f       func(_ context.Context, address string) (bool, error)
+		f       func(_ context.Context, address string) (api.PDVMeta, error)
 		rcode   int
 		rdata   string
 		rlog    string
@@ -297,19 +283,21 @@ func TestServer_DoesPDVExistHandler(t *testing.T) {
 		{
 			name:    "exists",
 			address: testAddress,
-			f: func(_ context.Context, address string) (bool, error) {
-				return true, nil
+			f: func(_ context.Context, address string) (api.PDVMeta, error) {
+				return api.PDVMeta{ObjectTypes: map[schema.PDVType]uint16{schema.PDVCookieType: 1}}, nil
 			},
 			rcode: http.StatusOK,
+			rdata: `{"object_types":{"cookie": 1}}`,
 			rlog:  "",
 		},
 		{
 			name:    "doesn't exists",
 			address: testAddress,
-			f: func(_ context.Context, address string) (bool, error) {
-				return false, nil
+			f: func(_ context.Context, address string) (api.PDVMeta, error) {
+				return api.PDVMeta{}, service.ErrNotFound
 			},
 			rcode: http.StatusNotFound,
+			rdata: fmt.Sprintf(`{"error":"PDV '%s' not found"}`, testAddress),
 			rlog:  "",
 		},
 		{
@@ -323,8 +311,8 @@ func TestServer_DoesPDVExistHandler(t *testing.T) {
 		{
 			name:    "internal error",
 			address: testAddress,
-			f: func(_ context.Context, address string) (bool, error) {
-				return false, errors.New("test error")
+			f: func(_ context.Context, address string) (api.PDVMeta, error) {
+				return api.PDVMeta{}, errors.New("test error")
 			},
 			rcode: http.StatusInternalServerError,
 			rdata: `{"error":"internal error"}`,
@@ -337,7 +325,7 @@ func TestServer_DoesPDVExistHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			b, w, r := newTestParameters(t, http.MethodHead, fmt.Sprintf("v1/pdv/%s", tc.address), nil)
+			b, w, r := newTestParameters(t, http.MethodGet, fmt.Sprintf("v1/pdv/%s/meta", tc.address), nil)
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -345,7 +333,7 @@ func TestServer_DoesPDVExistHandler(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.f != nil {
-				srv.EXPECT().DoesPDVExist(gomock.Any(), tc.address).DoAndReturn(tc.f)
+				srv.EXPECT().GetPDVMeta(gomock.Any(), tc.address).DoAndReturn(tc.f).Times(1)
 			}
 
 			router := chi.NewRouter()
@@ -358,14 +346,24 @@ func TestServer_DoesPDVExistHandler(t *testing.T) {
 			})
 			c, err := lru.NewARC(10)
 			require.NoError(t, err)
-			s := server{s: srv, pdvExistenceCache: c}
-			router.Head("/v1/pdv/{address}", s.doesPDVExistHandler)
+			s := server{s: srv, pdvMetaCache: c}
+			router.Get("/v1/pdv/{address}/meta", s.getPDVMetaHandler)
 
 			router.ServeHTTP(w, r)
 
 			assert.True(t, strings.Contains(b.String(), tc.rlog))
 			assert.Equal(t, tc.rcode, w.Code)
-			assert.Equal(t, tc.rdata, w.Body.String())
+			assert.JSONEq(t, tc.rdata, w.Body.String())
+
+			// check cache
+			if tc.rcode == http.StatusOK {
+				_, w, r := newTestParameters(t, http.MethodGet, fmt.Sprintf("v1/pdv/%s/meta", tc.address), nil)
+
+				router.ServeHTTP(w, r)
+
+				assert.Equal(t, tc.rcode, w.Code)
+				assert.JSONEq(t, tc.rdata, w.Body.String())
+			}
 		})
 	}
 }

@@ -11,10 +11,6 @@
 //     Consumes:
 //     - application/json
 //
-//     Security:
-//     - public_key:
-//     - signature:
-//
 //     SecurityDefinitions:
 //     public_key:
 //          type: apiKey
@@ -26,17 +22,17 @@
 //          name: Signature
 //          in: header
 //          description: |-
-//            Signature of request digest.
-//            Digest is sha256 sum of request: {body as is}+{request uri}.
-//            For example:
-//               Private key in hex: cfe43c70347c7e39084612d9448f3ed86ed733a33a67de35c7e335b3c4edc37d
-//               Request url: http://localhost/v1/pdv
-//               Body: {"some":"file"}
-//               Digest will be made from `{"some":"file"}/v1/pdv`
-//               Digest in hex:
-//                 4a1084d05820d60aee9ce600227ca2290ef63e80e5227215b58b023ec6876799
-//               Signature in hex:
-//                 28eff4676d7839648dda925ba92d447dd7552e177a302f32681fc76278088f9f1fb98051666aa02dd80f7d9b7c01d42ea1abbb3e65de8f1fd04be7b747fb0692
+//            Signature of request digest.<br>
+//            Digest is sha256 sum of request: `{body as is}`+`{request uri}`.<br>
+//            For example:<br>
+//            Private key in hex: ```cfe43c70347c7e39084612d9448f3ed86ed733a33a67de35c7e335b3c4edc37d```<br>
+//            Request url: ```http://localhost/v1/pdv```<br>
+//            Body: ```{"some":"file"}```<br>
+//            Digest will be made from ```{"some":"file"}/v1/pdv```<br>
+//            Digest in hex:<br>
+//            ```4a1084d05820d60aee9ce600227ca2290ef63e80e5227215b58b023ec6876799```<br>
+//            Signature in hex:<br>
+//            ```28eff4676d7839648dda925ba92d447dd7552e177a302f32681fc76278088f9f1fb98051666aa02dd80f7d9b7c01d42ea1abbb3e65de8f1fd04be7b747fb0692```<br>
 //
 // swagger:meta
 package server
@@ -58,6 +54,7 @@ import (
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
+	_ "github.com/Decentr-net/cerberus/pkg/api/swagger" // import models to be generated into swagger.json
 )
 
 //go:generate swagger generate spec -t swagger -m -c . -o ../../static/swagger.json
@@ -74,11 +71,14 @@ func init() { // nolint:gochecknoinits
 type server struct {
 	s service.Service
 
-	pdvExistenceCache *lru.ARCCache
+	pdvMetaCache *lru.ARCCache
+
+	minPDVCount uint16
+	maxPDVCount uint16
 }
 
 // SetupRouter setups handlers to chi router.
-func SetupRouter(s service.Service, r chi.Router, maxBodySize int64) {
+func SetupRouter(s service.Service, r chi.Router, maxBodySize int64, minPDVCount, maxPDVCount uint16) {
 	r.Use(
 		swaggerMiddleware,
 		loggerMiddleware,
@@ -94,13 +94,16 @@ func SetupRouter(s service.Service, r chi.Router, maxBodySize int64) {
 	}
 
 	srv := server{
-		s:                 s,
-		pdvExistenceCache: c,
+		s:            s,
+		pdvMetaCache: c,
+
+		minPDVCount: minPDVCount,
+		maxPDVCount: maxPDVCount,
 	}
 
 	r.Post("/v1/pdv", srv.savePDVHandler)
-	r.Get("/v1/pdv/{address}", srv.receivePDVHandler)
-	r.Head("/v1/pdv/{address}", srv.doesPDVExistHandler)
+	r.Get("/v1/pdv/{address}", srv.getPDVHandler)
+	r.Get("/v1/pdv/{address}/meta", srv.getPDVMetaHandler)
 }
 
 func getLogger(ctx context.Context) logrus.FieldLogger {

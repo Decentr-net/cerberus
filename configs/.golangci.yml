@@ -7,6 +7,7 @@ run:
     - integration
   skip-dirs:
     - vendor
+    - pkg/api/swagger
   modules-download-mode: vendor
 
 output:
@@ -117,7 +118,7 @@ issues:
 
     - linters:
         - lll
-      text: "^//( )?go:generate "
+      source: "^// "
 
     - linters:
         - govet
