@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPDVDataCookieV1_Validate(t *testing.T) {
@@ -58,4 +59,10 @@ func TestPDVDataCookieV1_Validate(t *testing.T) {
 			assert.Equal(t, tc.valid, tc.c.Validate())
 		})
 	}
+}
+
+func TestPDVType_UnmarshalText(t *testing.T) {
+	var p PDVType
+	require.NoError(t, p.UnmarshalText([]byte(PDVCookieType)))
+	require.Error(t, p.UnmarshalText([]byte("wrong")))
 }

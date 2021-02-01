@@ -21,6 +21,9 @@ var ErrNotFound = errors.New("not found")
 
 const metaFilepathTpl = "%s/meta.json"
 
+// RewardMap contains dictionary with PDV types and rewards for them.
+type RewardMap map[schema.PDVType]uint64
+
 // Service interface provides service's logic's methods.
 type Service interface {
 	// SavePDV sends PDV to storage.
@@ -35,19 +38,22 @@ type Service interface {
 type service struct {
 	c crypto.Crypto
 	s storage.Storage
+
+	rewardMap RewardMap
 }
 
 // New returns new instance of service.
-func New(c crypto.Crypto, s storage.Storage) Service {
+func New(c crypto.Crypto, s storage.Storage, rewardMap RewardMap) Service {
 	return &service{
-		c: c,
-		s: s,
+		c:         c,
+		s:         s,
+		rewardMap: rewardMap,
 	}
 }
 
 // SavePDV sends PDV to storage.
 func (s *service) SavePDV(ctx context.Context, p schema.PDV, filepath string) error {
-	meta, err := json.Marshal(getMeta(p))
+	meta, err := json.Marshal(s.getMeta(p))
 	if err != nil {
 		return fmt.Errorf("failed to marshal pdv meta: %w", err)
 	}
@@ -116,14 +122,19 @@ func (s *service) GetPDVMeta(ctx context.Context, address string) (api.PDVMeta, 
 	return m, nil
 }
 
-func getMeta(p schema.PDV) api.PDVMeta {
+func (s *service) getMeta(p schema.PDV) api.PDVMeta {
 	t := make(map[schema.PDVType]uint16)
+	var reward uint64
 
 	for _, v := range p.PDV {
 		for _, d := range v.GetData() {
 			t[d.Type()] = t[d.Type()] + 1
+			reward += s.rewardMap[d.Type()]
 		}
 	}
 
-	return api.PDVMeta{ObjectTypes: t}
+	return api.PDVMeta{
+		ObjectTypes: t,
+		Reward:      reward,
+	}
 }

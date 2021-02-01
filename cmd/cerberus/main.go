@@ -5,10 +5,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
@@ -23,6 +26,7 @@ import (
 	"github.com/Decentr-net/cerberus/internal/health"
 	"github.com/Decentr-net/cerberus/internal/server"
 	"github.com/Decentr-net/cerberus/internal/service"
+	"github.com/Decentr-net/cerberus/internal/storage"
 	"github.com/Decentr-net/cerberus/internal/storage/s3"
 )
 
@@ -41,9 +45,10 @@ var opts = struct {
 	S3UseSSL          bool   `long:"s3.use-ssl" env:"S3_USE_SSL" description:"use ssl for S3 storage connection'"`
 	S3Bucket          string `long:"s3.bucket" env:"S3_BUCKET" default:"cerberus" description:"S3 bucket for Cerberus files'"`
 
-	MinPDVCount uint16 `long:"min-pdv-count" env:"MIN_PDV_COUNT" default:"100" description:"minimal count of pdv to save"`
-	MaxPDVCount uint16 `long:"max-pdv-count" env:"MAX_PDV_COUNT" default:"100" description:"maximal count of pdv to save"`
-	EncryptKey  string `long:"encrypt-key" env:"ENCRYPT_KEY" description:"encrypt key in hex which will be used for encrypting and decrypting user's data"`
+	RewardMapConfig string `long:"reward-map-config" env:"REWARD_MAP_CONFIG" default:"configs/rewards.yml" description:"path to yaml config with pdv rewards"`
+	MinPDVCount     uint16 `long:"min-pdv-count" env:"MIN_PDV_COUNT" default:"100" description:"minimal count of pdv to save"`
+	MaxPDVCount     uint16 `long:"max-pdv-count" env:"MAX_PDV_COUNT" default:"100" description:"maximal count of pdv to save"`
+	EncryptKey      string `long:"encrypt-key" env:"ENCRYPT_KEY" description:"encrypt key in hex which will be used for encrypting and decrypting user's data"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 }{}
@@ -104,7 +109,7 @@ func main() {
 		logrus.WithError(err).Fatal("failed to create storage")
 	}
 
-	server.SetupRouter(service.New(sio.NewCrypto(mustExtractEncryptKey()), storage), r,
+	server.SetupRouter(newServiceOrDie(storage), r,
 		opts.MaxBodySize, opts.MinPDVCount, opts.MaxPDVCount)
 	health.SetupRouter(r, storage)
 
@@ -136,6 +141,18 @@ func main() {
 	if err := gr.Wait(); err != nil && !errors.Is(err, errTerminated) && !errors.Is(err, http.ErrServerClosed) {
 		logrus.WithError(err).Fatal("service unexpectedly closed")
 	}
+}
+
+func newServiceOrDie(s storage.Storage) service.Service {
+	rewardMap := make(service.RewardMap)
+	b, err := ioutil.ReadFile(opts.RewardMapConfig)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to read reward map config")
+	}
+	if err := yaml.Unmarshal(b, rewardMap); err != nil {
+		logrus.WithError(err).Fatal("failed to unmarshal reward map config")
+	}
+	return service.New(sio.NewCrypto(mustExtractEncryptKey()), s, rewardMap)
 }
 
 func mustExtractEncryptKey() [32]byte {

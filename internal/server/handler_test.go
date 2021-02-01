@@ -284,10 +284,10 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			name:    "exists",
 			address: testAddress,
 			f: func(_ context.Context, address string) (api.PDVMeta, error) {
-				return api.PDVMeta{ObjectTypes: map[schema.PDVType]uint16{schema.PDVCookieType: 1}}, nil
+				return api.PDVMeta{ObjectTypes: map[schema.PDVType]uint16{schema.PDVCookieType: 1}, Reward: 2}, nil
 			},
 			rcode: http.StatusOK,
-			rdata: `{"object_types":{"cookie": 1}}`,
+			rdata: `{"object_types":{"cookie": 1}, "reward": 2}`,
 			rlog:  "",
 		},
 		{
