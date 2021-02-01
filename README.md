@@ -1,5 +1,5 @@
 # Cerberus
-![img](https://img.shields.io/docker/cloud/build/decentr/cerberus.svg)
+![img](https://img.shields.io/docker/cloud/build/decentr/cerberus.svg) ![img](https://img.shields.io/github/go-mod/go-version/Decentr-net/cerberus) ![img](https://img.shields.io/github/v/tag/Decentr-net/cerberus?label=version)
 
 Cerberus is a Decentr oracle. Cerberus stores and validates PDV (private data value).
 
