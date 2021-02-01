@@ -191,6 +191,23 @@
       },
       "x-go-package": "github.com/Decentr-net/cerberus/pkg/api"
     },
+    "ObjectTypes": {
+      "type": "object",
+      "title": "ObjectTypes contains count of each pdv type in batch.",
+      "properties": {
+        "cookie": {
+          "type": "integer",
+          "format": "uint16",
+          "x-go-name": "Cookie"
+        },
+        "login_cookie": {
+          "type": "integer",
+          "format": "uint16",
+          "x-go-name": "LoginCookie"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api/swagger"
+    },
     "PDV": {
       "type": "object",
       "properties": {
@@ -307,16 +324,15 @@
       "title": "PDVMeta contains info about PDV.",
       "properties": {
         "object_types": {
-          "description": "ObjectTypes represents how much certain pdv data pdv contains.",
-          "type": "object",
-          "additionalProperties": {
-            "type": "integer",
-            "format": "uint16"
-          },
-          "x-go-name": "ObjectTypes"
+          "$ref": "#/definitions/ObjectTypes"
+        },
+        "reward": {
+          "type": "integer",
+          "format": "uint64",
+          "x-go-name": "Reward"
         }
       },
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api"
+      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api/swagger"
     },
     "PDVObjectMetaV1": {
       "type": "object",

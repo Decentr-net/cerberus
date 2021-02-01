@@ -55,3 +55,17 @@ type PDVDataLoginCookie struct {
 
 	schema.PDVDataLoginCookie
 }
+
+// PDVMeta contains info about PDV.
+// swagger:model PDVMeta
+type PDVMeta struct {
+	// ObjectTypes represents how much certain pdv data pdv contains.
+	ObjectTypes ObjectTypes `json:"object_types"`
+	Reward      uint64      `json:"reward"`
+}
+
+// ObjectTypes contains count of each pdv type in batch.
+type ObjectTypes struct {
+	Cookie      uint16 `json:"cookie"`
+	LoginCookie uint16 `json:"login_cookie"`
+}

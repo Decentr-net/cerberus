@@ -50,7 +50,6 @@ type SavePDVResponse struct {
 }
 
 // PDVMeta contains info about PDV.
-// swagger:model PDVMeta
 type PDVMeta struct {
 	// ObjectTypes represents how much certain pdv data pdv contains.
 	ObjectTypes map[schema.PDVType]uint16 `json:"object_types"`
