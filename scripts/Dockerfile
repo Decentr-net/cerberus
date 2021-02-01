@@ -10,5 +10,5 @@ FROM alpine:${ALPINE_VERSION}
 RUN apk update && apk add ca-certificates
 COPY --from=0 /go/src/github.com/Decentr-net/cerberus/build/cerberus-linux-amd64 /cerberusd
 COPY static /static
-COPY config/rewards.yml /configs/rewards.yml
+COPY configs/rewards.yml /configs/rewards.yml
 ENTRYPOINT [ "/cerberusd" ]
