@@ -15,7 +15,8 @@ import (
 	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
-var testAddress = "eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3ae2fc6e298ed6-eb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3aeb5ae98721035133ec05dfe1052ddf78f57dc4b018cedb0c2726261d165dad3a"
+const testOwner = "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz"
+const testID = 1
 
 var rawPDV = []byte(`{
     "version": "v1",
@@ -92,32 +93,32 @@ func TestClient_SavePDV(t *testing.T) {
 		code     int
 		response []byte
 
-		address string
-		err     string
+		id  uint64
+		err string
 	}{
 		{
 			name:     "success",
 			code:     http.StatusCreated,
-			response: []byte(fmt.Sprintf(`{"address":"%s"}`, testAddress)),
+			response: []byte(fmt.Sprintf(`{"id":%d}`, testID)),
 
-			address: testAddress,
-			err:     "",
+			id:  testID,
+			err: "",
 		},
 		{
 			name:     "internal error",
 			code:     http.StatusUnauthorized,
 			response: []byte(`{"error":"something went wrong"}`),
 
-			address: "",
-			err:     "failed to make SavePDV request: request failed: something went wrong",
+			id:  0,
+			err: "failed to make SavePDV request: request failed: something went wrong",
 		},
 		{
 			name:     "bad request",
 			code:     http.StatusBadRequest,
 			response: []byte(`{"error":"something went wrong"}`),
 
-			address: "",
-			err:     "failed to make SavePDV request: invalid request",
+			id:  0,
+			err: "failed to make SavePDV request: invalid request",
 		},
 	}
 
@@ -130,8 +131,8 @@ func TestClient_SavePDV(t *testing.T) {
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			address, err := c.SavePDV(context.Background(), pdv)
-			assert.Equal(t, tc.address, address)
+			id, err := c.SavePDV(context.Background(), pdv)
+			assert.Equal(t, tc.id, id)
 
 			if tc.err == "" {
 				assert.NoError(t, err)
@@ -187,11 +188,11 @@ func TestClient_GetPDVMeta(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := startServer(t, tc.code, tc.response, fmt.Sprintf("/v1/pdv/%s/meta", testAddress), nil)
+			p := startServer(t, tc.code, tc.response, fmt.Sprintf("/v1/pdv/%s/%d/meta", testOwner, testID), nil)
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			m, err := c.GetPDVMeta(context.Background(), testAddress)
+			m, err := c.GetPDVMeta(context.Background(), testOwner, testID)
 			assert.Equal(t, tc.meta, m)
 
 			if tc.err == "" {
@@ -235,12 +236,60 @@ func TestClient_ReceivePDV(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := startServer(t, tc.code, tc.response, fmt.Sprintf("/v1/pdv/%s", testAddress), nil)
+			p := startServer(t, tc.code, tc.response, fmt.Sprintf("/v1/pdv/%s/%d", testOwner, testID), nil)
 
 			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
 
-			data, err := c.ReceivePDV(context.Background(), testAddress)
+			data, err := c.ReceivePDV(context.Background(), testOwner, testID)
 			assert.Equal(t, tc.data, data)
+
+			if tc.err == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.err)
+			}
+		})
+	}
+}
+
+func TestClient_ListPDV(t *testing.T) {
+	tt := []struct {
+		name     string
+		code     int
+		response []byte
+
+		list []uint64
+		err  string
+	}{
+		{
+			name:     "success",
+			code:     http.StatusOK,
+			response: []byte(`[1,2,3,4]`),
+
+			list: []uint64{1, 2, 3, 4},
+			err:  "",
+		},
+		{
+			name:     "error",
+			code:     http.StatusInternalServerError,
+			response: []byte(`{"error":"internal error"}`),
+
+			list: nil,
+			err:  "failed to make ListPDV request: request failed: internal error",
+		},
+	}
+
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			p := startServer(t, tc.code, tc.response, fmt.Sprintf("/v1/pdv/%s?from=0&limit=1000", testOwner), nil)
+
+			c := NewClient(fmt.Sprintf("http://localhost:%d", p), secp256k1.GenPrivKey()).(*client)
+
+			list, err := c.ListPDV(context.Background(), testOwner, 0, 1000)
+			assert.Equal(t, tc.list, list)
 
 			if tc.err == "" {
 				assert.NoError(t, err)

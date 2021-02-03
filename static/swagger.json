@@ -12,7 +12,7 @@
   "info": {
     "description": "The Cerberus is an users' data keeper. The Cerberus encrypts data and pushes it into S3.",
     "title": "Cerberus",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "basePath": "/v1",
   "paths": {
@@ -74,7 +74,68 @@
         }
       }
     },
-    "/pdv/{address}": {
+    "/pdv/{owner}": {
+      "get": {
+        "description": "Lists PDV",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "PDV"
+        ],
+        "operationId": "List",
+        "parameters": [
+          {
+            "type": "string",
+            "example": "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
+            "description": "PDV's address",
+            "name": "owner",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "uint64",
+            "description": "id of PDV to start from",
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "maximum": 1000,
+            "type": "integer",
+            "format": "uint16",
+            "description": "how many pdv will be returned",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of PDV",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint64"
+              }
+            }
+          },
+          "400": {
+            "description": "bad request",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/pdv/{owner}/{id}": {
       "get": {
         "security": [
           {
@@ -133,7 +194,7 @@
         }
       }
     },
-    "/pdv/{address}/meta": {
+    "/pdv/{owner}/{id}/meta": {
       "get": {
         "description": "Returns metadata of PDV",
         "tags": [
@@ -379,9 +440,10 @@
       "type": "object",
       "title": "SavePDVResponse ...",
       "properties": {
-        "address": {
-          "type": "string",
-          "x-go-name": "Address"
+        "id": {
+          "type": "integer",
+          "format": "uint64",
+          "x-go-name": "ID"
         }
       },
       "x-go-package": "github.com/Decentr-net/cerberus/pkg/api"

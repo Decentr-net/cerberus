@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -24,7 +25,7 @@ import (
 	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
-const testAddress = "e161f70a30964f22d7180bbf0fa7e87d1fa260e4-e28a9046f00164596e02bf45d719d292afbef285fe3198316c0f843cedd2d89a"
+const testOwner = "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz"
 
 var pdv = []byte(`{
     "version": "v1",
@@ -94,7 +95,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			reqBody: pdv,
 			err:     nil,
 			rcode:   http.StatusCreated,
-			rdata:   `{"address":"e161f70a30964f22d7180bbf0fa7e87d1fa260e4-e28a9046f00164596e02bf45d719d292afbef285fe3198316c0f843cedd2d89a"}`,
+			rdata:   `{"id":1}`,
 			rlog:    "",
 		},
 		{
@@ -102,7 +103,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			reqBody: nil,
 			err:     errSkip,
 			rcode:   http.StatusBadRequest,
-			rdata:   `{"error":"request is invalid: unexpected end of JSON input"}`,
+			rdata:   `{"error":"request is invalid: EOF"}`,
 			rlog:    "",
 		},
 		{
@@ -144,16 +145,10 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.err != errSkip {
-				filepath, err := getPDVFilepath(r.Header.Get(api.PublicKeyHeader), tc.reqBody)
-				require.NoError(t, err)
-
 				var pdv schema.PDV
 				require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
 
-				srv.EXPECT().SavePDV(gomock.Any(), pdv, filepath).Return(tc.err)
-				if tc.err == nil {
-					srv.EXPECT().GetPDVMeta(gomock.Any(), filepath).Return(api.PDVMeta{ObjectTypes: map[schema.PDVType]uint16{}}, nil)
-				}
+				srv.EXPECT().SavePDV(gomock.Any(), pdv, testOwner).Return(uint64(1), api.PDVMeta{}, tc.err)
 			}
 
 			router := chi.NewRouter()
@@ -178,60 +173,66 @@ func TestServer_SavePDVHandler(t *testing.T) {
 	}
 }
 
-func TestServer_ReceivePDVHandler(t *testing.T) {
+func TestServer_ListPDVHandler(t *testing.T) {
 	tt := []struct {
-		name    string
-		address string
-		f       func(_ context.Context, address string) ([]byte, error)
-		rcode   int
-		rdata   string
-		rlog    string
+		name  string
+		owner string
+		from  uint64
+		limit uint16
+		list  []uint64
+		err   error
+
+		rcode int
+		rdata string
+		rlog  string
 	}{
 		{
-			name:    "success",
-			address: testAddress,
-			f: func(_ context.Context, address string) ([]byte, error) {
-				return []byte(`{"data":"cookie"}`), nil
-			},
+			name:  "success",
+			owner: testOwner,
+			list:  []uint64{1, 2, 3, 4},
+			err:   nil,
+
 			rcode: http.StatusOK,
-			rdata: `{"data":"cookie"}`,
+			rdata: `[1,2,3,4]`,
 			rlog:  "",
 		},
 		{
-			name:    "invalid request",
-			address: "adr",
-			f:       nil,
-			rcode:   http.StatusBadRequest,
-			rdata:   `{"error":"invalid address"}`,
-			rlog:    "",
-		},
-		{
-			name:    "not found",
-			address: testAddress,
-			f: func(_ context.Context, address string) ([]byte, error) {
-				return nil, service.ErrNotFound
-			},
-			rcode: http.StatusNotFound,
-			rdata: fmt.Sprintf(`{"error":"PDV '%s' not found"}`, testAddress),
+			name:  "success_params",
+			owner: testOwner,
+			list:  []uint64{1, 2, 3, 4},
+			from:  5,
+			limit: 200,
+			err:   nil,
+
+			rcode: http.StatusOK,
+			rdata: `[1,2,3,4]`,
 			rlog:  "",
 		},
 		{
-			name:    "internal error",
-			address: testAddress,
-			f: func(_ context.Context, address string) ([]byte, error) {
-				return nil, errors.New("test error")
-			},
+			name:  "invalid request",
+			owner: "adr",
+
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid owner"}`,
+			rlog:  "",
+		},
+		{
+			name:  "invalid request params",
+			owner: testOwner,
+			limit: 1001,
+
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid limit"}`,
+			rlog:  "",
+		},
+		{
+			name:  "internal error",
+			owner: testOwner,
+			list:  nil,
+			err:   errors.New("test error"),
 			rcode: http.StatusInternalServerError,
 			rdata: `{"error":"internal error"}`,
 			rlog:  "test error",
-		},
-		{
-			name:    "forbidden error",
-			address: "a" + testAddress[1:],
-			f:       nil,
-			rcode:   http.StatusForbidden,
-			rdata:   `{"error":"access denied"}`,
-			rlog:    "",
 		},
 	}
 
@@ -240,15 +241,27 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			b, w, r := newTestParameters(t, http.MethodGet, fmt.Sprintf("v1/pdv/%s", tc.address), nil)
+			b, w, r := newTestParameters(t, http.MethodGet, fmt.Sprintf("v1/pdv/%s", tc.owner), nil)
+			q := r.URL.Query()
+			if tc.from != 0 {
+				q.Set("from", strconv.FormatUint(tc.from, 10))
+			}
+			if tc.limit != 0 {
+				q.Set("limit", strconv.FormatUint(uint64(tc.limit), 10))
+			}
+			r.URL.RawQuery = q.Encode()
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			srv := service.NewMockService(ctrl)
 
-			if tc.f != nil {
-				srv.EXPECT().ReceivePDV(gomock.Any(), tc.address).DoAndReturn(tc.f)
+			if tc.rcode != http.StatusBadRequest {
+				limit := defaultLimit
+				if tc.limit != 0 {
+					limit = uint64(tc.limit)
+				}
+				srv.EXPECT().ListPDV(gomock.Any(), tc.owner, tc.from, uint16(limit)).Return(tc.list, tc.err)
 			}
 
 			router := chi.NewRouter()
@@ -260,7 +273,117 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 				})
 			})
 			s := server{s: srv}
-			router.Get("/v1/pdv/{address}", s.getPDVHandler)
+			router.Get("/v1/pdv/{owner}", s.listPDVHandler)
+
+			router.ServeHTTP(w, r)
+
+			assert.True(t, strings.Contains(b.String(), tc.rlog))
+			assert.Equal(t, tc.rcode, w.Code)
+			assert.Equal(t, tc.rdata, w.Body.String())
+		})
+	}
+}
+
+func TestServer_ReceivePDVHandler(t *testing.T) {
+	tt := []struct {
+		name  string
+		owner string
+		id    string
+		f     func(_ context.Context, owner string, id uint64) ([]byte, error)
+		rcode int
+		rdata string
+		rlog  string
+	}{
+		{
+			name:  "success",
+			owner: testOwner,
+			id:    "1",
+			f: func(_ context.Context, owner string, id uint64) ([]byte, error) {
+				return []byte(`{"data":"cookie"}`), nil
+			},
+			rcode: http.StatusOK,
+			rdata: `{"data":"cookie"}`,
+			rlog:  "",
+		},
+		{
+			name:  "invalid request",
+			owner: "adr",
+			id:    "1",
+			f:     nil,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid owner"}`,
+			rlog:  "",
+		},
+		{
+			name:  "invalid request #2",
+			owner: testOwner,
+			id:    "1s",
+			f:     nil,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid id"}`,
+			rlog:  "",
+		},
+		{
+			name:  "not found",
+			owner: testOwner,
+			id:    "1",
+			f: func(_ context.Context, owner string, id uint64) ([]byte, error) {
+				return nil, service.ErrNotFound
+			},
+			rcode: http.StatusNotFound,
+			rdata: fmt.Sprintf(`{"error":"PDV '%s' not found"}`, "1"),
+			rlog:  "",
+		},
+		{
+			name:  "internal error",
+			owner: testOwner,
+			id:    "1",
+			f: func(_ context.Context, owner string, id uint64) ([]byte, error) {
+				return nil, errors.New("test error")
+			},
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
+			rlog:  "test error",
+		},
+		{
+			name:  "forbidden error",
+			owner: "decentr1ltx6yymrs8eq4nmnhzfzxj6tspjuymh8mgd6gz",
+			id:    "1",
+			f:     nil,
+			rcode: http.StatusForbidden,
+			rdata: `{"error":"access denied"}`,
+			rlog:  "",
+		},
+	}
+
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			b, w, r := newTestParameters(t, http.MethodGet, fmt.Sprintf("v1/pdv/%s/%s", tc.owner, tc.id), nil)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			srv := service.NewMockService(ctrl)
+
+			if tc.f != nil {
+				id, err := strconv.ParseUint(tc.id, 10, 64)
+				require.NoError(t, err)
+				srv.EXPECT().ReceivePDV(gomock.Any(), tc.owner, id).DoAndReturn(tc.f)
+			}
+
+			router := chi.NewRouter()
+			router.Use(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					log := logrus.New()
+					log.SetOutput(b)
+					next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), logCtxKey{}, log)))
+				})
+			})
+			s := server{s: srv}
+			router.Get("/v1/pdv/{owner}/{id}", s.getPDVHandler)
 
 			router.ServeHTTP(w, r)
 
@@ -273,17 +396,19 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 
 func TestServer_GetPDVMeta(t *testing.T) {
 	tt := []struct {
-		name    string
-		address string
-		f       func(_ context.Context, address string) (api.PDVMeta, error)
-		rcode   int
-		rdata   string
-		rlog    string
+		name  string
+		owner string
+		id    string
+		f     func(_ context.Context, owner string, id uint64) (api.PDVMeta, error)
+		rcode int
+		rdata string
+		rlog  string
 	}{
 		{
-			name:    "exists",
-			address: testAddress,
-			f: func(_ context.Context, address string) (api.PDVMeta, error) {
+			name:  "success",
+			owner: testOwner,
+			id:    "1",
+			f: func(_ context.Context, owner string, id uint64) (api.PDVMeta, error) {
 				return api.PDVMeta{ObjectTypes: map[schema.PDVType]uint16{schema.PDVCookieType: 1}, Reward: 2}, nil
 			},
 			rcode: http.StatusOK,
@@ -291,27 +416,39 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			rlog:  "",
 		},
 		{
-			name:    "doesn't exists",
-			address: testAddress,
-			f: func(_ context.Context, address string) (api.PDVMeta, error) {
+			name:  "doesn't exists",
+			owner: testOwner,
+			id:    "1",
+			f: func(_ context.Context, owner string, id uint64) (api.PDVMeta, error) {
 				return api.PDVMeta{}, service.ErrNotFound
 			},
 			rcode: http.StatusNotFound,
-			rdata: fmt.Sprintf(`{"error":"PDV '%s' not found"}`, testAddress),
+			rdata: fmt.Sprintf(`{"error":"PDV '%s' not found"}`, "1"),
 			rlog:  "",
 		},
 		{
-			name:    "invalid request",
-			address: "invalid",
-			f:       nil,
-			rcode:   http.StatusBadRequest,
-			rdata:   `{"error":"invalid address"}`,
-			rlog:    "",
+			name:  "invalid request",
+			owner: "inv",
+			id:    "1",
+			f:     nil,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid address"}`,
+			rlog:  "",
 		},
 		{
-			name:    "internal error",
-			address: testAddress,
-			f: func(_ context.Context, address string) (api.PDVMeta, error) {
+			name:  "invalid request #2",
+			owner: testOwner,
+			id:    "1s",
+			f:     nil,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid id"}`,
+			rlog:  "",
+		},
+		{
+			name:  "internal error",
+			owner: testOwner,
+			id:    "1",
+			f: func(_ context.Context, owner string, id uint64) (api.PDVMeta, error) {
 				return api.PDVMeta{}, errors.New("test error")
 			},
 			rcode: http.StatusInternalServerError,
@@ -325,7 +462,7 @@ func TestServer_GetPDVMeta(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			b, w, r := newTestParameters(t, http.MethodGet, fmt.Sprintf("v1/pdv/%s/meta", tc.address), nil)
+			b, w, r := newTestParameters(t, http.MethodGet, fmt.Sprintf("v1/pdv/%s/%s/meta", tc.owner, tc.id), nil)
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -333,7 +470,9 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.f != nil {
-				srv.EXPECT().GetPDVMeta(gomock.Any(), tc.address).DoAndReturn(tc.f).Times(1)
+				id, err := strconv.ParseUint(tc.id, 10, 64)
+				require.NoError(t, err)
+				srv.EXPECT().GetPDVMeta(gomock.Any(), tc.owner, id).DoAndReturn(tc.f).Times(1)
 			}
 
 			router := chi.NewRouter()
@@ -347,7 +486,7 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			c, err := lru.NewARC(10)
 			require.NoError(t, err)
 			s := server{s: srv, pdvMetaCache: c}
-			router.Get("/v1/pdv/{address}/meta", s.getPDVMetaHandler)
+			router.Get("/v1/pdv/{owner}/{id}/meta", s.getPDVMetaHandler)
 
 			router.ServeHTTP(w, r)
 
@@ -357,7 +496,7 @@ func TestServer_GetPDVMeta(t *testing.T) {
 
 			// check cache
 			if tc.rcode == http.StatusOK {
-				_, w, r := newTestParameters(t, http.MethodGet, fmt.Sprintf("v1/pdv/%s/meta", tc.address), nil)
+				_, w, r := newTestParameters(t, http.MethodGet, fmt.Sprintf("v1/pdv/%s/%s/meta", tc.owner, tc.id), nil)
 
 				router.ServeHTTP(w, r)
 

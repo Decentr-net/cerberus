@@ -4,7 +4,7 @@
 //
 //     Schemes: https
 //     BasePath: /v1
-//     Version: 1.0.0
+//     Version: 1.0.1
 //
 //     Produces:
 //     - application/json
@@ -45,6 +45,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	lru "github.com/hashicorp/golang-lru"
@@ -59,7 +60,16 @@ import (
 
 //go:generate swagger generate spec -t swagger -m -c . -o ../../static/swagger.json
 
+// nolint: gochecknoinits
+func init() {
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount("decentr", "decentrpub") // from decentr.app package
+	config.Seal()
+}
+
 const existenceCacheSize = 200 // we don't need store a lot keys because method used by blockchain node which validates block
+
+const defaultLimit uint64 = 100
 
 var cdc = amino.NewCodec() // nolint:gochecknoglobals
 
@@ -102,8 +112,9 @@ func SetupRouter(s service.Service, r chi.Router, maxBodySize int64, minPDVCount
 	}
 
 	r.Post("/v1/pdv", srv.savePDVHandler)
-	r.Get("/v1/pdv/{address}", srv.getPDVHandler)
-	r.Get("/v1/pdv/{address}/meta", srv.getPDVMetaHandler)
+	r.Get("/v1/pdv/{owner}", srv.listPDVHandler)
+	r.Get("/v1/pdv/{owner}/{id}", srv.getPDVHandler)
+	r.Get("/v1/pdv/{owner}/{id}/meta", srv.getPDVMetaHandler)
 }
 
 func getLogger(ctx context.Context) logrus.FieldLogger {
@@ -148,4 +159,9 @@ func writeVerifyError(l logrus.FieldLogger, w http.ResponseWriter, err error) {
 	default:
 		writeInternalError(l, w, err.Error())
 	}
+}
+
+func isOwnerValid(s string) bool {
+	_, err := sdk.AccAddressFromBech32(s)
+	return err == nil
 }
