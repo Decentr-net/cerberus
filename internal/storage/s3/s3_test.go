@@ -150,3 +150,24 @@ func TestS3_Write_Read(t *testing.T) {
 
 	assert.NoError(t, rc.Close())
 }
+
+func TestS3_List(t *testing.T) {
+	s, err := NewStorage(c, bucket)
+	require.NoError(t, err)
+
+	text := []byte("cerberus")
+
+	for i := 0; i < 1010; i++ {
+		filename := fmt.Sprintf("pdv/owner/%016x", i)
+		require.NoError(t, s.Write(ctx, bytes.NewReader(text), 8, filename))
+	}
+
+	l, err := s.List(ctx, "pdv/owner", 5, 1000)
+	require.NoError(t, err)
+	require.Len(t, l, 1000)
+
+	for i := 0; i < 1000; i++ {
+		expected := fmt.Sprintf("%016x", i+5)
+		require.EqualValues(t, expected, l[i])
+	}
+}

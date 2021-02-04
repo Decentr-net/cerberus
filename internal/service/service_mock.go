@@ -36,45 +36,62 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // SavePDV mocks base method
-func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, filename string) error {
+func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, owner string) (uint64, api.PDVMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePDV", ctx, p, filename)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "SavePDV", ctx, p, owner)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(api.PDVMeta)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // SavePDV indicates an expected call of SavePDV
-func (mr *MockServiceMockRecorder) SavePDV(ctx, p, filename interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) SavePDV(ctx, p, owner interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePDV", reflect.TypeOf((*MockService)(nil).SavePDV), ctx, p, filename)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePDV", reflect.TypeOf((*MockService)(nil).SavePDV), ctx, p, owner)
+}
+
+// ListPDV mocks base method
+func (m *MockService) ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPDV", ctx, owner, from, limit)
+	ret0, _ := ret[0].([]uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPDV indicates an expected call of ListPDV
+func (mr *MockServiceMockRecorder) ListPDV(ctx, owner, from, limit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPDV", reflect.TypeOf((*MockService)(nil).ListPDV), ctx, owner, from, limit)
 }
 
 // ReceivePDV mocks base method
-func (m *MockService) ReceivePDV(ctx context.Context, address string) ([]byte, error) {
+func (m *MockService) ReceivePDV(ctx context.Context, owner string, id uint64) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReceivePDV", ctx, address)
+	ret := m.ctrl.Call(m, "ReceivePDV", ctx, owner, id)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ReceivePDV indicates an expected call of ReceivePDV
-func (mr *MockServiceMockRecorder) ReceivePDV(ctx, address interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) ReceivePDV(ctx, owner, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceivePDV", reflect.TypeOf((*MockService)(nil).ReceivePDV), ctx, address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceivePDV", reflect.TypeOf((*MockService)(nil).ReceivePDV), ctx, owner, id)
 }
 
 // GetPDVMeta mocks base method
-func (m *MockService) GetPDVMeta(ctx context.Context, address string) (api.PDVMeta, error) {
+func (m *MockService) GetPDVMeta(ctx context.Context, owner string, id uint64) (api.PDVMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPDVMeta", ctx, address)
+	ret := m.ctrl.Call(m, "GetPDVMeta", ctx, owner, id)
 	ret0, _ := ret[0].(api.PDVMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPDVMeta indicates an expected call of GetPDVMeta
-func (mr *MockServiceMockRecorder) GetPDVMeta(ctx, address interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) GetPDVMeta(ctx, owner, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVMeta", reflect.TypeOf((*MockService)(nil).GetPDVMeta), ctx, address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVMeta", reflect.TypeOf((*MockService)(nil).GetPDVMeta), ctx, owner, id)
 }

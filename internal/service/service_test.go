@@ -5,10 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +21,8 @@ import (
 )
 
 var ctx = context.Background()
-var testFilename = "test"
+var testOwner = "test"
+var testID = uint64(1)
 var testData = []byte("data")
 var testEncryptedData = []byte("data_encrypted")
 var errTest = errors.New("test")
@@ -73,6 +74,8 @@ func TestService_SavePDV(t *testing.T) {
 
 	s := New(cr, st, rewardsMap)
 
+	expectedID := uint64(time.Now().Unix())
+
 	cr.EXPECT().Encrypt(gomock.Any()).DoAndReturn(func(r io.Reader) (io.Reader, int64, error) {
 		data, err := ioutil.ReadAll(r)
 		require.NoError(t, err)
@@ -81,7 +84,9 @@ func TestService_SavePDV(t *testing.T) {
 		return bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil
 	})
 
-	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), testFilename).DoAndReturn(func(_ context.Context, r io.Reader, size int64, _ string) error {
+	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath string) error {
+		require.Equal(t, getPDVFilePath(testOwner, expectedID), filepath)
+
 		data, err := ioutil.ReadAll(r)
 		require.NoError(t, err)
 		require.Equal(t, testEncryptedData, data)
@@ -90,22 +95,28 @@ func TestService_SavePDV(t *testing.T) {
 		return nil
 	})
 
-	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), fmt.Sprintf(metaFilepathTpl, testFilename)).DoAndReturn(func(_ context.Context, r io.Reader, size int64, _ string) error {
+	expectedMeta := api.PDVMeta{
+		ObjectTypes: map[schema.PDVType]uint16{
+			schema.PDVCookieType:      1,
+			schema.PDVLoginCookieType: 1,
+		},
+		Reward: 6,
+	}
+
+	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath string) error {
+		require.Equal(t, getMetaFilePath(testOwner, expectedID), filepath)
+
 		var m api.PDVMeta
 		require.NoError(t, json.NewDecoder(r).Decode(&m))
 
-		require.Equal(t, api.PDVMeta{
-			ObjectTypes: map[schema.PDVType]uint16{
-				schema.PDVCookieType:      1,
-				schema.PDVLoginCookieType: 1,
-			},
-			Reward: 6,
-		}, m)
+		require.Equal(t, expectedMeta, m)
 
 		return nil
 	})
 
-	err := s.SavePDV(ctx, pdv, testFilename)
+	id, meta, err := s.SavePDV(ctx, pdv, testOwner)
+	require.Equal(t, expectedID, id)
+	require.Equal(t, expectedMeta, meta)
 	require.NoError(t, err)
 }
 
@@ -120,7 +131,7 @@ func TestService_SavePDV_EncryptError(t *testing.T) {
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, int64(0), errTest)
 
-	err := s.SavePDV(ctx, pdv, testFilename)
+	_, _, err := s.SavePDV(ctx, pdv, getPDVFilePath(testOwner, testID))
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }
@@ -136,9 +147,9 @@ func TestService_SavePDV_StorageError(t *testing.T) {
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil)
 
-	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), testFilename).Return(errTest)
+	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(errTest)
 
-	err := s.SavePDV(ctx, pdv, testFilename)
+	_, _, err := s.SavePDV(ctx, pdv, testOwner)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }
@@ -152,7 +163,7 @@ func TestService_ReceivePDV(t *testing.T) {
 
 	s := New(cr, st, rewardsMap)
 
-	st.EXPECT().Read(ctx, testFilename).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
+	st.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
 
 	cr.EXPECT().Decrypt(gomock.Any()).DoAndReturn(func(r io.Reader) (io.Reader, error) {
 		data, err := ioutil.ReadAll(r)
@@ -162,7 +173,7 @@ func TestService_ReceivePDV(t *testing.T) {
 		return bytes.NewReader(testData), nil
 	})
 
-	data, err := s.ReceivePDV(ctx, testFilename)
+	data, err := s.ReceivePDV(ctx, testOwner, testID)
 	require.NoError(t, err)
 	assert.Equal(t, testData, data)
 }
@@ -176,9 +187,9 @@ func TestService_ReceivePDV_StorageError(t *testing.T) {
 
 	s := New(cr, st, rewardsMap)
 
-	st.EXPECT().Read(ctx, testFilename).Return(nil, errTest)
+	st.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(nil, errTest)
 
-	data, err := s.ReceivePDV(ctx, testFilename)
+	data, err := s.ReceivePDV(ctx, testOwner, testID)
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 	assert.Nil(t, data)
@@ -193,9 +204,9 @@ func TestService_ReceivePDV_StorageError_NotFound(t *testing.T) {
 
 	s := New(cr, st, rewardsMap)
 
-	st.EXPECT().Read(ctx, testFilename).Return(nil, storage.ErrNotFound)
+	st.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(nil, storage.ErrNotFound)
 
-	data, err := s.ReceivePDV(ctx, testFilename)
+	data, err := s.ReceivePDV(ctx, testOwner, testID)
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, ErrNotFound))
 	assert.Nil(t, data)
@@ -210,11 +221,11 @@ func TestService_ReceivePDV_DecryptError(t *testing.T) {
 
 	s := New(cr, st, rewardsMap)
 
-	st.EXPECT().Read(ctx, testFilename).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
+	st.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
 
 	cr.EXPECT().Decrypt(gomock.Any()).Return(nil, errTest)
 
-	data, err := s.ReceivePDV(ctx, testFilename)
+	data, err := s.ReceivePDV(ctx, testOwner, testID)
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 	assert.Nil(t, data)
@@ -230,9 +241,9 @@ func TestService_GetPDVMeta(t *testing.T) {
 	s := New(cr, st, rewardsMap)
 
 	r := ioutil.NopCloser(bytes.NewBufferString(`{"object_types":{"cookie": 1, "login_cookie": 2}, "reward": 10}`))
-	st.EXPECT().Read(ctx, fmt.Sprintf(metaFilepathTpl, testFilename)).Return(r, nil)
+	st.EXPECT().Read(ctx, getMetaFilePath(testOwner, testID)).Return(r, nil)
 
-	meta, err := s.GetPDVMeta(ctx, testFilename)
+	meta, err := s.GetPDVMeta(ctx, testOwner, testID)
 	require.NoError(t, err)
 	require.Equal(t, api.PDVMeta{
 		ObjectTypes: map[schema.PDVType]uint16{
@@ -252,9 +263,9 @@ func TestService_GetPDVMeta_StorageError(t *testing.T) {
 
 	s := New(cr, st, rewardsMap)
 
-	st.EXPECT().Read(ctx, fmt.Sprintf(metaFilepathTpl, testFilename)).Return(nil, errTest)
+	st.EXPECT().Read(ctx, getMetaFilePath(testOwner, testID)).Return(nil, errTest)
 
-	_, err := s.GetPDVMeta(ctx, testFilename)
+	_, err := s.GetPDVMeta(ctx, testOwner, testID)
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }
@@ -268,8 +279,35 @@ func TestService_GetPDVMeta_NotFound(t *testing.T) {
 
 	s := New(cr, st, rewardsMap)
 
-	st.EXPECT().Read(ctx, fmt.Sprintf(metaFilepathTpl, testFilename)).Return(nil, storage.ErrNotFound)
+	st.EXPECT().Read(ctx, getMetaFilePath(testOwner, testID)).Return(nil, storage.ErrNotFound)
 
-	_, err := s.GetPDVMeta(ctx, testFilename)
+	_, err := s.GetPDVMeta(ctx, testOwner, testID)
 	require.EqualError(t, err, ErrNotFound.Error())
+}
+
+func TestService_getFilePath(t *testing.T) {
+	// we want to sort it for list on s3 side
+	require.Equal(t, "pdv/test/fffffffffffffffe", getPDVFilePath("test", 1))
+}
+
+func TestService_getMetaFilePath(t *testing.T) {
+	require.Equal(t, "meta/test/fffffffffffffffe", getMetaFilePath("test", 1))
+}
+
+func TestService_ListPDV(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	st := storage.NewMockStorage(ctrl)
+	cr := crypto.NewMockCrypto(ctrl)
+
+	s := New(cr, st, rewardsMap)
+
+	res := []string{"fffffffffffffffe", "fffffffffffffffd", "fffffffffffffffc"}
+
+	st.EXPECT().List(ctx, "pdv/owner", uint64(5), uint16(10)).Return(res, nil)
+
+	l, err := s.ListPDV(ctx, "owner", 5, 10)
+	require.NoError(t, err)
+	require.Equal(t, []uint64{1, 2, 3}, l)
 }

@@ -48,6 +48,21 @@ func (mr *MockStorageMockRecorder) Ping(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockStorage)(nil).Ping), ctx)
 }
 
+// List mocks base method
+func (m *MockStorage) List(ctx context.Context, prefix string, from uint64, limit uint16) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", ctx, prefix, from, limit)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// List indicates an expected call of List
+func (mr *MockStorageMockRecorder) List(ctx, prefix, from, limit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockStorage)(nil).List), ctx, prefix, from, limit)
+}
+
 // Read mocks base method
 func (m *MockStorage) Read(ctx context.Context, path string) (io.ReadCloser, error) {
 	m.ctrl.T.Helper()

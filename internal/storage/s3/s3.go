@@ -71,16 +71,28 @@ func (s s3) Write(ctx context.Context, r io.Reader, size int64, path string) err
 	return err
 }
 
-// DoesExist checks file's existence in s3 storage.
-func (s s3) DoesExist(ctx context.Context, path string) (bool, error) {
-	_, err := s.c.StatObject(ctx, s.b, path, minio.StatObjectOptions{})
+// List returns objects by prefix with paging.
+func (s s3) List(ctx context.Context, prefix string, from uint64, limit uint16) ([]string, error) {
+	to := from + uint64(limit)
 
-	if err != nil {
-		if minio.ToErrorResponse(err).StatusCode == http.StatusNotFound {
-			return false, nil
+	ch := s.c.ListObjects(ctx, s.b, minio.ListObjectsOptions{
+		Prefix:    fmt.Sprintf("%s/", prefix),
+		Recursive: true,
+	})
+
+	i := uint64(0)
+
+	out := make([]string, 0)
+	for v := range ch {
+		i++
+		if i > to {
+			return out, nil
 		}
-		return false, fmt.Errorf("get object failed: %w", err)
+		if i <= from {
+			continue
+		}
+		out = append(out, v.Key[len(prefix)+1:])
 	}
 
-	return true, nil
+	return out, nil
 }
