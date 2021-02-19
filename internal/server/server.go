@@ -67,7 +67,7 @@ func init() {
 	config.Seal()
 }
 
-const existenceCacheSize = 200 // we don't need store a lot keys because method used by blockchain node which validates block
+const existenceCacheSize = 100000
 
 const defaultLimit uint64 = 100
 
