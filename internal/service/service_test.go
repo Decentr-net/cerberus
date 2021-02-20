@@ -10,10 +10,12 @@ import (
 	"testing"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/Decentr-net/cerberus/internal/blockchain"
 	"github.com/Decentr-net/cerberus/internal/crypto"
 	"github.com/Decentr-net/cerberus/internal/storage"
 	"github.com/Decentr-net/cerberus/pkg/api"
@@ -21,7 +23,8 @@ import (
 )
 
 var ctx = context.Background()
-var testOwner = "test"
+var testOwner = "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz"
+var testOwnerSdkAddr, _ = sdk.AccAddressFromBech32(testOwner)
 var testID = uint64(1)
 var testData = []byte("data")
 var testEncryptedData = []byte("data_encrypted")
@@ -71,8 +74,9 @@ func TestService_SavePDV(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	expectedID := uint64(time.Now().Unix())
 
@@ -114,7 +118,9 @@ func TestService_SavePDV(t *testing.T) {
 		return nil
 	})
 
-	id, meta, err := s.SavePDV(ctx, pdv, testOwner)
+	b.EXPECT().CreatePDV(testOwnerSdkAddr, expectedMeta.Reward).Return(nil)
+
+	id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Equal(t, expectedID, id)
 	require.Equal(t, expectedMeta, meta)
 	require.NoError(t, err)
@@ -126,12 +132,13 @@ func TestService_SavePDV_EncryptError(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, int64(0), errTest)
 
-	_, _, err := s.SavePDV(ctx, pdv, getPDVFilePath(testOwner, testID))
+	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }
@@ -142,14 +149,36 @@ func TestService_SavePDV_StorageError(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil)
 
 	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(errTest)
 
-	_, _, err := s.SavePDV(ctx, pdv, testOwner)
+	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, errTest))
+}
+
+func TestService_SavePDV_BlockchainError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	st := storage.NewMockStorage(ctrl)
+	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
+
+	s := New(cr, st, b, rewardsMap)
+
+	cr.EXPECT().Encrypt(gomock.Any()).Return(bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil)
+	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	b.EXPECT().CreatePDV(testOwnerSdkAddr, gomock.Any()).Return(errTest)
+
+	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }
@@ -160,8 +189,9 @@ func TestService_ReceivePDV(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	st.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
 
@@ -184,8 +214,9 @@ func TestService_ReceivePDV_StorageError(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	st.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(nil, errTest)
 
@@ -201,8 +232,9 @@ func TestService_ReceivePDV_StorageError_NotFound(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	st.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(nil, storage.ErrNotFound)
 
@@ -218,8 +250,9 @@ func TestService_ReceivePDV_DecryptError(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	st.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
 
@@ -237,8 +270,9 @@ func TestService_GetPDVMeta(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	r := ioutil.NopCloser(bytes.NewBufferString(`{"object_types":{"cookie": 1, "login_cookie": 2}, "reward": 10}`))
 	st.EXPECT().Read(ctx, getMetaFilePath(testOwner, testID)).Return(r, nil)
@@ -260,8 +294,9 @@ func TestService_GetPDVMeta_StorageError(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	st.EXPECT().Read(ctx, getMetaFilePath(testOwner, testID)).Return(nil, errTest)
 
@@ -276,8 +311,9 @@ func TestService_GetPDVMeta_NotFound(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	st.EXPECT().Read(ctx, getMetaFilePath(testOwner, testID)).Return(nil, storage.ErrNotFound)
 
@@ -300,8 +336,9 @@ func TestService_ListPDV(t *testing.T) {
 
 	st := storage.NewMockStorage(ctrl)
 	cr := crypto.NewMockCrypto(ctrl)
+	b := blockchain.NewMockBlockchain(ctrl)
 
-	s := New(cr, st, rewardsMap)
+	s := New(cr, st, b, rewardsMap)
 
 	res := []string{"fffffffffffffffe", "fffffffffffffffd", "fffffffffffffffc"}
 

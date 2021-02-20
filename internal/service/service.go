@@ -11,6 +11,9 @@ import (
 	"strconv"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/Decentr-net/cerberus/internal/blockchain"
 	"github.com/Decentr-net/cerberus/internal/crypto"
 	"github.com/Decentr-net/cerberus/internal/storage"
 	"github.com/Decentr-net/cerberus/pkg/api"
@@ -28,7 +31,7 @@ type RewardMap map[schema.PDVType]uint64
 // Service interface provides service's logic's methods.
 type Service interface {
 	// SavePDV sends PDV to storage.
-	SavePDV(ctx context.Context, p schema.PDV, owner string) (uint64, api.PDVMeta, error)
+	SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddress) (uint64, api.PDVMeta, error)
 	// ListPDV lists PDVs.
 	ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error)
 	// ReceivePDV returns slice of bytes of PDV requested by address from storage.
@@ -41,24 +44,26 @@ type Service interface {
 type service struct {
 	c crypto.Crypto
 	s storage.Storage
+	b blockchain.Blockchain
 
 	rewardMap RewardMap
 }
 
 // New returns new instance of service.
-func New(c crypto.Crypto, s storage.Storage, rewardMap RewardMap) Service {
+func New(c crypto.Crypto, s storage.Storage, b blockchain.Blockchain, rewardMap RewardMap) Service {
 	return &service{
 		c:         c,
 		s:         s,
+		b:         b,
 		rewardMap: rewardMap,
 	}
 }
 
 // SavePDV sends PDV to storage.
-func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner string) (uint64, api.PDVMeta, error) {
+func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddress) (uint64, api.PDVMeta, error) {
 	id := uint64(time.Now().Unix())
 
-	filepath := getPDVFilePath(owner, id)
+	filepath := getPDVFilePath(owner.String(), id)
 
 	meta := s.getMeta(p)
 
@@ -82,8 +87,12 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner string) (uint
 	}
 
 	mr := bytes.NewReader(data)
-	if err := s.s.Write(ctx, mr, mr.Size(), getMetaFilePath(owner, id)); err != nil {
+	if err := s.s.Write(ctx, mr, mr.Size(), getMetaFilePath(owner.String(), id)); err != nil {
 		return 0, api.PDVMeta{}, fmt.Errorf("failed to write pdv meta to storage: %w", err)
+	}
+
+	if err := s.b.CreatePDV(owner, meta.Reward); err != nil {
+		return 0, api.PDVMeta{}, fmt.Errorf("failed to send CreatePDV message to decentr: %w", err)
 	}
 
 	return id, meta, nil

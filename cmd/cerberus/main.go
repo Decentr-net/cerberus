@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -11,8 +12,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	clicontext "github.com/cosmos/cosmos-sdk/client/context"
+	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	"github.com/minio/minio-go/v7"
@@ -20,8 +27,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/Decentr-net/decentr/app"
 	"github.com/Decentr-net/logrus/sentry"
 
+	"github.com/Decentr-net/cerberus/internal/blockchain"
 	"github.com/Decentr-net/cerberus/internal/crypto/sio"
 	"github.com/Decentr-net/cerberus/internal/health"
 	"github.com/Decentr-net/cerberus/internal/server"
@@ -44,6 +53,14 @@ var opts = struct {
 	S3SecretAccessKey string `long:"s3.secret-access-key" env:"S3_SECRET_ACCESS_KEY" description:"secret access key for S3 storage'"`
 	S3UseSSL          bool   `long:"s3.use-ssl" env:"S3_USE_SSL" description:"use ssl for S3 storage connection'"`
 	S3Bucket          string `long:"s3.bucket" env:"S3_BUCKET" default:"cerberus" description:"S3 bucket for Cerberus files'"`
+
+	BlockchainNode               string `long:"blockchain.node" env:"BLOCKCHAIN_NODE" default:"http://zeus.testnet.decentr.xyz:26657" description:"decentr node address"`
+	BlockchainFrom               string `long:"blockchain.from" env:"BLOCKCHAIN_FROM" description:"decentr account name to send stakes" required:"true"`
+	BlockchainTxMemo             string `long:"blockchain.tx_memo" env:"BLOCKCHAIN_TX_MEMO" description:"decentr tx's memo'"`
+	BlockchainChainID            string `long:"blockchain.chain_id" env:"BLOCKCHAIN_CHAIN_ID" default:"testnet" description:"decentr chain id"`
+	BlockchainClientHome         string `long:"blockchain.client_home" env:"BLOCKCHAIN_CLIENT_HOME" default:"~/.decentrcli" description:"decentrcli home directory"`
+	BlockchainKeyringBackend     string `long:"blockchain.keyring_backend" env:"BLOCKCHAIN_KEYRING_BACKEND" default:"test" description:"decentrcli keyring backend"`
+	BlockchainKeyringPromptInput string `long:"blockchain.keyring_prompt_input" env:"BLOCKCHAIN_KEYRING_PROMPT_INPUT" description:"decentrcli keyring prompt input"`
 
 	RewardMapConfig string `long:"reward-map-config" env:"REWARD_MAP_CONFIG" default:"configs/rewards.yml" description:"path to yaml config with pdv rewards"`
 	MinPDVCount     uint16 `long:"min-pdv-count" env:"MIN_PDV_COUNT" default:"100" description:"minimal count of pdv to save"`
@@ -109,7 +126,9 @@ func main() {
 		logrus.WithError(err).Fatal("failed to create storage")
 	}
 
-	server.SetupRouter(newServiceOrDie(storage), r,
+	bchain := mustGetBlockchain()
+
+	server.SetupRouter(newServiceOrDie(storage, bchain), r,
 		opts.MaxBodySize, opts.MinPDVCount, opts.MaxPDVCount)
 	health.SetupRouter(r, storage)
 
@@ -143,7 +162,7 @@ func main() {
 	}
 }
 
-func newServiceOrDie(s storage.Storage) service.Service {
+func newServiceOrDie(s storage.Storage, bchain blockchain.Blockchain) service.Service {
 	rewardMap := make(service.RewardMap)
 	b, err := ioutil.ReadFile(opts.RewardMapConfig)
 	if err != nil {
@@ -152,7 +171,7 @@ func newServiceOrDie(s storage.Storage) service.Service {
 	if err := yaml.Unmarshal(b, rewardMap); err != nil {
 		logrus.WithError(err).Fatal("failed to unmarshal reward map config")
 	}
-	return service.New(sio.NewCrypto(mustExtractEncryptKey()), s, rewardMap)
+	return service.New(sio.NewCrypto(mustExtractEncryptKey()), s, bchain, rewardMap)
 }
 
 func mustExtractEncryptKey() [32]byte {
@@ -169,4 +188,37 @@ func mustExtractEncryptKey() [32]byte {
 	copy(r[:], k)
 
 	return r
+}
+
+func mustGetBlockchain() blockchain.Blockchain {
+	cdc := app.MakeCodec()
+
+	kb, err := keys.NewKeyring(sdk.KeyringServiceName(),
+		opts.BlockchainKeyringBackend,
+		opts.BlockchainClientHome,
+		bytes.NewBufferString(opts.BlockchainKeyringPromptInput),
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create keyring")
+	}
+
+	acc, err := kb.Get(opts.BlockchainFrom)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to get blockchain account info")
+	}
+
+	cliCtx := clicontext.NewCLIContext().
+		WithCodec(cdc).
+		WithBroadcastMode(cliflags.BroadcastSync).
+		WithNodeURI(opts.BlockchainNode).
+		WithFrom(acc.GetName()).
+		WithFromName(acc.GetName()).
+		WithFromAddress(acc.GetAddress()).
+		WithChainID(opts.BlockchainChainID)
+	cliCtx.Keybase = kb
+
+	txBldr := auth.NewTxBuilder(utils.GetTxEncoder(cdc), 0, 0, 0, 1.0, false,
+		opts.BlockchainChainID, opts.BlockchainTxMemo, nil, nil).WithKeybase(kb)
+
+	return blockchain.NewBlockchain(cliCtx, txBldr)
 }

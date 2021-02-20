@@ -8,6 +8,7 @@ import (
 	context "context"
 	api "github.com/Decentr-net/cerberus/pkg/api"
 	schema "github.com/Decentr-net/cerberus/pkg/schema"
+	types "github.com/cosmos/cosmos-sdk/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -36,7 +37,7 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // SavePDV mocks base method
-func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, owner string) (uint64, api.PDVMeta, error) {
+func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, owner types.AccAddress) (uint64, api.PDVMeta, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SavePDV", ctx, p, owner)
 	ret0, _ := ret[0].(uint64)
