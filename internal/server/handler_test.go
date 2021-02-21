@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
 	lru "github.com/hashicorp/golang-lru"
@@ -148,7 +149,10 @@ func TestServer_SavePDVHandler(t *testing.T) {
 				var pdv schema.PDV
 				require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
 
-				srv.EXPECT().SavePDV(gomock.Any(), pdv, testOwner).Return(uint64(1), api.PDVMeta{}, tc.err)
+				srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner types.AccAddress) (uint64, api.PDVMeta, error) {
+					assert.Equal(t, testOwner, owner.String())
+					return 1, api.PDVMeta{}, tc.err
+				})
 			}
 
 			router := chi.NewRouter()

@@ -60,13 +60,6 @@ import (
 
 //go:generate swagger generate spec -t swagger -m -c . -o ../../static/swagger.json
 
-// nolint: gochecknoinits
-func init() {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount("decentr", "decentrpub") // from decentr.app package
-	config.Seal()
-}
-
 const existenceCacheSize = 100000
 
 const defaultLimit uint64 = 100

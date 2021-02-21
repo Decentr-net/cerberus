@@ -11,7 +11,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
-	"github.com/tendermint/tendermint/libs/bech32"
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
@@ -90,7 +89,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.pdvMetaCache.Add(getCacheKey(owner, id), meta)
+	s.pdvMetaCache.Add(getCacheKey(owner.String(), id), meta)
 
 	writeOK(w, http.StatusCreated, api.SavePDVResponse{ID: id})
 }
@@ -240,12 +239,12 @@ func (s *server) getPDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if chi.URLParam(r, "owner") != owner {
+	if chi.URLParam(r, "owner") != owner.String() {
 		writeError(w, http.StatusForbidden, "access denied")
 		return
 	}
 
-	data, err := s.s.ReceivePDV(r.Context(), owner, id)
+	data, err := s.s.ReceivePDV(r.Context(), owner.String(), id)
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
 			writeErrorf(w, http.StatusNotFound, fmt.Sprintf("PDV '%d' not found", id))
@@ -324,18 +323,22 @@ func (s *server) getPDVMetaHandler(w http.ResponseWriter, r *http.Request) {
 	writeOK(w, http.StatusOK, m)
 }
 
-func getAddressFromPubKey(k string) (string, error) {
+func getAddressFromPubKey(k string) (sdk.AccAddress, error) {
 	var pk secp256k1.PubKeySecp256k1
 	b, err := hex.DecodeString(k)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if err := cdc.UnmarshalBinaryBare(api.GetAminoSecp256k1PubKey(b), &pk); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return bech32.ConvertAndEncode(sdk.GetConfig().GetBech32AccountAddrPrefix(), pk.Address())
+	addr, err := sdk.AccAddressFromHex(pk.Address().String())
+	if err != nil {
+		panic(err)
+	}
+	return addr, err
 }
 
 func getCacheKey(owner string, id uint64) string {
