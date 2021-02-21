@@ -15,8 +15,8 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper) sdk.Handler {
 
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case MsgCreatePDV:
-			return handleMsgCreatePDV(ctx, keeper, tokensKeeper, msg)
+		case MsgDistributeRewards:
+			return handleMsgDistributeRewards(ctx, keeper, tokensKeeper, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -24,21 +24,18 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgCreatePDV(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, msg MsgCreatePDV) (*sdk.Result, error) {
-	cerberuses := keeper.GetCerberuses(ctx)
-	var isCerberus bool
-	for _, cerberus := range cerberuses {
-		addr, _ := sdk.AccAddressFromBech32(cerberus)
+func handleMsgDistributeRewards(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, msg MsgDistributeRewards) (*sdk.Result, error) {
+	owners := keeper.GetCerberusOwners(ctx)
+
+	for _, v := range owners {
+		addr, _ := sdk.AccAddressFromBech32(v)
 		if msg.Owner.Equals(addr) && !addr.Empty() {
-			isCerberus = true
-			break
+			for _, reward := range msg.Rewards {
+				tokensKeeper.AddTokens(ctx, reward.Receiver, sdk.NewIntFromUint64(reward.Reward), utils.GetHash(msg))
+			}
+			return &sdk.Result{}, nil
 		}
 	}
 
-	if !isCerberus {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Owner is not Cerberus")
-	}
-
-	tokensKeeper.AddTokens(ctx, msg.Receiver, sdk.NewIntFromUint64(msg.Reward), utils.GetHash(msg))
-	return &sdk.Result{}, nil
+	return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Owner is not a Cerberus owner")
 }

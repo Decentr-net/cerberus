@@ -91,8 +91,8 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 		return 0, api.PDVMeta{}, fmt.Errorf("failed to write pdv meta to storage: %w", err)
 	}
 
-	if err := s.b.CreatePDV(owner, meta.Reward); err != nil {
-		return 0, api.PDVMeta{}, fmt.Errorf("failed to send CreatePDV message to decentr: %w", err)
+	if err := s.b.DistributeReward(owner, id, meta.Reward); err != nil {
+		return 0, api.PDVMeta{}, fmt.Errorf("failed to send DistributeReward message to decentr: %w", err)
 	}
 
 	return id, meta, nil

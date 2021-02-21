@@ -48,16 +48,16 @@ func (mr *MockBlockchainMockRecorder) Ping(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockBlockchain)(nil).Ping), ctx)
 }
 
-// CreatePDV mocks base method
-func (m *MockBlockchain) CreatePDV(receiver types.AccAddress, reward uint64) error {
+// DistributeReward mocks base method
+func (m *MockBlockchain) DistributeReward(receiver types.AccAddress, id, reward uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePDV", receiver, reward)
+	ret := m.ctrl.Call(m, "DistributeReward", receiver, id, reward)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreatePDV indicates an expected call of CreatePDV
-func (mr *MockBlockchainMockRecorder) CreatePDV(receiver, reward interface{}) *gomock.Call {
+// DistributeReward indicates an expected call of DistributeReward
+func (mr *MockBlockchainMockRecorder) DistributeReward(receiver, id, reward interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePDV", reflect.TypeOf((*MockBlockchain)(nil).CreatePDV), receiver, reward)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DistributeReward", reflect.TypeOf((*MockBlockchain)(nil).DistributeReward), receiver, id, reward)
 }

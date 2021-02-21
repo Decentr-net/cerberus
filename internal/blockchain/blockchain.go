@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	clicontext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -32,12 +33,13 @@ func init() {
 type Blockchain interface {
 	health.Pinger
 
-	CreatePDV(receiver sdk.AccAddress, reward uint64) error
+	DistributeReward(receiver sdk.AccAddress, id uint64, reward uint64) error
 }
 
 type blockchain struct {
 	ctx       clicontext.CLIContext
 	txBuilder auth.TxBuilder
+	mu        sync.Mutex
 }
 
 func NewBlockchain(ctx clicontext.CLIContext, b auth.TxBuilder) Blockchain { // nolint
@@ -47,8 +49,12 @@ func NewBlockchain(ctx clicontext.CLIContext, b auth.TxBuilder) Blockchain { // 
 	}
 }
 
-func (b *blockchain) CreatePDV(receiver sdk.AccAddress, reward uint64) error {
-	msg := pdv.NewMsgCreatePDV(b.ctx.GetFromAddress(), receiver, reward)
+func (b *blockchain) DistributeReward(receiver sdk.AccAddress, id uint64, reward uint64) error {
+	msg := pdv.NewMsgDistributeRewards(b.ctx.GetFromAddress(), []pdv.Reward{{
+		Receiver: receiver,
+		ID:       id,
+		Reward:   reward,
+	}})
 	if err := msg.ValidateBasic(); err != nil {
 		return err
 	}
@@ -57,6 +63,9 @@ func (b *blockchain) CreatePDV(receiver sdk.AccAddress, reward uint64) error {
 }
 
 func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
 	txBldr, err := utils.PrepareTxBuilder(b.txBuilder, b.ctx)
 	if err != nil {
 		return fmt.Errorf("failed to prepare builder: %w", err)
@@ -82,8 +91,15 @@ func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
 		if sdkerrors.ErrTxInMempoolCache.ABCICode() == resp.Code {
 			return nil
 		}
+
+		if sdkerrors.ErrUnauthorized.ABCICode() == resp.Code || sdkerrors.ErrInvalidSequence.ABCICode() == resp.Code {
+			b.txBuilder = b.txBuilder.WithSequence(0) // reset sequence
+		}
+
 		return fmt.Errorf("failed to broadcast tx: %s", resp.String()) // nolint: goerr113
 	}
+
+	b.txBuilder = b.txBuilder.WithSequence(txBldr.Sequence() + 1)
 
 	return nil
 }

@@ -12,28 +12,28 @@ const (
 )
 
 var (
-	DefaultCerberuses = []string{}
+	DefaultCerberusOwners = []string{}
 )
 
 // ParamCerberusKey is store's key for ParamCerberus
-var ParamCerberusesKey = []byte("ParamCerberuses")
+var ParamCerberusOwnersKey = []byte("ParamCerberusOwners")
 
 // ParamKeyTable type declaration for parameters
 func ParamKeyTable() params.KeyTable {
 	return params.NewKeyTable(
-		params.NewParamSetPair(ParamCerberusesKey, &DefaultCerberuses, validateCerberuses),
+		params.NewParamSetPair(ParamCerberusOwnersKey, &DefaultCerberusOwners, validateCerberusOwners),
 	)
 }
 
-func validateCerberuses(i interface{}) error {
-	moderators, ok := i.([]string)
+func validateCerberusOwners(i interface{}) error {
+	owners, ok := i.([]string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	for _, moderator := range moderators {
-		if _, err := sdk.AccAddressFromBech32(moderator); err != nil {
-			return fmt.Errorf("%s is an invalid cerberus address, err=%w", moderator, err)
+	for _, owner := range owners {
+		if _, err := sdk.AccAddressFromBech32(owner); err != nil {
+			return fmt.Errorf("%s is an invalid cerberus address, err=%w", owner, err)
 		}
 	}
 	return nil

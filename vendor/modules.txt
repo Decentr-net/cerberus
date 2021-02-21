@@ -2,7 +2,7 @@
 github.com/99designs/keyring
 # github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 github.com/ChainSafe/go-schnorrkel
-# github.com/Decentr-net/decentr v1.0.5-0.20210220163838-0350f0b5c623
+# github.com/Decentr-net/decentr v1.1.0
 ## explicit
 github.com/Decentr-net/decentr/app
 github.com/Decentr-net/decentr/x/community
@@ -12,7 +12,6 @@ github.com/Decentr-net/decentr/x/community/keeper
 github.com/Decentr-net/decentr/x/community/types
 github.com/Decentr-net/decentr/x/pdv
 github.com/Decentr-net/decentr/x/pdv/client/cli
-github.com/Decentr-net/decentr/x/pdv/client/rest
 github.com/Decentr-net/decentr/x/pdv/keeper
 github.com/Decentr-net/decentr/x/pdv/types
 github.com/Decentr-net/decentr/x/profile

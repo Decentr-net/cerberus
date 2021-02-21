@@ -4,9 +4,6 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
-	"strconv"
-
 	"github.com/Decentr-net/decentr/x/pdv/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -15,10 +12,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"io/ioutil"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -32,7 +28,6 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	}
 
 	pdvTxCmd.AddCommand(flags.PostCommands(
-		GetCmdCreatePDV(cdc),
 		GetCmdSignPDV(cdc),
 	)...)
 
@@ -71,37 +66,6 @@ func GetCmdSignPDV(cdc *codec.Codec) *cobra.Command {
 				PublicKey: hex.EncodeToString(pk.Bytes()[5:]), // cut amino codec prefix
 				Signature: hex.EncodeToString(signature),
 			})
-		},
-	}
-}
-
-// GetCmdCreatePDV is the CLI command for sending a CreatePDV transaction
-func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "create [receiver] [reward]",
-		Short: "create PDV",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			receiver, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return fmt.Errorf("failed to parse receiver: %w", err)
-			}
-
-			reward, err := strconv.ParseUint(args[1], 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse reward: %w", err)
-			}
-
-			msg := types.NewMsgCreatePDV(cliCtx.GetFromAddress(), receiver, reward)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
 }

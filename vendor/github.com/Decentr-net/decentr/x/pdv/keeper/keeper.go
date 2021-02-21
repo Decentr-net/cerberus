@@ -28,14 +28,14 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspa
 	}
 }
 
-// GetCerberuses returns the current cerberuses
-func (k *Keeper) GetCerberuses(ctx sdk.Context) []string {
+// GetCerberusOwners returns the current Cerberus owners
+func (k *Keeper) GetCerberusOwners(ctx sdk.Context) []string {
 	var moderators []string
-	k.paramSpace.GetIfExists(ctx, types.ParamCerberusesKey, &moderators)
+	k.paramSpace.GetIfExists(ctx, types.ParamCerberusOwnersKey, &moderators)
 	return moderators
 }
 
-// SetCerberuses sets the moderators
-func (k *Keeper) SetCerberuses(ctx sdk.Context, moderators []string) {
-	k.paramSpace.Set(ctx, types.ParamCerberusesKey, &moderators)
+// SetCerberusOwners sets the Cerberus owners
+func (k *Keeper) SetCerberusOwners(ctx sdk.Context, moderators []string) {
+	k.paramSpace.Set(ctx, types.ParamCerberusOwnersKey, &moderators)
 }
