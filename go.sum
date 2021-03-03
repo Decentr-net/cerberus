@@ -13,6 +13,8 @@ github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53/go.mod h1:+3
 github.com/CloudyKit/jet/v3 v3.0.0/go.mod h1:HKQPgSJmdK8hdoAbKUUWajkHyHo4RaU5rMdUywE7VMo=
 github.com/Decentr-net/decentr v1.1.0 h1:VovICKqbROZS/Y9tXQq+yRhT22T/NqUGKWjyg2LMkTs=
 github.com/Decentr-net/decentr v1.1.0/go.mod h1:ehXkz6kZKY7w4P/2SWAj1ueL9oTRqfiWXnoAxKBGd+w=
+github.com/Decentr-net/decentr v1.2.2 h1:4RcsCuvcl2oDemn5jye7iizJrzLZEtfjCjNRrr8Hw00=
+github.com/Decentr-net/decentr v1.2.2/go.mod h1:ehXkz6kZKY7w4P/2SWAj1ueL9oTRqfiWXnoAxKBGd+w=
 github.com/Decentr-net/logrus v0.7.1 h1:/LjE/eiTF8hH0070482bphp5XAdYe7arEKb2Ho203rw=
 github.com/Decentr-net/logrus v0.7.1/go.mod h1:EPFtMuGaa2CVrSbTXaCywqwqIAezkhWo7xqEfudEDp4=
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=

@@ -5,7 +5,7 @@ go 1.15
 replace github.com/docker/docker => github.com/docker/engine v0.0.0-20190717161051-705d9623b7c1 // fix logrus for testcontainers
 
 require (
-	github.com/Decentr-net/decentr v1.1.0
+	github.com/Decentr-net/decentr v1.2.2
 	github.com/Decentr-net/logrus v0.7.1
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
