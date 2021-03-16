@@ -6,15 +6,16 @@ replace github.com/docker/docker => github.com/docker/engine v0.0.0-201907171610
 
 require (
 	github.com/Decentr-net/decentr v1.2.2
-	github.com/Decentr-net/logrus v0.7.1
+	github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/cosmos/cosmos-sdk v0.39.2
-	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/getsentry/sentry-go v0.9.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible
+	github.com/go-chi/cors v1.1.1
+	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/google/go-cmp v0.5.1 // indirect
@@ -26,7 +27,7 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.6.0
+	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.33.9

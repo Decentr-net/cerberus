@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	logging "github.com/Decentr-net/logrus/context"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
@@ -72,7 +73,7 @@ func newTestParameters(t *testing.T, method string, uri string, body []byte) (*b
 	l.SetOutput(b)
 
 	w := httptest.NewRecorder()
-	ctx := context.WithValue(context.Background(), logCtxKey{}, l)
+	ctx := logging.WithLogger(context.Background(), l)
 	r, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("http://localhost/%s", uri), bytes.NewReader(body))
 	require.NoError(t, err)
 
@@ -160,7 +161,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					log := logrus.New()
 					log.SetOutput(b)
-					next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), logCtxKey{}, log)))
+					next.ServeHTTP(w, r.WithContext(logging.WithLogger(r.Context(), log)))
 				})
 			})
 			c, err := lru.NewARC(10)
@@ -273,7 +274,7 @@ func TestServer_ListPDVHandler(t *testing.T) {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					log := logrus.New()
 					log.SetOutput(b)
-					next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), logCtxKey{}, log)))
+					next.ServeHTTP(w, r.WithContext(logging.WithLogger(r.Context(), log)))
 				})
 			})
 			s := server{s: srv}
@@ -383,7 +384,7 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					log := logrus.New()
 					log.SetOutput(b)
-					next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), logCtxKey{}, log)))
+					next.ServeHTTP(w, r.WithContext(logging.WithLogger(r.Context(), log)))
 				})
 			})
 			s := server{s: srv}
@@ -484,7 +485,7 @@ func TestServer_GetPDVMeta(t *testing.T) {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					log := logrus.New()
 					log.SetOutput(b)
-					next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), logCtxKey{}, log)))
+					next.ServeHTTP(w, r.WithContext(logging.WithLogger(r.Context(), log)))
 				})
 			})
 			c, err := lru.NewARC(10)

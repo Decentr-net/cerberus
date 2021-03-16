@@ -7,18 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 
 	"github.com/Decentr-net/cerberus/pkg/api"
 )
-
-func Test_getLogger(t *testing.T) {
-	ctx := context.WithValue(context.Background(), logCtxKey{}, logrus.WithError(nil))
-	require.NotNil(t, getLogger(ctx))
-}
 
 func Test_writeOK(t *testing.T) {
 	w := httptest.NewRecorder()
@@ -53,7 +45,7 @@ func Test_writeErrorf(t *testing.T) {
 func Test_writeInternalError(t *testing.T) {
 	b, w, r := newTestParameters(t, http.MethodGet, "", nil)
 
-	writeInternalError(getLogger(r.Context()), w, "some error")
+	writeInternalError(r.Context(), w, "some error")
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	assert.Greater(t, len(b.String()), 20) // stacktrace
@@ -65,7 +57,7 @@ func Test_writeVerifyError(t *testing.T) {
 	t.Run("bad request", func(t *testing.T) {
 		b, w, r := newTestParameters(t, http.MethodGet, "", nil)
 
-		writeVerifyError(getLogger(r.Context()), w, api.ErrInvalidPublicKey)
+		writeVerifyError(r.Context(), w, api.ErrInvalidPublicKey)
 
 		assert.Empty(t, b.String())
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -74,7 +66,7 @@ func Test_writeVerifyError(t *testing.T) {
 
 	t.Run("not verified", func(t *testing.T) {
 		b, w, r := newTestParameters(t, http.MethodGet, "", nil)
-		writeVerifyError(getLogger(r.Context()), w, api.ErrNotVerified)
+		writeVerifyError(r.Context(), w, api.ErrNotVerified)
 
 		assert.Empty(t, b.String())
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
@@ -84,7 +76,7 @@ func Test_writeVerifyError(t *testing.T) {
 	t.Run("internal error", func(t *testing.T) {
 		b, w, r := newTestParameters(t, http.MethodGet, "", nil)
 
-		writeVerifyError(getLogger(r.Context()), w, errors.New("some error"))
+		writeVerifyError(r.Context(), w, errors.New("some error"))
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Greater(t, len(b.String()), 20) // stacktrace

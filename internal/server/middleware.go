@@ -4,25 +4,24 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/gofrs/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/tomasen/realip"
-)
 
-type logCtxKey struct{}
+	logging "github.com/Decentr-net/logrus/context"
+)
 
 // recovererMiddleware handles panics.
 func recovererMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rvr := recover(); rvr != nil {
-				log := getLogger(r.Context())
-				log.Error("service recovered from panic")
-				log.Error("panic:")
-				log.Error(spew.Sdump(rvr))
+				logging.GetLogger(r.Context()).Info("service recovered from panic")
 
-				writeError(w, http.StatusInternalServerError, "internal error")
+				writeInternalError(r.Context(), w, spew.Sdump(rvr))
 			}
 		}()
 
@@ -37,11 +36,41 @@ func loggerMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		log := logrus.WithField("ip", realip.FromRequest(r))
 
-		ctx := context.WithValue(r.Context(), logCtxKey{}, log)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		next.ServeHTTP(w, r.WithContext(logging.WithLogger(r.Context(), log)))
 	}
 
 	return http.HandlerFunc(fn)
+}
+
+// requestIDMiddleware puts request-id to headers and adds it into a logger.
+func requestIDMiddleware(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		id := uuid.Must(uuid.NewV4()).String()
+
+		w.Header().Set("X-Request-ID", id)
+		l := logging.GetLogger(r.Context()).WithField("request_id", id)
+
+		next.ServeHTTP(w, r.WithContext(logging.WithLogger(r.Context(), l)))
+	}
+
+	return http.HandlerFunc(fn)
+}
+
+// timeoutMiddleware puts timeout context into request
+func timeoutMiddleware(timeout time.Duration) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			logging.GetLogger(r.Context()).WithField("url", r.URL.String()).Debug("start processing")
+
+			ctx, _ := context.WithTimeout(r.Context(), timeout)
+			next.ServeHTTP(w, r.WithContext(ctx))
+
+			logging.GetLogger(r.Context()).WithField("elapsed_time", time.Since(start)).Debug("processed")
+		}
+
+		return http.HandlerFunc(fn)
+	}
 }
 
 // setHeadersMiddleware sets predefined headers to response.

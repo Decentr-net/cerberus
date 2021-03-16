@@ -43,11 +43,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"runtime/debug"
+	"time"
 
+	logging "github.com/Decentr-net/logrus/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/sirupsen/logrus"
 	"github.com/tendermint/go-amino"
@@ -81,13 +83,16 @@ type server struct {
 }
 
 // SetupRouter setups handlers to chi router.
-func SetupRouter(s service.Service, r chi.Router, maxBodySize int64, minPDVCount, maxPDVCount uint16) {
+func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBodySize int64, minPDVCount, maxPDVCount uint16) {
 	r.Use(
 		swaggerMiddleware,
 		loggerMiddleware,
-		setHeadersMiddleware,
 		middleware.StripSlashes,
+		cors.AllowAll().Handler,
+		setHeadersMiddleware,
+		requestIDMiddleware,
 		recovererMiddleware,
+		timeoutMiddleware(timeout),
 		bodyLimiterMiddleware(maxBodySize),
 	)
 
@@ -110,10 +115,6 @@ func SetupRouter(s service.Service, r chi.Router, maxBodySize int64, minPDVCount
 	r.Get("/v1/pdv/{owner}/{id}/meta", srv.getPDVMetaHandler)
 }
 
-func getLogger(ctx context.Context) logrus.FieldLogger {
-	return ctx.Value(logCtxKey{}).(logrus.FieldLogger)
-}
-
 func writeErrorf(w http.ResponseWriter, status int, format string, args ...interface{}) {
 	body, _ := json.Marshal(api.Error{
 		Error: fmt.Sprintf(format, args...),
@@ -128,9 +129,9 @@ func writeError(w http.ResponseWriter, s int, message string) {
 	writeErrorf(w, s, message)
 }
 
-func writeInternalError(l logrus.FieldLogger, w http.ResponseWriter, message string) {
-	l.Error(string(debug.Stack()))
-	l.Error(message)
+func writeInternalError(ctx context.Context, w http.ResponseWriter, message string) {
+	logging.GetLogger(ctx).Error(message)
+
 	// We don't want to expose internal error to user. So we will just send typical error.
 	writeError(w, http.StatusInternalServerError, "internal error")
 }
@@ -143,14 +144,14 @@ func writeOK(w http.ResponseWriter, status int, v interface{}) {
 	w.Write(body)
 }
 
-func writeVerifyError(l logrus.FieldLogger, w http.ResponseWriter, err error) {
+func writeVerifyError(ctx context.Context, w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, api.ErrNotVerified):
 		writeError(w, http.StatusUnauthorized, err.Error())
 	case errors.Is(err, api.ErrInvalidRequest):
 		writeError(w, http.StatusBadRequest, err.Error())
 	default:
-		writeInternalError(l, w, err.Error())
+		writeInternalError(ctx, w, err.Error())
 	}
 }
 

@@ -57,7 +57,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	//        "$ref": "#/definitions/Error"
 
 	if err := api.Verify(r); err != nil {
-		writeVerifyError(getLogger(r.Context()), w, err)
+		writeVerifyError(r.Context(), w, err)
 		return
 	}
 
@@ -79,13 +79,13 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 
 	owner, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
 	if err != nil {
-		writeInternalError(getLogger(r.Context()), w, fmt.Sprintf("failed to decode owner address: %s", err.Error()))
+		writeInternalError(r.Context(), w, fmt.Sprintf("failed to decode owner address: %s", err.Error()))
 		return
 	}
 
 	id, meta, err := s.s.SavePDV(r.Context(), p, owner)
 	if err != nil {
-		writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to save pdv")
+		writeInternalError(r.Context(), w, fmt.Sprintf("failed to save pdv: %s", err.Error()))
 		return
 	}
 
@@ -164,13 +164,13 @@ func (s *server) listPDVHandler(w http.ResponseWriter, r *http.Request) {
 
 	list, err := s.s.ListPDV(r.Context(), owner, from, uint16(limit))
 	if err != nil {
-		writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to list pdv")
+		writeInternalError(r.Context(), w, fmt.Sprintf("failed to list pdv: %s", err.Error()))
 		return
 	}
 
 	data, err := json.Marshal(list)
 	if err != nil {
-		writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to marshal list of pdv")
+		writeInternalError(r.Context(), w, fmt.Sprintf("failed to marshal list of pdv: %s", err.Error()))
 		return
 	}
 
@@ -229,7 +229,7 @@ func (s *server) getPDVHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := api.Verify(r); err != nil {
-		writeVerifyError(getLogger(r.Context()), w, err)
+		writeVerifyError(r.Context(), w, err)
 		return
 	}
 
@@ -249,7 +249,7 @@ func (s *server) getPDVHandler(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, service.ErrNotFound) {
 			writeErrorf(w, http.StatusNotFound, fmt.Sprintf("PDV '%d' not found", id))
 		} else {
-			writeInternalError(getLogger(r.Context()), w, err.Error())
+			writeInternalError(r.Context(), w, err.Error())
 		}
 		return
 	}
@@ -314,7 +314,7 @@ func (s *server) getPDVMetaHandler(w http.ResponseWriter, r *http.Request) {
 				writeErrorf(w, http.StatusNotFound, fmt.Sprintf("PDV '%d' not found", id))
 				return
 			}
-			writeInternalError(getLogger(r.Context()), w, err.Error())
+			writeInternalError(r.Context(), w, err.Error())
 			return
 		}
 		s.pdvMetaCache.Add(getCacheKey(owner, id), m)
