@@ -12,6 +12,9 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sirupsen/logrus"
+
+	logging "github.com/Decentr-net/logrus/context"
 
 	"github.com/Decentr-net/cerberus/internal/blockchain"
 	"github.com/Decentr-net/cerberus/internal/crypto"
@@ -61,8 +64,9 @@ func New(c crypto.Crypto, s storage.Storage, b blockchain.Blockchain, rewardMap 
 
 // SavePDV sends PDV to storage.
 func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddress) (uint64, api.PDVMeta, error) {
-	id := uint64(time.Now().Unix())
+	log := logging.GetLogger(ctx)
 
+	id := uint64(time.Now().Unix())
 	filepath := getPDVFilePath(owner.String(), id)
 
 	meta := s.getMeta(p)
@@ -72,11 +76,13 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 		return 0, api.PDVMeta{}, fmt.Errorf("failed to marshal pdv: %w", err)
 	}
 
+	log.Debug("encrypting pdv")
 	enc, size, err := s.c.Encrypt(bytes.NewReader(data))
 	if err != nil {
 		return 0, api.PDVMeta{}, fmt.Errorf("failed to create encrypting reader: %w", err)
 	}
 
+	log.WithField("filepath", filepath).Debug("writing pdv into the storage")
 	if err := s.s.Write(ctx, enc, size, filepath); err != nil {
 		return 0, api.PDVMeta{}, fmt.Errorf("failed to write pdv data to storage: %w", err)
 	}
@@ -86,12 +92,18 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 		return 0, api.PDVMeta{}, fmt.Errorf("failed to marshal pdv meta: %w", err)
 	}
 
+	log.WithField("filepath", filepath).Debug("writing meta into the storage")
 	mr := bytes.NewReader(data)
 	if err := s.s.Write(ctx, mr, mr.Size(), getMetaFilePath(owner.String(), id)); err != nil {
 		return 0, api.PDVMeta{}, fmt.Errorf("failed to write pdv meta to storage: %w", err)
 	}
 
-	if err := s.b.DistributeReward(owner, id, meta.Reward); err != nil {
+	log.WithFields(logrus.Fields{
+		"owner":  owner.String(),
+		"pdv":    id,
+		"amount": meta.Reward,
+	}).Debug("distributing reward")
+	if err := s.b.DistributeReward(ctx, owner, id, meta.Reward); err != nil {
 		return 0, api.PDVMeta{}, fmt.Errorf("failed to send DistributeReward message to decentr: %w", err)
 	}
 
@@ -100,6 +112,11 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 
 // ListPDV lists PDVs.
 func (s *service) ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error) {
+	logging.GetLogger(ctx).WithFields(logrus.Fields{
+		"prefix": getPDVOwnerPrefix(owner),
+		"from":   from,
+		"limit":  limit,
+	}).Debug("trying to list pdv")
 	files, err := s.s.List(ctx, getPDVOwnerPrefix(owner), from, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list files: %w", err)
@@ -107,6 +124,12 @@ func (s *service) ListPDV(ctx context.Context, owner string, from uint64, limit 
 
 	out := make([]uint64, len(files))
 	for i, v := range files {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
 		id, err := getIDFromFilename(v)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse id: %w", err)
@@ -118,6 +141,9 @@ func (s *service) ListPDV(ctx context.Context, owner string, from uint64, limit 
 
 // ReceivePDV returns slice of bytes of PDV requested by address from storage.
 func (s *service) ReceivePDV(ctx context.Context, owner string, id uint64) ([]byte, error) {
+	log := logging.GetLogger(ctx)
+
+	log.WithField("filepath", getPDVFilePath(owner, id)).Debug("reading pdv from storage")
 	r, err := s.s.Read(ctx, getPDVFilePath(owner, id))
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
@@ -127,6 +153,7 @@ func (s *service) ReceivePDV(ctx context.Context, owner string, id uint64) ([]by
 	}
 	defer r.Close() // nolint
 
+	log.Debug("decrypting pdv")
 	dr, err := s.c.Decrypt(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create decrypting reader: %w", err)
@@ -142,6 +169,7 @@ func (s *service) ReceivePDV(ctx context.Context, owner string, id uint64) ([]by
 
 // GetPDVMeta returns pdv meta.
 func (s *service) GetPDVMeta(ctx context.Context, owner string, id uint64) (api.PDVMeta, error) {
+	logging.GetLogger(ctx).WithField("filepath", getMetaFilePath(owner, id)).Debug("reading meta from storage")
 	r, err := s.s.Read(ctx, getMetaFilePath(owner, id))
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	logging "github.com/Decentr-net/logrus/context"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
@@ -21,6 +20,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"golang.org/x/net/context"
+
+	apitest "github.com/Decentr-net/go-api/test"
+	logging "github.com/Decentr-net/logrus/context"
 
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/pkg/api"
@@ -68,19 +70,11 @@ var pdv = []byte(`{
 var errSkip = errors.New("fictive error")
 
 func newTestParameters(t *testing.T, method string, uri string, body []byte) (*bytes.Buffer, *httptest.ResponseRecorder, *http.Request) {
-	l := logrus.New()
-	b := bytes.NewBufferString("")
-	l.SetOutput(b)
-
-	w := httptest.NewRecorder()
-	ctx := logging.WithLogger(context.Background(), l)
-	r, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("http://localhost/%s", uri), bytes.NewReader(body))
-	require.NoError(t, err)
-
+	l, w, r := apitest.NewAPITestParameters(method, uri, body)
 	pk := secp256k1.PrivKeySecp256k1{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31}
 	require.NoError(t, api.Sign(r, pk))
 
-	return b, w, r
+	return l, w, r
 }
 
 func TestServer_SavePDVHandler(t *testing.T) {
@@ -105,7 +99,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			reqBody: nil,
 			err:     errSkip,
 			rcode:   http.StatusBadRequest,
-			rdata:   `{"error":"request is invalid: EOF"}`,
+			rdata:   `{"error":"request is invalid: unexpected end of JSON input"}`,
 			rlog:    "",
 		},
 		{

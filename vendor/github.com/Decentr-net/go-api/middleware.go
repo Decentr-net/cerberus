@@ -1,7 +1,8 @@
-package server
+package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -14,14 +15,14 @@ import (
 	logging "github.com/Decentr-net/logrus/context"
 )
 
-// recovererMiddleware handles panics.
-func recovererMiddleware(next http.Handler) http.Handler {
+// RecovererMiddleware handles panics.
+func RecovererMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rvr := recover(); rvr != nil {
 				logging.GetLogger(r.Context()).Info("service recovered from panic")
 
-				writeInternalError(r.Context(), w, spew.Sdump(rvr))
+				WriteInternalError(r.Context(), w, spew.Sdump(rvr))
 			}
 		}()
 
@@ -31,8 +32,8 @@ func recovererMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// loggerMiddleware puts logger with client's info into context.
-func loggerMiddleware(next http.Handler) http.Handler {
+// LoggerMiddleware puts logger with client's info into context.
+func LoggerMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		log := logrus.WithField("ip", realip.FromRequest(r))
 
@@ -42,8 +43,8 @@ func loggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// requestIDMiddleware puts request-id to headers and adds it into a logger.
-func requestIDMiddleware(next http.Handler) http.Handler {
+// RequestIDMiddleware puts request-id to headers and adds it into a logger.
+func RequestIDMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		id := uuid.Must(uuid.NewV4()).String()
 
@@ -56,8 +57,8 @@ func requestIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// timeoutMiddleware puts timeout context into request
-func timeoutMiddleware(timeout time.Duration) func(next http.Handler) http.Handler {
+// TimeoutMiddleware puts timeout context into request.
+func TimeoutMiddleware(timeout time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
@@ -73,35 +74,27 @@ func timeoutMiddleware(timeout time.Duration) func(next http.Handler) http.Handl
 	}
 }
 
-// setHeadersMiddleware sets predefined headers to response.
-func setHeadersMiddleware(handler http.Handler) http.Handler {
-	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		handler.ServeHTTP(w, r)
-	})
-
-	return http.Handler(fn)
+// FileServerMiddleware serves requests with prefix into directory.
+func FileServerMiddleware(prefix, dir string) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Shortcut helpers for swagger-ui
+			if r.URL.Path == prefix {
+				http.Redirect(w, r, fmt.Sprintf("%s/", prefix), http.StatusFound)
+				return
+			}
+			// Serving ./swagger-ui/
+			if strings.Index(r.URL.Path, fmt.Sprintf("%s/", prefix)) == 0 {
+				http.StripPrefix(fmt.Sprintf("%s/", prefix), http.FileServer(http.Dir(dir))).ServeHTTP(w, r)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
-// swaggerMiddleware for swagger-ui.
-func swaggerMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Shortcut helpers for swagger-ui
-		if r.URL.Path == "/docs" {
-			http.Redirect(w, r, "/docs/", http.StatusFound)
-			return
-		}
-		// Serving ./swagger-ui/
-		if strings.Index(r.URL.Path, "/docs/") == 0 {
-			http.StripPrefix("/docs/", http.FileServer(http.Dir("static"))).ServeHTTP(w, r)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-// bodyLimiterMiddleware returns middleware which limits size of data read from request's body.
-func bodyLimiterMiddleware(maxBodySize int64) func(handler http.Handler) http.Handler {
+// BodyLimiterMiddleware returns middleware which limits size of data read from request's body.
+func BodyLimiterMiddleware(maxBodySize int64) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)

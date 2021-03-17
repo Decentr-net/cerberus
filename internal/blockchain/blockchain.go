@@ -16,6 +16,7 @@ import (
 
 	"github.com/Decentr-net/decentr/app"
 	pdv "github.com/Decentr-net/decentr/x/pdv/types"
+	logging "github.com/Decentr-net/logrus/context"
 
 	"github.com/Decentr-net/cerberus/internal/health"
 )
@@ -33,8 +34,10 @@ func init() {
 type Blockchain interface {
 	health.Pinger
 
-	DistributeReward(receiver sdk.AccAddress, id uint64, reward uint64) error
+	DistributeReward(ctx context.Context, receiver sdk.AccAddress, id uint64, reward uint64) error
 }
+
+var errInvalidSequence = errors.New("invalid sequence_id")
 
 type blockchain struct {
 	ctx       clicontext.CLIContext
@@ -49,7 +52,7 @@ func NewBlockchain(ctx clicontext.CLIContext, b auth.TxBuilder) Blockchain { // 
 	}
 }
 
-func (b *blockchain) DistributeReward(receiver sdk.AccAddress, id uint64, reward uint64) error {
+func (b *blockchain) DistributeReward(ctx context.Context, receiver sdk.AccAddress, id uint64, reward uint64) error {
 	msg := pdv.NewMsgDistributeRewards(b.ctx.GetFromAddress(), []pdv.Reward{{
 		Receiver: receiver,
 		ID:       id,
@@ -59,13 +62,31 @@ func (b *blockchain) DistributeReward(receiver sdk.AccAddress, id uint64, reward
 		return err
 	}
 
-	return b.BroadcastMsg(msg)
+	logging.GetLogger(ctx).WithField("msg", msg).Debug("trying to broadcast msg")
+	var err error
+	for i := 0; i < 2; i++ {
+		err = b.BroadcastMsg(ctx, msg)
+
+		if err == nil {
+			return nil
+		}
+
+		if errors.Is(err, errInvalidSequence) {
+			logging.GetLogger(ctx).WithField("msg", msg).Debug("retry broadcasting msg")
+			continue
+		}
+	}
+
+	return err
 }
 
-func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
+func (b *blockchain) BroadcastMsg(ctx context.Context, msg sdk.Msg) error {
+	log := logging.GetLogger(ctx).WithField("sequence_id", b.txBuilder.Sequence())
+
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
+	log.Debug("preparing tx builder")
 	txBldr, err := utils.PrepareTxBuilder(b.txBuilder, b.ctx)
 	if err != nil {
 		return fmt.Errorf("failed to prepare builder: %w", err)
@@ -77,11 +98,13 @@ func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
 		return errors.New("failed to calculate gas") // nolint: goerr113
 	}
 
+	log.Debug("building tx")
 	txBytes, err := txBldr.BuildAndSign(b.ctx.GetFromName(), keys.DefaultKeyPass, msgs)
 	if err != nil {
 		return fmt.Errorf("failed to build and sign tx: %w", err)
 	}
 
+	log.Debug("broadcasting tx")
 	resp, err := b.ctx.BroadcastTx(txBytes)
 	if err != nil {
 		return fmt.Errorf("failed to broadcast tx: %w", err)
@@ -93,7 +116,9 @@ func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
 		}
 
 		if sdkerrors.ErrUnauthorized.ABCICode() == resp.Code || sdkerrors.ErrInvalidSequence.ABCICode() == resp.Code {
-			b.txBuilder = b.txBuilder.WithSequence(0) // reset sequence
+			log.Info("wrong sequence_id. reset sequence_id to zero")
+			b.txBuilder = b.txBuilder.WithSequence(0)
+			return errInvalidSequence
 		}
 
 		return fmt.Errorf("failed to broadcast tx: %s", resp.String()) // nolint: goerr113

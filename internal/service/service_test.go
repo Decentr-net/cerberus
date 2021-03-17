@@ -118,7 +118,7 @@ func TestService_SavePDV(t *testing.T) {
 		return nil
 	})
 
-	b.EXPECT().DistributeReward(testOwnerSdkAddr, expectedID, expectedMeta.Reward).Return(nil)
+	b.EXPECT().DistributeReward(gomock.Any(), testOwnerSdkAddr, expectedID, expectedMeta.Reward).Return(nil)
 
 	id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Equal(t, expectedID, id)
@@ -176,7 +176,7 @@ func TestService_SavePDV_BlockchainError(t *testing.T) {
 	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-	b.EXPECT().DistributeReward(testOwnerSdkAddr, gomock.Any(), gomock.Any()).Return(errTest)
+	b.EXPECT().DistributeReward(gomock.Any(), testOwnerSdkAddr, gomock.Any(), gomock.Any()).Return(errTest)
 
 	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Error(t, err)
