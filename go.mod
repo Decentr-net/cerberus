@@ -7,7 +7,8 @@ replace github.com/docker/docker => github.com/docker/engine v0.0.0-201907171610
 require (
 	github.com/Decentr-net/decentr v1.2.2
 	github.com/Decentr-net/go-api v0.0.1
-	github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189
+	github.com/Decentr-net/go-broadcaster v0.0.0-20210317215517-fab9bae48544
+	github.com/Decentr-net/logrus v0.7.2
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/cosmos/cosmos-sdk v0.39.2
 	github.com/go-chi/chi v4.1.2+incompatible
@@ -20,6 +21,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
+	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.33.9
 	github.com/testcontainers/testcontainers-go v0.8.0
 	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb

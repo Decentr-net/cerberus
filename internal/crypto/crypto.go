@@ -3,7 +3,7 @@ package crypto
 
 import "io"
 
-//go:generate mockgen -destination=./crypto_mock.go -package=crypto -source=crypto.go
+//go:generate mockgen -destination=./mock/crypto.go -package=mock -source=crypto.go
 
 // Crypto provide Reader and Writer wrappers.
 type Crypto interface {

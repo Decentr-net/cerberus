@@ -9,7 +9,7 @@ import (
 	"github.com/Decentr-net/cerberus/internal/health"
 )
 
-//go:generate mockgen -destination=./storage_mock.go -package=storage -source=storage.go
+//go:generate mockgen -destination=./mock/storage.go -package=storage -source=storage.go
 
 // ErrNotFound means that file is not found.
 var ErrNotFound = errors.New("not found")

@@ -37,6 +37,14 @@ type Pinger interface {
 	Ping(ctx context.Context) error
 }
 
+// PingFunc is wrapper for raw func.
+type PingFunc func(ctx context.Context) error
+
+// Ping ...
+func (f PingFunc) Ping(ctx context.Context) error {
+	return f(ctx)
+}
+
 // SetupRouter setups all pingers to /health.
 func SetupRouter(r chi.Router, p ...Pinger) {
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {

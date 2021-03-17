@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -13,14 +12,10 @@ import (
 	"syscall"
 	"time"
 
-	clicontext "github.com/cosmos/cosmos-sdk/client/context"
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/client/keys"
 	"gopkg.in/yaml.v2"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	"github.com/minio/minio-go/v7"
@@ -29,6 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/Decentr-net/decentr/app"
+	"github.com/Decentr-net/go-broadcaster"
 	"github.com/Decentr-net/logrus/sentry"
 
 	"github.com/Decentr-net/cerberus/internal/blockchain"
@@ -128,11 +124,11 @@ func main() {
 		logrus.WithError(err).Fatal("failed to create storage")
 	}
 
-	bchain := mustGetBlockchain()
+	b := mustGetBroadcaster()
 
-	server.SetupRouter(newServiceOrDie(storage, bchain), r,
+	server.SetupRouter(newServiceOrDie(storage, blockchain.New(b)), r,
 		opts.RequestTimeout, opts.MaxBodySize, opts.MinPDVCount, opts.MaxPDVCount)
-	health.SetupRouter(r, storage)
+	health.SetupRouter(r, storage, health.PingFunc(b.PingContext))
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),
@@ -192,35 +188,21 @@ func mustExtractEncryptKey() [32]byte {
 	return r
 }
 
-func mustGetBlockchain() blockchain.Blockchain {
-	cdc := app.MakeCodec()
+func mustGetBroadcaster() *broadcaster.Broadcaster {
+	b, err := broadcaster.New(app.MakeCodec(), broadcaster.Config{
+		CLIHome:            opts.BlockchainClientHome,
+		KeyringBackend:     opts.BlockchainKeyringBackend,
+		KeyringPromptInput: opts.BlockchainKeyringPromptInput,
+		NodeURI:            opts.BlockchainNode,
+		BroadcastMode:      cliflags.BroadcastSync,
+		From:               opts.BlockchainFrom,
+		ChainID:            opts.BlockchainChainID,
+		GenesisKeyPass:     keys.DefaultKeyPass,
+	})
 
-	kb, err := keys.NewKeyring(sdk.KeyringServiceName(),
-		opts.BlockchainKeyringBackend,
-		opts.BlockchainClientHome,
-		bytes.NewBufferString(opts.BlockchainKeyringPromptInput),
-	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to create keyring")
+		logrus.WithError(err).Fatal("failed to create broadcaster")
 	}
 
-	acc, err := kb.Get(opts.BlockchainFrom)
-	if err != nil {
-		logrus.WithError(err).Fatal("failed to get blockchain account info")
-	}
-
-	cliCtx := clicontext.NewCLIContext().
-		WithCodec(cdc).
-		WithBroadcastMode(cliflags.BroadcastSync).
-		WithNodeURI(opts.BlockchainNode).
-		WithFrom(acc.GetName()).
-		WithFromName(acc.GetName()).
-		WithFromAddress(acc.GetAddress()).
-		WithChainID(opts.BlockchainChainID)
-	cliCtx.Keybase = kb
-
-	txBldr := auth.NewTxBuilder(utils.GetTxEncoder(cdc), 0, 0, 0, 1.0, false,
-		opts.BlockchainChainID, opts.BlockchainTxMemo, nil, nil).WithKeybase(kb)
-
-	return blockchain.NewBlockchain(cliCtx, txBldr)
+	return b
 }

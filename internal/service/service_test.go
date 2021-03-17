@@ -15,9 +15,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Decentr-net/cerberus/internal/blockchain"
-	"github.com/Decentr-net/cerberus/internal/crypto"
+	blockchainmock "github.com/Decentr-net/cerberus/internal/blockchain/mock"
+	cryptomock "github.com/Decentr-net/cerberus/internal/crypto/mock"
 	"github.com/Decentr-net/cerberus/internal/storage"
+	storagemock "github.com/Decentr-net/cerberus/internal/storage/mock"
 	"github.com/Decentr-net/cerberus/pkg/api"
 	"github.com/Decentr-net/cerberus/pkg/schema"
 )
@@ -72,9 +73,9 @@ func TestService_SavePDV(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -118,7 +119,7 @@ func TestService_SavePDV(t *testing.T) {
 		return nil
 	})
 
-	b.EXPECT().DistributeReward(gomock.Any(), testOwnerSdkAddr, expectedID, expectedMeta.Reward).Return(nil)
+	b.EXPECT().DistributeReward(testOwnerSdkAddr, expectedID, expectedMeta.Reward).Return(nil)
 
 	id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Equal(t, expectedID, id)
@@ -130,9 +131,9 @@ func TestService_SavePDV_EncryptError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -147,9 +148,9 @@ func TestService_SavePDV_StorageError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -166,9 +167,9 @@ func TestService_SavePDV_BlockchainError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -176,7 +177,7 @@ func TestService_SavePDV_BlockchainError(t *testing.T) {
 	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	st.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-	b.EXPECT().DistributeReward(gomock.Any(), testOwnerSdkAddr, gomock.Any(), gomock.Any()).Return(errTest)
+	b.EXPECT().DistributeReward(testOwnerSdkAddr, gomock.Any(), gomock.Any()).Return(errTest)
 
 	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Error(t, err)
@@ -187,9 +188,9 @@ func TestService_ReceivePDV(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -212,9 +213,9 @@ func TestService_ReceivePDV_StorageError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -230,9 +231,9 @@ func TestService_ReceivePDV_StorageError_NotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -248,9 +249,9 @@ func TestService_ReceivePDV_DecryptError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -268,9 +269,9 @@ func TestService_GetPDVMeta(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -292,9 +293,9 @@ func TestService_GetPDVMeta_StorageError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -309,9 +310,9 @@ func TestService_GetPDVMeta_NotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 
@@ -334,9 +335,9 @@ func TestService_ListPDV(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	st := storage.NewMockStorage(ctrl)
-	cr := crypto.NewMockCrypto(ctrl)
-	b := blockchain.NewMockBlockchain(ctrl)
+	st := storagemock.NewMockStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	b := blockchainmock.NewMockBlockchain(ctrl)
 
 	s := New(cr, st, b, rewardsMap)
 

@@ -29,7 +29,10 @@ github.com/Decentr-net/decentr/x/utils
 ## explicit
 github.com/Decentr-net/go-api
 github.com/Decentr-net/go-api/test
-# github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189
+# github.com/Decentr-net/go-broadcaster v0.0.0-20210317215517-fab9bae48544
+## explicit
+github.com/Decentr-net/go-broadcaster
+# github.com/Decentr-net/logrus v0.7.2
 ## explicit
 github.com/Decentr-net/logrus/context
 github.com/Decentr-net/logrus/sentry
@@ -446,6 +449,7 @@ github.com/tendermint/btcd/btcec
 # github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15
 github.com/tendermint/crypto/bcrypt
 # github.com/tendermint/go-amino v0.15.1
+## explicit
 github.com/tendermint/go-amino
 # github.com/tendermint/iavl v0.14.1
 github.com/tendermint/iavl
