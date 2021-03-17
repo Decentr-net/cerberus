@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	clicontext "github.com/cosmos/cosmos-sdk/client/context"
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
@@ -41,9 +42,10 @@ import (
 
 // nolint:lll,gochecknoglobals,maligned
 var opts = struct {
-	Host        string `long:"http.host" env:"HTTP_HOST" default:"localhost" description:"IP to listen on"`
-	Port        int    `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
-	MaxBodySize int64  `long:"http.max-body-size" env:"HTTP_MAX_BODY_SIZE" default:"8000000" description:"max request's body size"`
+	Host           string        `long:"http.host" env:"HTTP_HOST" default:"localhost" description:"IP to listen on"`
+	Port           int           `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
+	RequestTimeout time.Duration `long:"http.request-timeout" env:"HTTP_REQUEST_TIMEOUT" default:"45s" description:"request processing timeout"`
+	MaxBodySize    int64         `long:"http.max-body-size" env:"HTTP_MAX_BODY_SIZE" default:"8000000" description:"max request's body size"`
 
 	SentryDSN string `long:"sentry.dsn" env:"SENTRY_DSN" description:"sentry dsn"`
 
@@ -129,7 +131,7 @@ func main() {
 	bchain := mustGetBlockchain()
 
 	server.SetupRouter(newServiceOrDie(storage, bchain), r,
-		opts.MaxBodySize, opts.MinPDVCount, opts.MaxPDVCount)
+		opts.RequestTimeout, opts.MaxBodySize, opts.MinPDVCount, opts.MaxPDVCount)
 	health.SetupRouter(r, storage)
 
 	srv := http.Server{

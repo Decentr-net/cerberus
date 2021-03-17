@@ -38,23 +38,20 @@
 package server
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"net/http"
-	"runtime/debug"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/sirupsen/logrus"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
+	"github.com/Decentr-net/go-api"
+
 	"github.com/Decentr-net/cerberus/internal/service"
-	"github.com/Decentr-net/cerberus/pkg/api"
 	_ "github.com/Decentr-net/cerberus/pkg/api/swagger" // import models to be generated into swagger.json
 )
 
@@ -81,14 +78,16 @@ type server struct {
 }
 
 // SetupRouter setups handlers to chi router.
-func SetupRouter(s service.Service, r chi.Router, maxBodySize int64, minPDVCount, maxPDVCount uint16) {
+func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBodySize int64, minPDVCount, maxPDVCount uint16) {
 	r.Use(
-		swaggerMiddleware,
-		loggerMiddleware,
-		setHeadersMiddleware,
+		api.FileServerMiddleware("/docs", "static"),
+		api.LoggerMiddleware,
 		middleware.StripSlashes,
-		recovererMiddleware,
-		bodyLimiterMiddleware(maxBodySize),
+		cors.AllowAll().Handler,
+		api.RequestIDMiddleware,
+		api.RecovererMiddleware,
+		api.TimeoutMiddleware(timeout),
+		api.BodyLimiterMiddleware(maxBodySize),
 	)
 
 	c, err := lru.NewARC(existenceCacheSize)
@@ -108,50 +107,6 @@ func SetupRouter(s service.Service, r chi.Router, maxBodySize int64, minPDVCount
 	r.Get("/v1/pdv/{owner}", srv.listPDVHandler)
 	r.Get("/v1/pdv/{owner}/{id}", srv.getPDVHandler)
 	r.Get("/v1/pdv/{owner}/{id}/meta", srv.getPDVMetaHandler)
-}
-
-func getLogger(ctx context.Context) logrus.FieldLogger {
-	return ctx.Value(logCtxKey{}).(logrus.FieldLogger)
-}
-
-func writeErrorf(w http.ResponseWriter, status int, format string, args ...interface{}) {
-	body, _ := json.Marshal(api.Error{
-		Error: fmt.Sprintf(format, args...),
-	})
-
-	w.WriteHeader(status)
-	// nolint:gosec,errcheck
-	w.Write(body)
-}
-
-func writeError(w http.ResponseWriter, s int, message string) {
-	writeErrorf(w, s, message)
-}
-
-func writeInternalError(l logrus.FieldLogger, w http.ResponseWriter, message string) {
-	l.Error(string(debug.Stack()))
-	l.Error(message)
-	// We don't want to expose internal error to user. So we will just send typical error.
-	writeError(w, http.StatusInternalServerError, "internal error")
-}
-
-func writeOK(w http.ResponseWriter, status int, v interface{}) {
-	body, _ := json.Marshal(v)
-
-	w.WriteHeader(status)
-	// nolint:gosec,errcheck
-	w.Write(body)
-}
-
-func writeVerifyError(l logrus.FieldLogger, w http.ResponseWriter, err error) {
-	switch {
-	case errors.Is(err, api.ErrNotVerified):
-		writeError(w, http.StatusUnauthorized, err.Error())
-	case errors.Is(err, api.ErrInvalidRequest):
-		writeError(w, http.StatusBadRequest, err.Error())
-	default:
-		writeInternalError(l, w, err.Error())
-	}
 }
 
 func isOwnerValid(s string) bool {

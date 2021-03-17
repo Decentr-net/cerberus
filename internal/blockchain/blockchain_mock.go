@@ -49,15 +49,15 @@ func (mr *MockBlockchainMockRecorder) Ping(ctx interface{}) *gomock.Call {
 }
 
 // DistributeReward mocks base method
-func (m *MockBlockchain) DistributeReward(receiver types.AccAddress, id, reward uint64) error {
+func (m *MockBlockchain) DistributeReward(ctx context.Context, receiver types.AccAddress, id, reward uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DistributeReward", receiver, id, reward)
+	ret := m.ctrl.Call(m, "DistributeReward", ctx, receiver, id, reward)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DistributeReward indicates an expected call of DistributeReward
-func (mr *MockBlockchainMockRecorder) DistributeReward(receiver, id, reward interface{}) *gomock.Call {
+func (mr *MockBlockchainMockRecorder) DistributeReward(ctx, receiver, id, reward interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DistributeReward", reflect.TypeOf((*MockBlockchain)(nil).DistributeReward), receiver, id, reward)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DistributeReward", reflect.TypeOf((*MockBlockchain)(nil).DistributeReward), ctx, receiver, id, reward)
 }
