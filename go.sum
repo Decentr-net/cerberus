@@ -16,9 +16,13 @@ github.com/Decentr-net/decentr v1.2.2 h1:4RcsCuvcl2oDemn5jye7iizJrzLZEtfjCjNRrr8
 github.com/Decentr-net/decentr v1.2.2/go.mod h1:ehXkz6kZKY7w4P/2SWAj1ueL9oTRqfiWXnoAxKBGd+w=
 github.com/Decentr-net/go-api v0.0.1 h1:Rr/Xf3imdMXvA3A+EiV6gpn6AguDliIQCQ9yknZx/KE=
 github.com/Decentr-net/go-api v0.0.1/go.mod h1:wnRhOKC/xSbKmlkRcArtoij//U/g+6CoR/eLnCtRo2k=
+github.com/Decentr-net/go-broadcaster v0.0.0-20210317215517-fab9bae48544 h1:WQIH8tOCvvvh3KUCgjz51eIwny1F345Law4mneUcSiA=
+github.com/Decentr-net/go-broadcaster v0.0.0-20210317215517-fab9bae48544/go.mod h1:eQ9gSusDjqVXi6rMEAHTDsyWxRk2ZKJnRFjUH3zb8j4=
 github.com/Decentr-net/logrus v0.7.1/go.mod h1:EPFtMuGaa2CVrSbTXaCywqwqIAezkhWo7xqEfudEDp4=
 github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189 h1:UsQjUr0TwkLsllBJGRjShMOJ817F82iL1rK7rxHI6AQ=
 github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189/go.mod h1:zhIP1LNjBhoEQvIqKJbw0MIoHN43GjmnZI+ElQ73ab0=
+github.com/Decentr-net/logrus v0.7.2 h1:48PiVv7LCE6F4Wpcqq7JUvP6JXuiY9nN9SlugOuqthE=
+github.com/Decentr-net/logrus v0.7.2/go.mod h1:zhIP1LNjBhoEQvIqKJbw0MIoHN43GjmnZI+ElQ73ab0=
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/Microsoft/go-winio v0.4.11/go.mod h1:VhR8bwka0BXejwEJY73c50VrPtXAaKcyvVC4A4RozmA=

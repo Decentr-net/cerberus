@@ -25,6 +25,7 @@ import (
 	logging "github.com/Decentr-net/logrus/context"
 
 	"github.com/Decentr-net/cerberus/internal/service"
+	"github.com/Decentr-net/cerberus/internal/service/mock"
 	"github.com/Decentr-net/cerberus/pkg/api"
 	"github.com/Decentr-net/cerberus/pkg/schema"
 )
@@ -138,7 +139,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			srv := service.NewMockService(ctrl)
+			srv := mock.NewMockService(ctrl)
 
 			if tc.err != errSkip {
 				var pdv schema.PDV
@@ -253,7 +254,7 @@ func TestServer_ListPDVHandler(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			srv := service.NewMockService(ctrl)
+			srv := mock.NewMockService(ctrl)
 
 			if tc.rcode != http.StatusBadRequest {
 				limit := defaultLimit
@@ -365,7 +366,7 @@ func TestServer_ReceivePDVHandler(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			srv := service.NewMockService(ctrl)
+			srv := mock.NewMockService(ctrl)
 
 			if tc.f != nil {
 				id, err := strconv.ParseUint(tc.id, 10, 64)
@@ -466,7 +467,7 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			srv := service.NewMockService(ctrl)
+			srv := mock.NewMockService(ctrl)
 
 			if tc.f != nil {
 				id, err := strconv.ParseUint(tc.id, 10, 64)

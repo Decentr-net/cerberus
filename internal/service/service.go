@@ -1,3 +1,4 @@
+// Package service contains business logic of application.
 package service
 
 import (
@@ -23,7 +24,7 @@ import (
 	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
-//go:generate mockgen -destination=./service_mock.go -package=service -source=service.go
+//go:generate mockgen -destination=./mock/service.go -package=mock -source=service.go
 
 // ErrNotFound means that requested object is not found.
 var ErrNotFound = errors.New("not found")
@@ -103,7 +104,7 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 		"pdv":    id,
 		"amount": meta.Reward,
 	}).Debug("distributing reward")
-	if err := s.b.DistributeReward(ctx, owner, id, meta.Reward); err != nil {
+	if err := s.b.DistributeReward(owner, id, meta.Reward); err != nil {
 		return 0, api.PDVMeta{}, fmt.Errorf("failed to send DistributeReward message to decentr: %w", err)
 	}
 
