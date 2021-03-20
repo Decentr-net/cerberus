@@ -61,7 +61,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	//        "$ref": "#/definitions/Error"
 
 	if err := capi.Verify(r); err != nil {
-		api.WriteVerifyError(r.Context(), w, err)
+		writeVerifyError(r.Context(), w, err)
 		return
 	}
 
@@ -242,7 +242,7 @@ func (s *server) getPDVHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := capi.Verify(r); err != nil {
-		api.WriteVerifyError(r.Context(), w, err)
+		writeVerifyError(r.Context(), w, err)
 		return
 	}
 

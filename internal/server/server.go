@@ -38,6 +38,9 @@
 package server
 
 import (
+	"context"
+	"errors"
+	"net/http"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -49,6 +52,7 @@ import (
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
+	capi "github.com/Decentr-net/cerberus/pkg/api"
 	"github.com/Decentr-net/go-api"
 
 	"github.com/Decentr-net/cerberus/internal/service"
@@ -112,4 +116,15 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 func isOwnerValid(s string) bool {
 	_, err := sdk.AccAddressFromBech32(s)
 	return err == nil
+}
+
+func writeVerifyError(ctx context.Context, w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, capi.ErrNotVerified):
+		api.WriteError(w, http.StatusUnauthorized, err.Error())
+	case errors.Is(err, capi.ErrInvalidRequest):
+		api.WriteError(w, http.StatusBadRequest, err.Error())
+	default:
+		api.WriteInternalError(ctx, w, err.Error())
+	}
 }

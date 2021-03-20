@@ -3,17 +3,20 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
-	"github.com/Decentr-net/cerberus/pkg/api"
 	logging "github.com/Decentr-net/logrus/context"
 )
 
+// Error ...
+type Error struct {
+	Error string `json:"error"`
+}
+
 // WriteErrorf writes formatted error.
 func WriteErrorf(w http.ResponseWriter, status int, format string, args ...interface{}) {
-	body, _ := json.Marshal(api.Error{
+	body, _ := json.Marshal(Error{
 		Error: fmt.Sprintf(format, args...),
 	})
 
@@ -48,17 +51,4 @@ func WriteOK(w http.ResponseWriter, status int, v interface{}) {
 	w.WriteHeader(status)
 	// nolint:gosec,errcheck
 	w.Write(body)
-}
-
-// WriteVerifyError writes proper error into w.
-// Possible status codes: 400, 401, 500
-func WriteVerifyError(ctx context.Context, w http.ResponseWriter, err error) {
-	switch {
-	case errors.Is(err, api.ErrNotVerified):
-		WriteError(w, http.StatusUnauthorized, err.Error())
-	case errors.Is(err, api.ErrInvalidRequest):
-		WriteError(w, http.StatusBadRequest, err.Error())
-	default:
-		WriteInternalError(ctx, w, err.Error())
-	}
 }

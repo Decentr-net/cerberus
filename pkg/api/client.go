@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
+	"github.com/Decentr-net/go-api"
+
 	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
@@ -136,7 +138,7 @@ func (c *client) sendRequest(ctx context.Context, method, endpoint string, body 
 		case http.StatusBadRequest:
 			return nil, ErrInvalidRequest
 		default:
-			var e Error
+			var e api.Error
 			if err := json.NewDecoder(resp.Body).Decode(&e); err != nil {
 				return nil, errors.Errorf("request failed with status %d", resp.StatusCode)
 			}

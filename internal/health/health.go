@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/Decentr-net/cerberus/pkg/api"
+	"github.com/Decentr-net/go-api"
 )
 
 // nolint:gochecknoglobals

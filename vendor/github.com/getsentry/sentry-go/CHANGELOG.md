@@ -1,18 +1,5 @@
 # Changelog
 
-## v0.9.0
-
-- feat: Initial tracing and performance monitoring support (#285)
-- doc: Revamp sentryhttp documentation (#304)
-- fix: Hub.PopScope never empties the scope stack (#300)
-- ref: Report Event.Timestamp in local time (#299)
-- ref: Report Breadcrumb.Timestamp in local time (#299)
-
-_NOTE:_
-This version introduces support for [Sentry's Performance Monitoring](https://docs.sentry.io/platforms/go/performance/).
-The new tracing capabilities are beta, and we plan to expand them on future versions. Feedback is welcome, please open new issues on GitHub.
-The `sentryhttp` package got better API docs, an [updated usage example](https://github.com/getsentry/sentry-go/tree/master/example/http) and support for creating automatic transactions as part of Performance Monitoring.
-
 ## v0.8.0
 
 - build: Bump required version of Iris (#296)
@@ -164,7 +151,7 @@ Please verify the usage of `sentry.Flush` in your code base.
 
 ## v0.3.0
 
-- feat: Retry event marshaling without contextual data if the first pass fails
+- feat: Retry event marshalling without contextual data if the first pass fails
 - fix: Include `url.Parse` error in `DsnParseError`
 - fix: Make more `Scope` methods safe for concurrency
 - fix: Synchronize concurrent access to `Hub.client`

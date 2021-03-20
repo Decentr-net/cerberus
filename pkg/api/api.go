@@ -34,12 +34,6 @@ type Cerberus interface {
 	GetPDVMeta(ctx context.Context, owner string, id uint64) (PDVMeta, error)
 }
 
-// Error ...
-// swagger:model Error
-type Error struct {
-	Error string `json:"error"`
-}
-
 // SavePDVResponse ...
 // swagger:model SavePDVResponse
 type SavePDVResponse struct {

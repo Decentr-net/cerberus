@@ -25,7 +25,7 @@ github.com/Decentr-net/decentr/x/token/client/rest
 github.com/Decentr-net/decentr/x/token/keeper
 github.com/Decentr-net/decentr/x/token/types
 github.com/Decentr-net/decentr/x/utils
-# github.com/Decentr-net/go-api v0.0.2
+# github.com/Decentr-net/go-api v0.0.3
 ## explicit
 github.com/Decentr-net/go-api
 github.com/Decentr-net/go-api/test
@@ -36,9 +36,8 @@ github.com/Decentr-net/go-broadcaster
 ## explicit
 github.com/Decentr-net/logrus/context
 github.com/Decentr-net/logrus/sentry
-# github.com/Microsoft/go-winio v0.4.14
+# github.com/Microsoft/go-winio v0.4.11
 github.com/Microsoft/go-winio
-github.com/Microsoft/go-winio/pkg/guid
 # github.com/Microsoft/hcsshim v0.8.6
 github.com/Microsoft/hcsshim/osversion
 # github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
@@ -199,7 +198,7 @@ github.com/cosmos/ledger-go
 github.com/danieljoos/wincred
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/docker/distribution v2.7.1+incompatible
+# github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
 github.com/docker/distribution/registry/api/errcode
@@ -234,7 +233,7 @@ github.com/docker/docker/pkg/system
 github.com/docker/go-connections/nat
 github.com/docker/go-connections/sockets
 github.com/docker/go-connections/tlsconfig
-# github.com/docker/go-units v0.4.0
+# github.com/docker/go-units v0.3.3
 github.com/docker/go-units
 # github.com/dvsekhvalnov/jose2go v0.0.0-20200901110807-248326c1351b
 github.com/dvsekhvalnov/jose2go
@@ -247,10 +246,8 @@ github.com/dvsekhvalnov/jose2go/keys/ecc
 github.com/dvsekhvalnov/jose2go/padding
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
-# github.com/getsentry/sentry-go v0.9.0
+# github.com/getsentry/sentry-go v0.8.0
 github.com/getsentry/sentry-go
-github.com/getsentry/sentry-go/internal/crypto/randutil
-github.com/getsentry/sentry-go/internal/debug
 # github.com/go-chi/chi v4.1.2+incompatible
 ## explicit
 github.com/go-chi/chi
