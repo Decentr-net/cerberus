@@ -29,7 +29,12 @@ func WriteError(w http.ResponseWriter, s int, message string) {
 
 // WriteInternalError logs error and writes internal error.
 func WriteInternalError(ctx context.Context, w http.ResponseWriter, message string) {
-	logging.GetLogger(ctx).Error(message)
+	WriteInternalErrorf(ctx, w, message)
+}
+
+// WriteInternalErrorf logs formatted error and writes internal error.
+func WriteInternalErrorf(ctx context.Context, w http.ResponseWriter, format string, args ...interface{}) {
+	logging.GetLogger(ctx).Errorf(format, args...)
 
 	// We don't want to expose internal error to user. So we will just send typical error.
 	WriteError(w, http.StatusInternalServerError, "internal error")
