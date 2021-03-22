@@ -250,7 +250,7 @@
           "x-go-name": "Error"
         }
       },
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api"
+      "x-go-package": "github.com/Decentr-net/go-api"
     },
     "ObjectTypes": {
       "type": "object",

@@ -25,7 +25,7 @@ github.com/Decentr-net/decentr/x/token/client/rest
 github.com/Decentr-net/decentr/x/token/keeper
 github.com/Decentr-net/decentr/x/token/types
 github.com/Decentr-net/decentr/x/utils
-# github.com/Decentr-net/go-api v0.0.3
+# github.com/Decentr-net/go-api v0.0.4
 ## explicit
 github.com/Decentr-net/go-api
 github.com/Decentr-net/go-api/test

@@ -13,8 +13,8 @@ github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53/go.mod h1:+3
 github.com/CloudyKit/jet/v3 v3.0.0/go.mod h1:HKQPgSJmdK8hdoAbKUUWajkHyHo4RaU5rMdUywE7VMo=
 github.com/Decentr-net/decentr v1.2.2 h1:4RcsCuvcl2oDemn5jye7iizJrzLZEtfjCjNRrr8Hw00=
 github.com/Decentr-net/decentr v1.2.2/go.mod h1:ehXkz6kZKY7w4P/2SWAj1ueL9oTRqfiWXnoAxKBGd+w=
-github.com/Decentr-net/go-api v0.0.3 h1:bmU3kcvcXwD+cVIqRvWpONqmaN239j1vQ5bXJ905f6Y=
-github.com/Decentr-net/go-api v0.0.3/go.mod h1:yS55wlW6/6Tl5OhZ2EM1fk7+LZb9qYH/ttAs7ePVouE=
+github.com/Decentr-net/go-api v0.0.4 h1:reDTfz2ZOrVTM44uoldujPrA+Pq9VDSoHLUwPN2GNSE=
+github.com/Decentr-net/go-api v0.0.4/go.mod h1:yS55wlW6/6Tl5OhZ2EM1fk7+LZb9qYH/ttAs7ePVouE=
 github.com/Decentr-net/go-broadcaster v0.0.1 h1:JOx7i8NPzAKHJxQebFyW64EtuYdUhXH9jDd334CfOtc=
 github.com/Decentr-net/go-broadcaster v0.0.1/go.mod h1:eQ9gSusDjqVXi6rMEAHTDsyWxRk2ZKJnRFjUH3zb8j4=
 github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189 h1:UsQjUr0TwkLsllBJGRjShMOJ817F82iL1rK7rxHI6AQ=
