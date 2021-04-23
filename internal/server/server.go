@@ -38,9 +38,6 @@
 package server
 
 import (
-	"context"
-	"errors"
-	"net/http"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -52,18 +49,20 @@ import (
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	capi "github.com/Decentr-net/cerberus/pkg/api"
 	"github.com/Decentr-net/go-api"
 
+	_ "github.com/Decentr-net/cerberus/internal/server/swagger" // import models to be generated into swagger.json
 	"github.com/Decentr-net/cerberus/internal/service"
-	_ "github.com/Decentr-net/cerberus/pkg/api/swagger" // import models to be generated into swagger.json
 )
 
 //go:generate swagger generate spec -t swagger -m -c . -o ../../static/swagger.json
 
-const existenceCacheSize = 100000
+const (
+	existenceCacheSize        = 100000
+	defaultLimit       uint64 = 100
 
-const defaultLimit uint64 = 100
+	dateFormat = "2006-01-02"
+)
 
 var cdc = amino.NewCodec() // nolint:gochecknoglobals
 
@@ -79,6 +78,19 @@ type server struct {
 
 	minPDVCount uint16
 	maxPDVCount uint16
+}
+
+// Profile ...
+// swagger:model APIProfile
+type Profile struct {
+	Address   string `json:"address"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Bio       string `json:"bio"`
+	Gender    string `json:"gender"`
+	Avatar    string `json:"avatar"`
+	Birthday  string `json:"birthday"`
+	CreatedAt string `json:"createdAt"`
 }
 
 // SetupRouter setups handlers to chi router.
@@ -111,20 +123,10 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 	r.Get("/v1/pdv/{owner}", srv.listPDVHandler)
 	r.Get("/v1/pdv/{owner}/{id}", srv.getPDVHandler)
 	r.Get("/v1/pdv/{owner}/{id}/meta", srv.getPDVMetaHandler)
+	r.Get("/v1/profiles", srv.getProfilesHandler)
 }
 
 func isOwnerValid(s string) bool {
 	_, err := sdk.AccAddressFromBech32(s)
 	return err == nil
-}
-
-func writeVerifyError(ctx context.Context, w http.ResponseWriter, err error) {
-	switch {
-	case errors.Is(err, capi.ErrNotVerified):
-		api.WriteError(w, http.StatusUnauthorized, err.Error())
-	case errors.Is(err, capi.ErrInvalidRequest):
-		api.WriteError(w, http.StatusBadRequest, err.Error())
-	default:
-		api.WriteInternalError(ctx, w, err.Error())
-	}
 }

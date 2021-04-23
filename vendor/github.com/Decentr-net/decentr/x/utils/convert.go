@@ -1,15 +1,16 @@
 package utils
 
 import (
-	"bytes"
-	"crypto/sha256"
 	"encoding/binary"
-	"encoding/gob"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Decentr-net/decentr/x/token/types"
 )
+
+func InitialTokenBalance() sdk.Int {
+	return sdk.NewInt(types.Denominator)
+}
 
 // Uint64ToBytes converts uint64 to bytes using BigEndian endianness
 func Uint64ToBytes(i uint64) []byte {
@@ -30,17 +31,4 @@ func TokenToFloat64(token sdk.Int) float64 {
 	}
 
 	return float64(token.Int64()) / float64(types.Denominator)
-}
-
-func InitialTokenBalance() sdk.Int {
-	return sdk.NewInt(1 * types.Denominator)
-}
-
-func GetHash(v interface{}) []byte {
-	buf := bytes.NewBuffer([]byte{})
-
-	gob.NewEncoder(buf).Encode(v)
-
-	h := sha256.Sum256(buf.Bytes())
-	return h[:]
 }

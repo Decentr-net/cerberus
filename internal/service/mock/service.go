@@ -6,8 +6,8 @@ package mock
 
 import (
 	context "context"
-	api "github.com/Decentr-net/cerberus/pkg/api"
-	schema "github.com/Decentr-net/cerberus/pkg/schema"
+	schema "github.com/Decentr-net/cerberus/internal/schema"
+	service "github.com/Decentr-net/cerberus/internal/service"
 	types "github.com/cosmos/cosmos-sdk/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -37,11 +37,11 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // SavePDV mocks base method
-func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, owner types.AccAddress) (uint64, api.PDVMeta, error) {
+func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, owner types.AccAddress) (uint64, service.PDVMeta, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SavePDV", ctx, p, owner)
 	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(api.PDVMeta)
+	ret1, _ := ret[1].(service.PDVMeta)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -83,10 +83,10 @@ func (mr *MockServiceMockRecorder) ReceivePDV(ctx, owner, id interface{}) *gomoc
 }
 
 // GetPDVMeta mocks base method
-func (m *MockService) GetPDVMeta(ctx context.Context, owner string, id uint64) (api.PDVMeta, error) {
+func (m *MockService) GetPDVMeta(ctx context.Context, owner string, id uint64) (service.PDVMeta, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPDVMeta", ctx, owner, id)
-	ret0, _ := ret[0].(api.PDVMeta)
+	ret0, _ := ret[0].(service.PDVMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -95,4 +95,19 @@ func (m *MockService) GetPDVMeta(ctx context.Context, owner string, id uint64) (
 func (mr *MockServiceMockRecorder) GetPDVMeta(ctx, owner, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVMeta", reflect.TypeOf((*MockService)(nil).GetPDVMeta), ctx, owner, id)
+}
+
+// GetProfiles mocks base method
+func (m *MockService) GetProfiles(ctx context.Context, owner []string) ([]*service.Profile, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProfiles", ctx, owner)
+	ret0, _ := ret[0].([]*service.Profile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProfiles indicates an expected call of GetProfiles
+func (mr *MockServiceMockRecorder) GetProfiles(ctx, owner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfiles", reflect.TypeOf((*MockService)(nil).GetProfiles), ctx, owner)
 }

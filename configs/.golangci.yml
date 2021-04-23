@@ -7,7 +7,7 @@ run:
     - integration
   skip-dirs:
     - vendor
-    - pkg/api/swagger
+    - internal/server/swagger
   modules-download-mode: vendor
 
 output:
@@ -83,6 +83,8 @@ linters:
     - funlen
     - gofumpt
     - testpackage
+    - goerr113
+    - exhaustive
 
 issues:
   exclude-rules:

@@ -1,4 +1,4 @@
-// Package s3 contains implementation Storage interface with any s3-compatible storage.
+// Package s3 contains implementation FileStorage interface with any s3-compatible storage.
 package s3
 
 import (
@@ -19,8 +19,8 @@ type s3 struct {
 	b string
 }
 
-// NewStorage returns s3 implementation of Storage interface.
-func NewStorage(client *minio.Client, bucket string) (storage.Storage, error) {
+// NewStorage returns s3 implementation of FileStorage interface.
+func NewStorage(client *minio.Client, bucket string) (storage.FileStorage, error) {
 	logrus.WithField("bucket", bucket).Debug("check bucket existence")
 	exists, err := client.BucketExists(context.Background(), bucket)
 	if err != nil {

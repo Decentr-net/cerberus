@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -29,6 +30,18 @@ func WriteErrorf(w http.ResponseWriter, status int, format string, args ...inter
 // WriteError writes error.
 func WriteError(w http.ResponseWriter, s int, message string) {
 	WriteErrorf(w, s, message)
+}
+
+// WriteVerifyError writes sign verification(auth) error with proper status.
+func WriteVerifyError(ctx context.Context, w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, ErrNotVerified):
+		WriteError(w, http.StatusUnauthorized, err.Error())
+	case errors.Is(err, ErrInvalidRequest):
+		WriteError(w, http.StatusBadRequest, err.Error())
+	default:
+		WriteInternalError(ctx, w, err.Error())
+	}
 }
 
 // WriteInternalError logs error and writes internal error.

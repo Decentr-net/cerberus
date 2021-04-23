@@ -238,9 +238,151 @@
           }
         }
       }
+    },
+    "/profiles": {
+      "get": {
+        "description": "Returns profiles by addresses",
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Get profiles",
+        "operationId": "GetProfiles",
+        "parameters": [
+          {
+            "example": "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz,decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
+            "description": "profile address",
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "metadata of pdv",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/APIProfile"
+              }
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
+    "APIProfile": {
+      "type": "object",
+      "title": "Profile ...",
+      "properties": {
+        "address": {
+          "type": "string",
+          "x-go-name": "Address"
+        },
+        "avatar": {
+          "type": "string",
+          "x-go-name": "Avatar"
+        },
+        "bio": {
+          "type": "string",
+          "x-go-name": "Bio"
+        },
+        "birthday": {
+          "type": "string",
+          "x-go-name": "Birthday"
+        },
+        "createdAt": {
+          "type": "string",
+          "x-go-name": "CreatedAt"
+        },
+        "firstName": {
+          "type": "string",
+          "x-go-name": "FirstName"
+        },
+        "gender": {
+          "type": "string",
+          "x-go-name": "Gender"
+        },
+        "lastName": {
+          "type": "string",
+          "x-go-name": "LastName"
+        }
+      },
+      "x-go-name": "Profile",
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
+    },
+    "Cookie": {
+      "type": "object",
+      "title": "Cookie is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).",
+      "properties": {
+        "domain": {
+          "type": "string",
+          "x-go-name": "Domain"
+        },
+        "expiration_date": {
+          "type": "integer",
+          "format": "uint64",
+          "x-go-name": "ExpirationDate"
+        },
+        "host_only": {
+          "type": "boolean",
+          "x-go-name": "HostOnly"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "path": {
+          "type": "string",
+          "x-go-name": "Path"
+        },
+        "same_site": {
+          "type": "string",
+          "x-go-name": "SameSite"
+        },
+        "secure": {
+          "type": "boolean",
+          "x-go-name": "Secure"
+        },
+        "source": {
+          "$ref": "#/definitions/Source"
+        },
+        "value": {
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/v1"
+    },
+    "DataV1": {
+      "type": "object",
+      "title": "DataV1 is interface for all data types.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cookie",
+            "login_cookie",
+            "profile"
+          ],
+          "x-go-name": "TypeV1"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger",
+      "discriminator": "type"
+    },
     "Error": {
       "type": "object",
       "title": "Error ...",
@@ -251,6 +393,15 @@
         }
       },
       "x-go-package": "github.com/Decentr-net/go-api"
+    },
+    "Gender": {
+      "type": "string",
+      "title": "Gender can be male or female.",
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/types"
+    },
+    "LoginCookie": {
+      "title": "LoginCookie is the same as PDVDataCookie but with different type.",
+      "$ref": "#/definitions/Cookie"
     },
     "ObjectTypes": {
       "type": "object",
@@ -267,118 +418,18 @@
           "x-go-name": "LoginCookie"
         }
       },
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api/swagger"
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
     },
     "PDV": {
       "type": "object",
       "properties": {
         "version": {
-          "type": "string",
-          "enum": [
-            "v1"
-          ],
           "x-go-name": "Version"
         }
       },
       "x-go-name": "PDVInterface",
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api/swagger",
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger",
       "discriminator": "version"
-    },
-    "PDVData": {
-      "type": "object",
-      "title": "PDVData is interface for all data types.",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "cookie",
-            "login_cookie"
-          ],
-          "x-go-name": "Type"
-        }
-      },
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api/swagger",
-      "discriminator": "type"
-    },
-    "PDVDataCookie": {
-      "type": "object",
-      "title": "PDVDataCookie is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).",
-      "properties": {
-        "domain": {
-          "type": "string",
-          "x-go-name": "Domain"
-        },
-        "expiration_date": {
-          "type": "integer",
-          "format": "uint64",
-          "x-go-name": "ExpirationDate"
-        },
-        "host_only": {
-          "type": "boolean",
-          "x-go-name": "HostOnly"
-        },
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "path": {
-          "type": "string",
-          "x-go-name": "Path"
-        },
-        "same_site": {
-          "type": "string",
-          "x-go-name": "SameSite"
-        },
-        "secure": {
-          "type": "boolean",
-          "x-go-name": "Secure"
-        },
-        "value": {
-          "type": "string",
-          "x-go-name": "Value"
-        }
-      },
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/schema"
-    },
-    "PDVDataLoginCookie": {
-      "type": "object",
-      "title": "PDVDataLoginCookie is the same as PDVDataCookie but with different type.",
-      "properties": {
-        "domain": {
-          "type": "string",
-          "x-go-name": "Domain"
-        },
-        "expiration_date": {
-          "type": "integer",
-          "format": "uint64",
-          "x-go-name": "ExpirationDate"
-        },
-        "host_only": {
-          "type": "boolean",
-          "x-go-name": "HostOnly"
-        },
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "path": {
-          "type": "string",
-          "x-go-name": "Path"
-        },
-        "same_site": {
-          "type": "string",
-          "x-go-name": "SameSite"
-        },
-        "secure": {
-          "type": "boolean",
-          "x-go-name": "Secure"
-        },
-        "value": {
-          "type": "string",
-          "x-go-name": "Value"
-        }
-      },
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/schema"
     },
     "PDVMeta": {
       "type": "object",
@@ -393,48 +444,38 @@
           "x-go-name": "Reward"
         }
       },
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api/swagger"
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
     },
-    "PDVObjectMetaV1": {
+    "Profile": {
       "type": "object",
-      "title": "PDVObjectMetaV1 is PDVObjectV1 meta Data.",
+      "title": "Profile is PDVData implementation for profile's data.",
       "properties": {
-        "domain": {
-          "description": "Domain of website where object was taken",
+        "avatar": {
           "type": "string",
-          "x-go-name": "Host"
+          "x-go-name": "Avatar"
         },
-        "path": {
-          "description": "Path of website's url where object was taken",
+        "bio": {
           "type": "string",
-          "x-go-name": "Path"
+          "x-go-name": "Bio"
+        },
+        "birthday": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Birthday"
+        },
+        "first_name": {
+          "type": "string",
+          "x-go-name": "FirstName"
+        },
+        "gender": {
+          "$ref": "#/definitions/Gender"
+        },
+        "last_name": {
+          "type": "string",
+          "x-go-name": "LastName"
         }
       },
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/schema"
-    },
-    "PDVObjectV1": {
-      "type": "object",
-      "title": "PDVObjectV1 is PDVObject implementation with v1 version.",
-      "properties": {
-        "data": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/PDVData"
-          },
-          "x-go-name": "Data"
-        },
-        "domain": {
-          "description": "Domain of website where object was taken",
-          "type": "string",
-          "x-go-name": "Host"
-        },
-        "path": {
-          "description": "Path of website's url where object was taken",
-          "type": "string",
-          "x-go-name": "Path"
-        }
-      },
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api/swagger"
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/v1"
     },
     "SavePDVResponse": {
       "type": "object",
@@ -446,13 +487,30 @@
           "x-go-name": "ID"
         }
       },
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api"
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
+    },
+    "Source": {
+      "type": "object",
+      "title": "Source contains information about source of pdv.",
+      "properties": {
+        "host": {
+          "description": "Domain of website where object was taken",
+          "type": "string",
+          "x-go-name": "Host"
+        },
+        "path": {
+          "description": "Path of website's url where object was taken",
+          "type": "string",
+          "x-go-name": "Path"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/types"
     },
     "cookie": {
-      "title": "PDVDataCookie is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).",
+      "title": "Cookie is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).",
       "allOf": [
         {
-          "$ref": "#/definitions/PDVData"
+          "$ref": "#/definitions/DataV1"
         },
         {
           "type": "object",
@@ -485,6 +543,9 @@
             "secure": {
               "type": "boolean",
               "x-go-name": "Secure"
+            },
+            "source": {
+              "$ref": "#/definitions/Source"
             },
             "value": {
               "type": "string",
@@ -494,14 +555,14 @@
         }
       ],
       "x-class": "cookie",
-      "x-go-name": "PDVDataCookie",
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api/swagger"
+      "x-go-name": "Cookie",
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
     },
     "login_cookie": {
-      "title": "PDVDataLoginCookie is the same as PDVDataCookie but with different type.",
+      "title": "LoginCookieV1 is the same as PDVDataCookie but with different type.",
       "allOf": [
         {
-          "$ref": "#/definitions/PDVData"
+          "$ref": "#/definitions/DataV1"
         },
         {
           "type": "object",
@@ -535,6 +596,9 @@
               "type": "boolean",
               "x-go-name": "Secure"
             },
+            "source": {
+              "$ref": "#/definitions/Source"
+            },
             "value": {
               "type": "string",
               "x-go-name": "Value"
@@ -543,11 +607,51 @@
         }
       ],
       "x-class": "login_cookie",
-      "x-go-name": "PDVDataLoginCookie",
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api/swagger"
+      "x-go-name": "LoginCookieV1",
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
+    },
+    "profile": {
+      "title": "ProfileV1 is profile data.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/DataV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "avatar": {
+              "type": "string",
+              "x-go-name": "Avatar"
+            },
+            "bio": {
+              "type": "string",
+              "x-go-name": "Bio"
+            },
+            "birthday": {
+              "type": "string",
+              "format": "date-time",
+              "x-go-name": "Birthday"
+            },
+            "first_name": {
+              "type": "string",
+              "x-go-name": "FirstName"
+            },
+            "gender": {
+              "$ref": "#/definitions/Gender"
+            },
+            "last_name": {
+              "type": "string",
+              "x-go-name": "LastName"
+            }
+          }
+        }
+      ],
+      "x-class": "profile",
+      "x-go-name": "ProfileV1",
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
     },
     "v1": {
-      "title": "PDV is main data object.",
+      "title": "PDVV1 is main data object.",
       "allOf": [
         {
           "$ref": "#/definitions/PDV"
@@ -558,7 +662,7 @@
             "pdv": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/PDVObjectV1"
+                "$ref": "#/definitions/DataV1"
               },
               "x-go-name": "PDV"
             }
@@ -566,8 +670,8 @@
         }
       ],
       "x-class": "v1",
-      "x-go-name": "PDV",
-      "x-go-package": "github.com/Decentr-net/cerberus/pkg/api/swagger"
+      "x-go-name": "PDVV1",
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
     }
   },
   "securityDefinitions": {

@@ -8,16 +8,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/Decentr-net/go-api"
 	"github.com/Decentr-net/go-api/test"
-
-	"github.com/Decentr-net/cerberus/pkg/api"
 )
 
 func Test_writeVerifyError(t *testing.T) {
 	t.Run("bad request", func(t *testing.T) {
 		b, w, r := test.NewAPITestParameters(http.MethodGet, "", nil)
 
-		writeVerifyError(r.Context(), w, api.ErrInvalidPublicKey)
+		api.WriteVerifyError(r.Context(), w, api.ErrInvalidPublicKey)
 
 		assert.Empty(t, b.String())
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -26,7 +25,7 @@ func Test_writeVerifyError(t *testing.T) {
 
 	t.Run("not verified", func(t *testing.T) {
 		b, w, r := test.NewAPITestParameters(http.MethodGet, "", nil)
-		writeVerifyError(r.Context(), w, api.ErrNotVerified)
+		api.WriteVerifyError(r.Context(), w, api.ErrNotVerified)
 
 		assert.Empty(t, b.String())
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
@@ -36,7 +35,7 @@ func Test_writeVerifyError(t *testing.T) {
 	t.Run("internal error", func(t *testing.T) {
 		b, w, r := test.NewAPITestParameters(http.MethodGet, "", nil)
 
-		writeVerifyError(r.Context(), w, errors.New("some error"))
+		api.WriteVerifyError(r.Context(), w, errors.New("some error"))
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Greater(t, len(b.String()), 20) // stacktrace

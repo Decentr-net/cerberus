@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -14,6 +15,8 @@ import (
 
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/golang-migrate/migrate/v4"
+	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-chi/chi"
@@ -33,6 +36,7 @@ import (
 	"github.com/Decentr-net/cerberus/internal/server"
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/internal/storage"
+	"github.com/Decentr-net/cerberus/internal/storage/postgres"
 	"github.com/Decentr-net/cerberus/internal/storage/s3"
 )
 
@@ -51,6 +55,11 @@ var opts = struct {
 	S3SecretAccessKey string `long:"s3.secret-access-key" env:"S3_SECRET_ACCESS_KEY" description:"secret access key for S3 storage'"`
 	S3UseSSL          bool   `long:"s3.use-ssl" env:"S3_USE_SSL" description:"use ssl for S3 storage connection'"`
 	S3Bucket          string `long:"s3.bucket" env:"S3_BUCKET" default:"cerberus" description:"S3 bucket for Cerberus files'"`
+
+	Postgres                   string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
+	PostgresMaxOpenConnections int    `long:"postgres.max_open_connections" env:"POSTGRES_MAX_OPEN_CONNECTIONS" default:"0" description:"postgres maximal open connections count, 0 means unlimited"`
+	PostgresMaxIdleConnections int    `long:"postgres.max_idle_connections" env:"POSTGRES_MAX_IDLE_CONNECTIONS" default:"5" description:"postgres maximal idle connections count"`
+	PostgresMigrations         string `long:"postgres.migrations" env:"POSTGRES_MIGRATIONS" default:"migrations/postgres" description:"postgres migrations directory"`
 
 	BlockchainNode               string `long:"blockchain.node" env:"BLOCKCHAIN_NODE" default:"http://zeus.testnet.decentr.xyz:26657" description:"decentr node address"`
 	BlockchainFrom               string `long:"blockchain.from" env:"BLOCKCHAIN_FROM" description:"decentr account name to send stakes" required:"true"`
@@ -119,16 +128,19 @@ func main() {
 		logrus.WithError(err).Fatal("failed to connect to S3 storage")
 	}
 
-	storage, err := s3.NewStorage(s3client, opts.S3Bucket)
+	fs, err := s3.NewStorage(s3client, opts.S3Bucket)
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to create storage")
 	}
 
+	db := mustGetDB()
+	is := postgres.New(db)
+
 	b := mustGetBroadcaster()
 
-	server.SetupRouter(newServiceOrDie(storage, blockchain.New(b)), r,
+	server.SetupRouter(newServiceOrDie(fs, is, blockchain.New(b)), r,
 		opts.RequestTimeout, opts.MaxBodySize, opts.MinPDVCount, opts.MaxPDVCount)
-	health.SetupRouter(r, storage, health.PingFunc(b.PingContext))
+	health.SetupRouter(r, fs, health.PingFunc(b.PingContext), health.PingFunc(db.PingContext))
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),
@@ -160,7 +172,7 @@ func main() {
 	}
 }
 
-func newServiceOrDie(s storage.Storage, bchain blockchain.Blockchain) service.Service {
+func newServiceOrDie(fs storage.FileStorage, is storage.IndexStorage, bchain blockchain.Blockchain) service.Service {
 	rewardMap := make(service.RewardMap)
 	b, err := ioutil.ReadFile(opts.RewardMapConfig)
 	if err != nil {
@@ -169,7 +181,7 @@ func newServiceOrDie(s storage.Storage, bchain blockchain.Blockchain) service.Se
 	if err := yaml.Unmarshal(b, rewardMap); err != nil {
 		logrus.WithError(err).Fatal("failed to unmarshal reward map config")
 	}
-	return service.New(sio.NewCrypto(mustExtractEncryptKey()), s, bchain, rewardMap)
+	return service.New(sio.NewCrypto(mustExtractEncryptKey()), fs, is, bchain, rewardMap)
 }
 
 func mustExtractEncryptKey() [32]byte {
@@ -205,4 +217,47 @@ func mustGetBroadcaster() *broadcaster.Broadcaster {
 	}
 
 	return b
+}
+
+func mustGetDB() *sql.DB {
+	db, err := sql.Open("postgres", opts.Postgres)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create postgres connection")
+	}
+	db.SetMaxOpenConns(opts.PostgresMaxOpenConnections)
+	db.SetMaxIdleConns(opts.PostgresMaxIdleConnections)
+
+	if err := db.PingContext(context.Background()); err != nil {
+		logrus.WithError(err).Fatal("failed to ping postgres")
+	}
+
+	driver, err := migratep.WithInstance(db, &migratep.Config{})
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create database migrate driver")
+	}
+
+	migrator, err := migrate.NewWithDatabaseInstance(fmt.Sprintf("file://%s", opts.PostgresMigrations), "postgres", driver)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create migrator")
+	}
+
+	switch v, d, err := migrator.Version(); err {
+	case nil:
+		logrus.Infof("database version %d with dirty state %t", v, d)
+	case migrate.ErrNilVersion:
+		logrus.Info("database version: nil")
+	default:
+		logrus.WithError(err).Fatal("failed to get version")
+	}
+
+	switch err := migrator.Up(); err {
+	case nil:
+		logrus.Info("database was migrated")
+	case migrate.ErrNoChange:
+		logrus.Info("database is up-to-date")
+	default:
+		logrus.WithError(err).Fatal("failed to migrate db")
+	}
+
+	return db
 }
