@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
@@ -21,13 +22,13 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"golang.org/x/net/context"
 
+	"github.com/Decentr-net/go-api"
 	apitest "github.com/Decentr-net/go-api/test"
 	logging "github.com/Decentr-net/logrus/context"
 
+	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/internal/service/mock"
-	"github.com/Decentr-net/cerberus/pkg/api"
-	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 const testOwner = "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz"
@@ -35,36 +36,36 @@ const testOwner = "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz"
 var pdv = []byte(`{
     "version": "v1",
 	"pdv": [
-		{
-		    "domain": "decentr.net",
-		    "path": "/",
-		    "data": [
-		        {
-		            "version": "v1",
-		            "type": "cookie",
-		            "name": "my cookie",
-		            "value": "some value",
-		            "domain": "*",
-		            "host_only": true,
-		            "path": "*",
-		            "secure": true,
-		            "same_site": "None",
-		            "expiration_date": 1861920000
-		        },
-		        {
-		            "version": "v1",
-		            "type": "cookie",
-		            "name": "my cookie 2",
-		            "value": "some value 2",
-		            "domain": "*",
-		            "host_only": true,
-		            "path": "*",
-		            "secure": true,
-		            "same_site": "None",
-		            "expiration_date": 1861920000
-		        }
-		    ]
-		}
+        {
+			"source": {
+			    "host": "decentr.net",
+			    "path": "/"
+			},
+            "type": "cookie",
+            "name": "my cookie",
+            "value": "some value",
+            "domain": "*",
+            "host_only": true,
+            "path": "*",
+            "secure": true,
+            "same_site": "None",
+            "expiration_date": 1861920000
+        },
+        {
+			"source": {
+			    "host": "decentr.net",
+			    "path": "/"
+			},
+            "type": "cookie",
+            "name": "my cookie 2",
+            "value": "some value 2",
+            "domain": "*",
+            "host_only": true,
+            "path": "*",
+            "secure": true,
+            "same_site": "None",
+            "expiration_date": 1861920000
+        }
 	]
 }`)
 
@@ -142,12 +143,12 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			srv := mock.NewMockService(ctrl)
 
 			if tc.err != errSkip {
-				var pdv schema.PDV
+				var pdv schema.PDVWrapper
 				require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
 
-				srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner types.AccAddress) (uint64, api.PDVMeta, error) {
+				srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner types.AccAddress) (uint64, service.PDVMeta, error) {
 					assert.Equal(t, testOwner, owner.String())
-					return 1, api.PDVMeta{}, tc.err
+					return 1, service.PDVMeta{}, tc.err
 				})
 			}
 
@@ -399,7 +400,7 @@ func TestServer_GetPDVMeta(t *testing.T) {
 		name  string
 		owner string
 		id    string
-		f     func(_ context.Context, owner string, id uint64) (api.PDVMeta, error)
+		f     func(_ context.Context, owner string, id uint64) (service.PDVMeta, error)
 		rcode int
 		rdata string
 		rlog  string
@@ -408,8 +409,8 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			name:  "success",
 			owner: testOwner,
 			id:    "1",
-			f: func(_ context.Context, owner string, id uint64) (api.PDVMeta, error) {
-				return api.PDVMeta{ObjectTypes: map[schema.PDVType]uint16{schema.PDVCookieType: 1}, Reward: 2}, nil
+			f: func(_ context.Context, owner string, id uint64) (service.PDVMeta, error) {
+				return service.PDVMeta{ObjectTypes: map[schema.Type]uint16{schema.PDVCookieType: 1}, Reward: 2}, nil
 			},
 			rcode: http.StatusOK,
 			rdata: `{"object_types":{"cookie": 1}, "reward": 2}`,
@@ -419,8 +420,8 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			name:  "doesn't exists",
 			owner: testOwner,
 			id:    "1",
-			f: func(_ context.Context, owner string, id uint64) (api.PDVMeta, error) {
-				return api.PDVMeta{}, service.ErrNotFound
+			f: func(_ context.Context, owner string, id uint64) (service.PDVMeta, error) {
+				return service.PDVMeta{}, service.ErrNotFound
 			},
 			rcode: http.StatusNotFound,
 			rdata: fmt.Sprintf(`{"error":"PDV '%s' not found"}`, "1"),
@@ -448,8 +449,8 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			name:  "internal error",
 			owner: testOwner,
 			id:    "1",
-			f: func(_ context.Context, owner string, id uint64) (api.PDVMeta, error) {
-				return api.PDVMeta{}, errors.New("test error")
+			f: func(_ context.Context, owner string, id uint64) (service.PDVMeta, error) {
+				return service.PDVMeta{}, errors.New("test error")
 			},
 			rcode: http.StatusInternalServerError,
 			rdata: `{"error":"internal error"}`,
@@ -503,6 +504,82 @@ func TestServer_GetPDVMeta(t *testing.T) {
 				assert.Equal(t, tc.rcode, w.Code)
 				assert.JSONEq(t, tc.rdata, w.Body.String())
 			}
+		})
+	}
+}
+
+func TestServer_GetProfiles(t *testing.T) {
+	tt := []struct {
+		name  string
+		url   string
+		owner []string
+		f     func(_ context.Context, owner []string) ([]*service.Profile, error)
+		rcode int
+		rdata string
+	}{
+		{
+			name:  "success",
+			url:   "v1/profiles?address=decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz,decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
+			owner: []string{testOwner, testOwner},
+			f: func(_ context.Context, owner []string) ([]*service.Profile, error) {
+				return []*service.Profile{
+					{
+						Address:   "1",
+						FirstName: "2",
+						LastName:  "3",
+						Bio:       "4",
+						Avatar:    "5",
+						Gender:    "6",
+						Birthday:  time.Unix(1, 0),
+						CreatedAt: time.Unix(200000, 0),
+					},
+				}, nil
+			},
+			rcode: http.StatusOK,
+			rdata: `[{"address":"1","firstName":"2","lastName":"3","bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":"1970-01-03"}]`,
+		},
+		{
+			name:  "invalid request",
+			url:   "v1/profiles?address=1",
+			f:     nil,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid address"}`,
+		},
+	}
+
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			b, w, r := newTestParameters(t, http.MethodGet, tc.url, nil)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			srv := mock.NewMockService(ctrl)
+
+			if tc.f != nil {
+				srv.EXPECT().GetProfiles(gomock.Any(), tc.owner).DoAndReturn(tc.f).Times(1)
+			}
+
+			router := chi.NewRouter()
+			router.Use(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					log := logrus.New()
+					log.SetOutput(b)
+					next.ServeHTTP(w, r.WithContext(logging.WithLogger(r.Context(), log)))
+				})
+			})
+			c, err := lru.NewARC(10)
+			require.NoError(t, err)
+			s := server{s: srv, pdvMetaCache: c}
+			router.Get("/v1/profiles", s.getProfilesHandler)
+
+			router.ServeHTTP(w, r)
+
+			assert.Equal(t, tc.rcode, w.Code)
+			assert.JSONEq(t, tc.rdata, w.Body.String())
 		})
 	}
 }

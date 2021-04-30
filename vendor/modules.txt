@@ -2,7 +2,7 @@
 github.com/99designs/keyring
 # github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 github.com/ChainSafe/go-schnorrkel
-# github.com/Decentr-net/decentr v1.2.2
+# github.com/Decentr-net/decentr v1.2.4
 ## explicit
 github.com/Decentr-net/decentr/app
 github.com/Decentr-net/decentr/x/community
@@ -25,7 +25,7 @@ github.com/Decentr-net/decentr/x/token/client/rest
 github.com/Decentr-net/decentr/x/token/keeper
 github.com/Decentr-net/decentr/x/token/types
 github.com/Decentr-net/decentr/x/utils
-# github.com/Decentr-net/go-api v0.0.4
+# github.com/Decentr-net/go-api v0.0.5
 ## explicit
 github.com/Decentr-net/go-api
 github.com/Decentr-net/go-api/test
@@ -36,8 +36,9 @@ github.com/Decentr-net/go-broadcaster
 ## explicit
 github.com/Decentr-net/logrus/context
 github.com/Decentr-net/logrus/sentry
-# github.com/Microsoft/go-winio v0.4.11
+# github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5
 github.com/Microsoft/go-winio
+github.com/Microsoft/go-winio/pkg/guid
 # github.com/Microsoft/hcsshim v0.8.6
 github.com/Microsoft/hcsshim/osversion
 # github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
@@ -198,11 +199,11 @@ github.com/cosmos/ledger-go
 github.com/danieljoos/wincred
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible
+# github.com/docker/distribution v2.7.1+incompatible
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
 github.com/docker/distribution/registry/api/errcode
-# github.com/docker/docker v1.13.1 => github.com/docker/engine v0.0.0-20190717161051-705d9623b7c1
+# github.com/docker/docker v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible => github.com/docker/engine v0.0.0-20190717161051-705d9623b7c1
 github.com/docker/docker/api
 github.com/docker/docker/api/types
 github.com/docker/docker/api/types/blkiodev
@@ -233,7 +234,7 @@ github.com/docker/docker/pkg/system
 github.com/docker/go-connections/nat
 github.com/docker/go-connections/sockets
 github.com/docker/go-connections/tlsconfig
-# github.com/docker/go-units v0.3.3
+# github.com/docker/go-units v0.4.0
 github.com/docker/go-units
 # github.com/dvsekhvalnov/jose2go v0.0.0-20200901110807-248326c1351b
 github.com/dvsekhvalnov/jose2go
@@ -246,8 +247,11 @@ github.com/dvsekhvalnov/jose2go/keys/ecc
 github.com/dvsekhvalnov/jose2go/padding
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
-# github.com/getsentry/sentry-go v0.8.0
+# github.com/getsentry/sentry-go v0.9.0
+## explicit
 github.com/getsentry/sentry-go
+github.com/getsentry/sentry-go/internal/crypto/randutil
+github.com/getsentry/sentry-go/internal/debug
 # github.com/go-chi/chi v4.1.2+incompatible
 ## explicit
 github.com/go-chi/chi
@@ -276,10 +280,19 @@ github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
 github.com/gogo/protobuf/sortkeys
 github.com/gogo/protobuf/types
+# github.com/golang-migrate/migrate/v4 v4.14.1
+## explicit
+github.com/golang-migrate/migrate/v4
+github.com/golang-migrate/migrate/v4/database
+github.com/golang-migrate/migrate/v4/database/postgres
+github.com/golang-migrate/migrate/v4/internal/url
+github.com/golang-migrate/migrate/v4/source
+github.com/golang-migrate/migrate/v4/source/file
+github.com/golang-migrate/migrate/v4/source/httpfs
 # github.com/golang/mock v1.4.4
 ## explicit
 github.com/golang/mock/gomock
-# github.com/golang/protobuf v1.4.2
+# github.com/golang/protobuf v1.4.3
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
@@ -304,6 +317,10 @@ github.com/gtank/ristretto255
 github.com/gtank/ristretto255/internal/edwards25519
 github.com/gtank/ristretto255/internal/radix51
 github.com/gtank/ristretto255/internal/scalar
+# github.com/hashicorp/errwrap v1.0.0
+github.com/hashicorp/errwrap
+# github.com/hashicorp/go-multierror v1.1.0
+github.com/hashicorp/go-multierror
 # github.com/hashicorp/golang-lru v0.5.4
 ## explicit
 github.com/hashicorp/golang-lru
@@ -326,12 +343,21 @@ github.com/inconshreveable/mousetrap
 github.com/jessevdk/go-flags
 # github.com/jmhodges/levigo v1.0.0
 github.com/jmhodges/levigo
+# github.com/jmoiron/sqlx v1.3.3
+## explicit
+github.com/jmoiron/sqlx
+github.com/jmoiron/sqlx/reflectx
 # github.com/json-iterator/go v1.1.10
 github.com/json-iterator/go
 # github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d
 github.com/keybase/go-keychain
 # github.com/klauspost/cpuid v1.3.1
 github.com/klauspost/cpuid
+# github.com/lib/pq v1.10.1
+## explicit
+github.com/lib/pq
+github.com/lib/pq/oid
+github.com/lib/pq/scram
 # github.com/libp2p/go-buffer-pool v0.0.2
 github.com/libp2p/go-buffer-pool
 # github.com/magiconair/properties v1.8.1
@@ -372,7 +398,7 @@ github.com/modern-go/concurrent
 github.com/modern-go/reflect2
 # github.com/mtibben/percent v0.2.1
 github.com/mtibben/percent
-# github.com/opencontainers/go-digest v1.0.0-rc1
+# github.com/opencontainers/go-digest v1.0.0
 github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v1.0.1
 github.com/opencontainers/image-spec/specs-go
@@ -383,7 +409,6 @@ github.com/opencontainers/runc/libcontainer/user
 # github.com/pelletier/go-toml v1.6.0
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.9.1
-## explicit
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
@@ -548,7 +573,7 @@ golang.org/x/crypto/poly1305
 golang.org/x/crypto/ripemd160
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/net v0.0.0-20201010224723-4f7140c49acb
+# golang.org/x/net v0.0.0-20201029221708-28c70e62bb1d
 ## explicit
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
@@ -564,7 +589,7 @@ golang.org/x/net/trace
 # golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 ## explicit
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.0.0-20201013132646-2da7054afaeb
+# golang.org/x/sys v0.0.0-20201029080932-201ba4db2418
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
@@ -577,9 +602,9 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# google.golang.org/genproto v0.0.0-20200726014623-da3ae01ef02d
+# google.golang.org/genproto v0.0.0-20201030142918-24207fddd1c3
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.30.0
+# google.golang.org/grpc v1.33.1
 google.golang.org/grpc
 google.golang.org/grpc/attributes
 google.golang.org/grpc/backoff
@@ -591,7 +616,6 @@ google.golang.org/grpc/binarylog/grpc_binarylog_v1
 google.golang.org/grpc/codes
 google.golang.org/grpc/connectivity
 google.golang.org/grpc/credentials
-google.golang.org/grpc/credentials/internal
 google.golang.org/grpc/encoding
 google.golang.org/grpc/encoding/proto
 google.golang.org/grpc/grpclog
@@ -601,6 +625,7 @@ google.golang.org/grpc/internal/balancerload
 google.golang.org/grpc/internal/binarylog
 google.golang.org/grpc/internal/buffer
 google.golang.org/grpc/internal/channelz
+google.golang.org/grpc/internal/credentials
 google.golang.org/grpc/internal/envconfig
 google.golang.org/grpc/internal/grpclog
 google.golang.org/grpc/internal/grpcrand
