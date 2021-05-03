@@ -449,11 +449,11 @@ func TestService_GetPDVMeta_NotFound(t *testing.T) {
 
 func TestService_getFilePath(t *testing.T) {
 	// we want to sort it for list on s3 side
-	require.Equal(t, "pdv/test/fffffffffffffffe", getPDVFilePath("test", 1))
+	require.Equal(t, "test/pdv/fffffffffffffffe", getPDVFilePath("test", 1))
 }
 
 func TestService_getMetaFilePath(t *testing.T) {
-	require.Equal(t, "meta/test/fffffffffffffffe", getMetaFilePath("test", 1))
+	require.Equal(t, "test/meta/fffffffffffffffe", getMetaFilePath("test", 1))
 }
 
 func TestService_ListPDV(t *testing.T) {
@@ -469,7 +469,7 @@ func TestService_ListPDV(t *testing.T) {
 
 	res := []string{"fffffffffffffffe", "fffffffffffffffd", "fffffffffffffffc"}
 
-	fs.EXPECT().List(ctx, "meta/owner", uint64(5), uint16(10)).Return(res, nil)
+	fs.EXPECT().List(ctx, "owner/meta", uint64(5), uint16(10)).Return(res, nil)
 
 	l, err := s.ListPDV(ctx, "owner", 5, 10)
 	require.NoError(t, err)

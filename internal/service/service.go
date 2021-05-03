@@ -295,11 +295,11 @@ func getSetProfileParams(owner sdk.AccAddress, p schema.V1Profile) *storage.SetP
 }
 
 func getPDVOwnerPrefix(owner string) string {
-	return fmt.Sprintf("pdv/%s", owner)
+	return fmt.Sprintf("%s/pdv", owner)
 }
 
 func getMetaOwnerPrefix(owner string) string {
-	return fmt.Sprintf("meta/%s", owner)
+	return fmt.Sprintf("%s/meta", owner)
 }
 
 func getPDVFilePath(owner string, id uint64) string {

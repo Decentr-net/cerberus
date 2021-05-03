@@ -34,6 +34,49 @@ func (m *MockIndexStorage) EXPECT() *MockIndexStorageMockRecorder {
 	return m.recorder
 }
 
+// InTx mocks base method
+func (m *MockIndexStorage) InTx(ctx context.Context, f func(storage.IndexStorage) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InTx", ctx, f)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InTx indicates an expected call of InTx
+func (mr *MockIndexStorageMockRecorder) InTx(ctx, f interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InTx", reflect.TypeOf((*MockIndexStorage)(nil).InTx), ctx, f)
+}
+
+// SetHeight mocks base method
+func (m *MockIndexStorage) SetHeight(ctx context.Context, height uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetHeight", ctx, height)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetHeight indicates an expected call of SetHeight
+func (mr *MockIndexStorageMockRecorder) SetHeight(ctx, height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHeight", reflect.TypeOf((*MockIndexStorage)(nil).SetHeight), ctx, height)
+}
+
+// GetHeight mocks base method
+func (m *MockIndexStorage) GetHeight(ctx context.Context) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHeight", ctx)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetHeight indicates an expected call of GetHeight
+func (mr *MockIndexStorageMockRecorder) GetHeight(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeight", reflect.TypeOf((*MockIndexStorage)(nil).GetHeight), ctx)
+}
+
 // GetProfile mocks base method
 func (m *MockIndexStorage) GetProfile(ctx context.Context, addr string) (*storage.Profile, error) {
 	m.ctrl.T.Helper()
@@ -76,4 +119,18 @@ func (m *MockIndexStorage) SetProfile(ctx context.Context, p *storage.SetProfile
 func (mr *MockIndexStorageMockRecorder) SetProfile(ctx, p interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetProfile", reflect.TypeOf((*MockIndexStorage)(nil).SetProfile), ctx, p)
+}
+
+// DeleteProfile mocks base method
+func (m *MockIndexStorage) DeleteProfile(ctx context.Context, addr string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteProfile", ctx, addr)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteProfile indicates an expected call of DeleteProfile
+func (mr *MockIndexStorageMockRecorder) DeleteProfile(ctx, addr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProfile", reflect.TypeOf((*MockIndexStorage)(nil).DeleteProfile), ctx, addr)
 }

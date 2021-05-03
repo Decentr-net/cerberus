@@ -91,3 +91,17 @@ func (mr *MockFileStorageMockRecorder) Write(ctx, data, size, path interface{}) 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockFileStorage)(nil).Write), ctx, data, size, path)
 }
+
+// DeleteData mocks base method
+func (m *MockFileStorage) DeleteData(ctx context.Context, address string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteData", ctx, address)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteData indicates an expected call of DeleteData
+func (mr *MockFileStorageMockRecorder) DeleteData(ctx, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteData", reflect.TypeOf((*MockFileStorage)(nil).DeleteData), ctx, address)
+}
