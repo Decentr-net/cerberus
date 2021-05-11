@@ -16,6 +16,30 @@
   },
   "basePath": "/v1",
   "paths": {
+    "/configs/rewards": {
+      "get": {
+        "description": "Returns rewards config.",
+        "tags": [
+          "Configs"
+        ],
+        "summary": "Get rewards config",
+        "operationId": "GetRewardsConfig",
+        "responses": {
+          "200": {
+            "description": "rewards config",
+            "schema": {
+              "$ref": "#/definitions/ObjectTypes"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/pdv": {
       "post": {
         "security": [

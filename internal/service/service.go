@@ -64,6 +64,9 @@ type Service interface {
 
 	// GetProfile ...
 	GetProfiles(ctx context.Context, owner []string) ([]*Profile, error)
+
+	// GetRewardsMap ...
+	GetRewardsMap() RewardMap
 }
 
 // service is Service interface implementation.
@@ -235,6 +238,11 @@ func (s *service) GetProfiles(ctx context.Context, owner []string) ([]*Profile, 
 	}
 
 	return out, nil
+}
+
+// GetRewardsConfig ...
+func (s *service) GetRewardsMap() RewardMap {
+	return s.rewardMap
 }
 
 func (s *service) getMeta(ctx context.Context, owner sdk.AccAddress, p schema.PDV) (PDVMeta, error) {

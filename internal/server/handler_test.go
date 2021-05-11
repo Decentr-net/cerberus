@@ -583,3 +583,32 @@ func TestServer_GetProfiles(t *testing.T) {
 		})
 	}
 }
+
+func Test_getRewardsConfig(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	srv := mock.NewMockService(ctrl)
+
+	srv.EXPECT().GetRewardsMap().Return(map[schema.Type]uint64{
+		"cookie":  1,
+		"history": 2,
+	})
+
+	router := chi.NewRouter()
+
+	s := server{s: srv}
+	router.Get("/v1/configs/rewards", s.getRewardsConfigHandler)
+
+	r := httptest.NewRequest(http.MethodGet, "http://localhost/v1/configs/rewards", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, r)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, `{
+		"cookie": 1,
+		"history": 2
+	}`, w.Body.String())
+}

@@ -407,6 +407,28 @@ func (s *server) getProfilesHandler(w http.ResponseWriter, r *http.Request) {
 	api.WriteOK(w, http.StatusOK, out)
 }
 
+// getRewardsConfigHandler returns rewards config.
+func (s *server) getRewardsConfigHandler(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /configs/rewards Configs GetRewardsConfig
+	//
+	// Get rewards config
+	//
+	// Returns rewards config.
+	//
+	// ---
+	// responses:
+	//   '200':
+	//     description: rewards config
+	//     schema:
+	//       "$ref": "#/definitions/ObjectTypes"
+	//   '500':
+	//     description: internal server error
+	//     schema:
+	//       "$ref": "#/definitions/Error"
+
+	api.WriteOK(w, http.StatusOK, s.s.GetRewardsMap())
+}
+
 func getAddressFromPubKey(k string) (sdk.AccAddress, error) {
 	var pk secp256k1.PubKeySecp256k1
 	b, err := hex.DecodeString(k)

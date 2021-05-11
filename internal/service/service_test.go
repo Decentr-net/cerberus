@@ -535,3 +535,13 @@ func TestService_GetProfiles(t *testing.T) {
 		},
 	}, pp)
 }
+
+func TestService_GetRewardsMap(t *testing.T) {
+	rm := RewardMap{
+		"m": 1,
+		"t": 2,
+	}
+	s := service{rewardMap: rm}
+
+	require.EqualValues(t, rm, s.GetRewardsMap())
+}

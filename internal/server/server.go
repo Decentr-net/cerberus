@@ -124,6 +124,8 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 	r.Get("/v1/pdv/{owner}/{id}", srv.getPDVHandler)
 	r.Get("/v1/pdv/{owner}/{id}/meta", srv.getPDVMetaHandler)
 	r.Get("/v1/profiles", srv.getProfilesHandler)
+
+	r.Get("/v1/configs/rewards", srv.getRewardsConfigHandler)
 }
 
 func isOwnerValid(s string) bool {
