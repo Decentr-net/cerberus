@@ -2,7 +2,6 @@ package schema
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +20,7 @@ func TestProfile_Validate(t *testing.T) {
 				Bio:       "Some BIO",
 				Gender:    "male",
 				Avatar:    "https://decentr.xyz/avatar.jpeg",
-				Birthday:  time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
+				Birthday:  mustDate("1990-01-01"),
 			},
 			valid: true,
 		},
@@ -33,7 +32,7 @@ func TestProfile_Validate(t *testing.T) {
 				Bio:       "Some BIO",
 				Gender:    "male",
 				Avatar:    "https://decentr.xyz/avatar.jpeg",
-				Birthday:  time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
+				Birthday:  mustDate("1990-01-01"),
 			},
 			valid: false,
 		},
@@ -45,7 +44,7 @@ func TestProfile_Validate(t *testing.T) {
 				Bio:       "Some BIO",
 				Gender:    "male",
 				Avatar:    "https://decentr.xyz/avatar.jpeg",
-				Birthday:  time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
+				Birthday:  mustDate("1990-01-01"),
 			},
 			valid: false,
 		},
@@ -57,7 +56,7 @@ func TestProfile_Validate(t *testing.T) {
 				Bio:       "Some BIO",
 				Gender:    "male",
 				Avatar:    "ftp://decentr.xyz/avatar.jpeg",
-				Birthday:  time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
+				Birthday:  mustDate("1990-01-01"),
 			},
 			valid: false,
 		},
@@ -69,7 +68,7 @@ func TestProfile_Validate(t *testing.T) {
 				Bio:       "Some BIO",
 				Gender:    "coolguy",
 				Avatar:    "https://decentr.xyz/avatar.jpeg",
-				Birthday:  time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
+				Birthday:  mustDate("1990-01-01"),
 			},
 			valid: false,
 		},
@@ -81,7 +80,7 @@ func TestProfile_Validate(t *testing.T) {
 				Bio:       "Some BIO",
 				Gender:    "female",
 				Avatar:    "https://decentr.xyz/avatar.jpeg",
-				Birthday:  time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC),
+				Birthday:  mustDate("0010-01-01"),
 			},
 			valid: false,
 		},

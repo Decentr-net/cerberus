@@ -12,16 +12,17 @@ import (
 func TestPDV_Validate(t *testing.T) {
 	require.True(t, PDV{
 		Cookie{
-			Source: types.Source{Host: "https://decentr.xyz"},
-			Name:   "cookie",
-			Value:  "value",
+			Timestamp: Timestamp{Time: time.Now()},
+			Source:    types.Source{Host: "https://decentr.xyz"},
+			Name:      "cookie",
+			Value:     "value",
 		},
 		Profile{
 			FirstName: "First",
 			LastName:  "Last",
 			Gender:    types.GenderMale,
 			Avatar:    "https://decentr.xyz/avatar.jpeg",
-			Birthday:  time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
+			Birthday:  mustDate("1990-01-01"),
 		},
 	}.Validate())
 }
@@ -35,4 +36,14 @@ func TestPDV_Validate_invalid(t *testing.T) {
 			Name:   "cookie",
 		},
 	}.Validate())
+}
+
+func mustDate(s string) types.Date {
+	var d types.Date
+
+	if err := d.UnmarshalJSON([]byte(s)); err != nil {
+		panic(err)
+	}
+
+	return d
 }

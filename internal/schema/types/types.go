@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strings"
 	"time"
 
 	valid "github.com/asaskevich/govalidator"
@@ -22,15 +23,22 @@ type Type string
 
 // nolint
 const (
-	PDVCookieType      Type = "cookie"
-	PDVLoginCookieType Type = "login_cookie"
-	PDVProfileType     Type = "profile"
+	PDVAdvertiserIDType  Type = "advertiserId"
+	PDVCookieType        Type = "cookie"
+	PDVProfileType       Type = "profile"
+	PDVSearchHistoryType Type = "searchHistory"
+	PDVLocationType      Type = "location"
 )
 
 const (
 	// DataSizeLimit is limit to PDVData's size.
 	DataSizeLimit = 8 * 1024
 )
+
+// Date in rfc3999 format.
+type Date struct {
+	time.Time
+}
 
 // Gender can be male or female.
 type Gender string
@@ -79,11 +87,28 @@ type Data interface {
 func (t *Type) UnmarshalText(b []byte) error {
 	s := Type(b)
 	switch s {
-	case PDVCookieType, PDVLoginCookieType, PDVProfileType:
+	case PDVAdvertiserIDType, PDVCookieType, PDVLocationType, PDVSearchHistoryType, PDVProfileType:
 	default:
 		return errors.New("unknown PDVType")
 	}
 	*t = s
+	return nil
+}
+
+// MarshalJSON ...
+func (d Date) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s"`, d.Format(DateFormat))), nil
+}
+
+// UnmarshalJSON ...
+func (d *Date) UnmarshalJSON(b []byte) error {
+	t, err := time.Parse(DateFormat, strings.Trim(string(b), `"`))
+	if err != nil {
+		return err
+	}
+
+	*d = Date{t}
+
 	return nil
 }
 
@@ -144,12 +169,6 @@ func (m TypeMapper) UnmarshalPDVData(b []byte) (Data, error) {
 // Validate ...
 func (s Source) Validate() bool {
 	return valid.IsURL(fmt.Sprintf("%s/%s", s.Host, s.Path))
-}
-
-// IsValidDate checks if s is a valid date.
-func IsValidDate(s string) bool {
-	dt, err := time.Parse(DateFormat, s)
-	return err == nil && dt.Year() > 1900 && dt.Year() < time.Now().Year()
 }
 
 // IsValidGender checks if s is a valid gender.

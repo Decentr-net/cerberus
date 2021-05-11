@@ -4,6 +4,7 @@ package schema
 import (
 	"encoding/json"
 	"reflect"
+	"time"
 
 	"github.com/Decentr-net/cerberus/internal/schema/types"
 )
@@ -11,12 +12,24 @@ import (
 // Version ...
 const Version types.Version = "v1"
 
+// Timestamp ...
+type Timestamp struct {
+	Time time.Time `json:"timestamp"`
+}
+
+// Validate ...
+func (t Timestamp) Validate() bool {
+	return !t.Time.IsZero()
+}
+
 var _ types.PDV = PDV{}
 
 var dataSchemes = types.TypeMapper{ // nolint:gochecknoglobals
-	types.PDVCookieType:      reflect.TypeOf(Cookie{}),
-	types.PDVLoginCookieType: reflect.TypeOf(LoginCookie{}),
-	types.PDVProfileType:     reflect.TypeOf(Profile{}),
+	types.PDVAdvertiserIDType:  reflect.TypeOf(AdvertiserID{}),
+	types.PDVCookieType:        reflect.TypeOf(Cookie{}),
+	types.PDVLocationType:      reflect.TypeOf(Location{}),
+	types.PDVSearchHistoryType: reflect.TypeOf(SearchHistory{}),
+	types.PDVProfileType:       reflect.TypeOf(Profile{}),
 }
 
 // PDV is PDVObject implementation with v2 version.

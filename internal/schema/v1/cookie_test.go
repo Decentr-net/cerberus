@@ -2,13 +2,14 @@ package schema
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/Decentr-net/cerberus/internal/schema/types"
 )
 
-func TestPDVDataCookie_Validate(t *testing.T) {
+func TestCookie_Validate(t *testing.T) {
 	tt := []struct {
 		name  string
 		c     Cookie
@@ -17,6 +18,7 @@ func TestPDVDataCookie_Validate(t *testing.T) {
 		{
 			name: "valid",
 			c: Cookie{
+				Timestamp: Timestamp{Time: time.Now()},
 				Source: types.Source{
 					Host: "https://decentr.xyz",
 					Path: "/?something#",
@@ -35,40 +37,54 @@ func TestPDVDataCookie_Validate(t *testing.T) {
 		{
 			name: "valid minimal",
 			c: Cookie{
-				Source: types.Source{Host: "https://decentr.xyz"},
-				Name:   "name",
-				Value:  "value",
+				Timestamp: Timestamp{Time: time.Now()},
+				Source:    types.Source{Host: "https://decentr.xyz"},
+				Name:      "name",
+				Value:     "value",
 			},
 			valid: true,
 		},
 		{
 			name: "without name",
 			c: Cookie{
-				Source: types.Source{Host: "https://decentr.xyz"},
-				Value:  "value",
+				Timestamp: Timestamp{Time: time.Now()},
+				Source:    types.Source{Host: "https://decentr.xyz"},
+				Value:     "value",
 			},
 			valid: false,
 		},
 		{
 			name: "without value",
 			c: Cookie{
-				Source: types.Source{Host: "https://decentr.xyz"},
-				Name:   "name",
+				Timestamp: Timestamp{Time: time.Now()},
+				Source:    types.Source{Host: "https://decentr.xyz"},
+				Name:      "name",
 			},
 			valid: false,
 		},
 		{
 			name: "without host",
 			c: Cookie{
-				Name:  "name",
-				Value: "value",
+				Timestamp: Timestamp{Time: time.Now()},
+				Name:      "name",
+				Value:     "value",
 			},
 			valid: false,
 		},
 		{
 			name: "invalid host",
 			c: Cookie{
-				Source: types.Source{Host: "abc"},
+				Timestamp: Timestamp{Time: time.Now()},
+				Source:    types.Source{Host: "abc"},
+				Name:      "name",
+				Value:     "value",
+			},
+			valid: false,
+		},
+		{
+			name: "without timestamp",
+			c: Cookie{
+				Source: types.Source{Host: "https://decentr.xyz"},
 				Name:   "name",
 				Value:  "value",
 			},

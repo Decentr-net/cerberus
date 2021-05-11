@@ -37,6 +37,7 @@ var pdv = []byte(`{
     "version": "v1",
 	"pdv": [
         {
+			"timestamp": "2021-05-11T11:05:18Z",
 			"source": {
 			    "host": "decentr.net",
 			    "path": "/"
@@ -45,13 +46,14 @@ var pdv = []byte(`{
             "name": "my cookie",
             "value": "some value",
             "domain": "*",
-            "host_only": true,
+            "hostOnly": true,
             "path": "*",
             "secure": true,
-            "same_site": "None",
-            "expiration_date": 1861920000
+            "sameSite": "None",
+            "expirationDate": 1861920000
         },
         {
+			"timestamp": "2021-05-11T11:05:18Z",
 			"source": {
 			    "host": "decentr.net",
 			    "path": "/"
@@ -60,11 +62,11 @@ var pdv = []byte(`{
             "name": "my cookie 2",
             "value": "some value 2",
             "domain": "*",
-            "host_only": true,
+            "hostOnly": true,
             "path": "*",
             "secure": true,
-            "same_site": "None",
-            "expiration_date": 1861920000
+            "sameSite": "None",
+            "expirationDate": 1861920000
         }
 	]
 }`)
