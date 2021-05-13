@@ -4,6 +4,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	valid "github.com/asaskevich/govalidator"
+
 	"github.com/Decentr-net/cerberus/internal/schema/types"
 )
 
@@ -16,6 +18,7 @@ const (
 type Profile struct {
 	FirstName string       `json:"firstName"`
 	LastName  string       `json:"lastName"`
+	Emails    []string     `json:"emails"`
 	Bio       string       `json:"bio"`
 	Gender    types.Gender `json:"gender"`
 	Avatar    string       `json:"avatar"`
@@ -34,6 +37,16 @@ func (d Profile) MarshalJSON() ([]byte, error) { // nolint: gocritic
 
 // Validate ...
 func (d Profile) Validate() bool { // nolint: gocritic
+	if len(d.Emails) == 0 {
+		return false
+	}
+
+	for _, v := range d.Emails {
+		if !valid.IsEmail(v) {
+			return false
+		}
+	}
+
 	return types.IsValidGender(d.Gender) &&
 		types.IsValidAvatar(d.Avatar) &&
 		utf8.RuneCountInString(d.FirstName) <= maxFirstNameLength &&

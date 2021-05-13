@@ -47,6 +47,7 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
             "type": "profile",
             "firstName": "John",
             "lastName": "Dorian",
+            "emails": ["dev@decentr.xyz"],
             "bio": "Just cool guy",
             "gender": "male",
             "avatar": "http://john.dorian/avatar.png",

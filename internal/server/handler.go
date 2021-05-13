@@ -375,16 +375,32 @@ func (s *server) getProfilesHandler(w http.ResponseWriter, r *http.Request) {
 	//     schema:
 	//       "$ref": "#/definitions/Error"
 
-	owner := strings.Split(r.URL.Query().Get("address"), ",")
+	address := strings.Split(r.URL.Query().Get("address"), ",")
 
-	for _, v := range owner {
+	var requestedBy string
+	if r.Header.Get(api.PublicKeyHeader) != "" {
+		if err := api.Verify(r); err != nil {
+			api.WriteVerifyError(r.Context(), w, err)
+			return
+		}
+
+		owner, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
+		if err != nil {
+			api.WriteError(w, http.StatusBadRequest, fmt.Sprintf("failed to decode owner address: %s", err.Error()))
+			return
+		}
+
+		requestedBy = owner.String()
+	}
+
+	for _, v := range address {
 		if !isOwnerValid(v) {
 			api.WriteError(w, http.StatusBadRequest, "invalid address")
 			return
 		}
 	}
 
-	pp, err := s.s.GetProfiles(r.Context(), owner)
+	pp, err := s.s.GetProfiles(r.Context(), address)
 	if err != nil {
 		api.WriteInternalError(r.Context(), w, fmt.Sprintf("failed to get profiles: %s", err.Error()))
 		return
@@ -392,7 +408,7 @@ func (s *server) getProfilesHandler(w http.ResponseWriter, r *http.Request) {
 
 	out := make([]Profile, len(pp))
 	for i, v := range pp {
-		out[i] = Profile{
+		p := Profile{
 			Address:   v.Address,
 			FirstName: v.FirstName,
 			LastName:  v.LastName,
@@ -402,6 +418,12 @@ func (s *server) getProfilesHandler(w http.ResponseWriter, r *http.Request) {
 			Birthday:  v.Birthday.Format(dateFormat),
 			CreatedAt: v.CreatedAt.Format(dateFormat),
 		}
+
+		if requestedBy == p.Address {
+			p.Emails = v.Emails
+		}
+
+		out[i] = p
 	}
 
 	api.WriteOK(w, http.StatusOK, out)

@@ -24,6 +24,7 @@ type Profile struct {
 	Address   string
 	FirstName string
 	LastName  string
+	Emails    []string
 	Bio       string
 	Avatar    string
 	Gender    string
@@ -37,6 +38,7 @@ type SetProfileParams struct {
 	Address   string
 	FirstName string
 	LastName  string
+	Emails    []string
 	Bio       string
 	Avatar    string
 	Gender    string

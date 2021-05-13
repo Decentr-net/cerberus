@@ -512,12 +512,13 @@ func TestServer_GetPDVMeta(t *testing.T) {
 
 func TestServer_GetProfiles(t *testing.T) {
 	tt := []struct {
-		name  string
-		url   string
-		owner []string
-		f     func(_ context.Context, owner []string) ([]*service.Profile, error)
-		rcode int
-		rdata string
+		name         string
+		url          string
+		owner        []string
+		f            func(_ context.Context, owner []string) ([]*service.Profile, error)
+		unauthorized bool
+		rcode        int
+		rdata        string
 	}{
 		{
 			name:  "success",
@@ -526,19 +527,71 @@ func TestServer_GetProfiles(t *testing.T) {
 			f: func(_ context.Context, owner []string) ([]*service.Profile, error) {
 				return []*service.Profile{
 					{
-						Address:   "1",
+						Address:   "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
 						FirstName: "2",
 						LastName:  "3",
+						Emails:    []string{"email"},
 						Bio:       "4",
 						Avatar:    "5",
 						Gender:    "6",
 						Birthday:  time.Unix(1, 0),
 						CreatedAt: time.Unix(200000, 0),
 					},
+					{
+						Address:   "decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
+						FirstName: "22",
+						LastName:  "23",
+						Emails:    []string{"email"},
+						Bio:       "24",
+						Avatar:    "25",
+						Gender:    "26",
+						Birthday:  time.Unix(222210, 0),
+						CreatedAt: time.Unix(2200000, 0),
+					},
 				}, nil
 			},
 			rcode: http.StatusOK,
-			rdata: `[{"address":"1","firstName":"2","lastName":"3","bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":"1970-01-03"}]`,
+			rdata: `[
+	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","emails":["email"],"bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":"1970-01-03"},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":"1970-01-26"}
+		]`,
+		},
+		{
+			name:         "success_unauthorized",
+			url:          "v1/profiles?address=decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz,decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
+			owner:        []string{testOwner, testOwner},
+			unauthorized: true,
+			f: func(_ context.Context, owner []string) ([]*service.Profile, error) {
+				return []*service.Profile{
+					{
+						Address:   "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
+						FirstName: "2",
+						LastName:  "3",
+						Emails:    []string{"email"},
+						Bio:       "4",
+						Avatar:    "5",
+						Gender:    "6",
+						Birthday:  time.Unix(1, 0),
+						CreatedAt: time.Unix(200000, 0),
+					},
+					{
+						Address:   "decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
+						FirstName: "22",
+						LastName:  "23",
+						Emails:    []string{"email"},
+						Bio:       "24",
+						Avatar:    "25",
+						Gender:    "26",
+						Birthday:  time.Unix(222210, 0),
+						CreatedAt: time.Unix(2200000, 0),
+					},
+				}, nil
+			},
+			rcode: http.StatusOK,
+			rdata: `[
+	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":"1970-01-03"},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":"1970-01-26"}
+		]`,
 		},
 		{
 			name:  "invalid request",
@@ -555,6 +608,11 @@ func TestServer_GetProfiles(t *testing.T) {
 			t.Parallel()
 
 			b, w, r := newTestParameters(t, http.MethodGet, tc.url, nil)
+
+			if tc.unauthorized {
+				r.Header.Del(api.SignatureHeader)
+				r.Header.Del(api.PublicKeyHeader)
+			}
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
