@@ -4,14 +4,19 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Decentr-net/cerberus/internal/storage"
 )
+
+var log = logrus.WithField("layer", "storage").WithField("package", "postgres")
+var errBeginCalledWithinTx = errors.New("can not run WithLockedHeight in tx")
 
 type pg struct {
 	ext sqlx.ExtContext
@@ -34,6 +39,54 @@ func New(db *sql.DB) storage.IndexStorage {
 	return pg{
 		ext: sqlx.NewDb(db, "postgres"),
 	}
+}
+
+func (s pg) InTx(ctx context.Context, f func(s storage.IndexStorage) error) error {
+	db, ok := s.ext.(*sqlx.DB)
+	if !ok {
+		return errBeginCalledWithinTx
+	}
+
+	tx, err := db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return fmt.Errorf("failed to create tx: %w", err)
+	}
+
+	if err := func(s storage.IndexStorage) error {
+		if err := f(s); err != nil {
+			return err
+		}
+
+		return nil
+	}(pg{ext: tx}); err != nil {
+		if err := tx.Rollback(); err != nil {
+			log.WithError(err).Error("failed to rollback tx")
+		}
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commint tx: %w", err)
+	}
+
+	return nil
+}
+
+func (s pg) GetHeight(ctx context.Context) (uint64, error) {
+	var h uint64
+	if err := sqlx.GetContext(ctx, s.ext, &h, `SELECT height FROM height FOR KEY SHARE`); err != nil {
+		return 0, fmt.Errorf("failed to query: %w", err)
+	}
+
+	return h, nil
+}
+
+func (s pg) SetHeight(ctx context.Context, height uint64) error {
+	if _, err := s.ext.ExecContext(ctx, `UPDATE height SET height = $1`, height); err != nil {
+		return fmt.Errorf("failed to update: %w", err)
+	}
+
+	return nil
 }
 
 func (s pg) GetProfile(ctx context.Context, addr string) (*storage.Profile, error) {
@@ -108,6 +161,15 @@ func (s pg) SetProfile(ctx context.Context, p *storage.SetProfileParams) error {
 		`, profile,
 	); err != nil {
 		return fmt.Errorf("failed to exec: %w", err)
+	}
+
+	return nil
+}
+
+// DeleteProfile deletes profile.
+func (s pg) DeleteProfile(ctx context.Context, addr string) error {
+	if _, err := s.ext.ExecContext(ctx, `DELETE FROM profile WHERE address = $1`, addr); err != nil {
+		return fmt.Errorf("failed to delete: %w", err)
 	}
 
 	return nil

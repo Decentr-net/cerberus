@@ -2,8 +2,10 @@
 V := @
 
 OUT_DIR := ./build
-OUT := $(OUT_DIR)/cerberus
-MAIN_PKG := ./cmd/cerberus
+CERBERUS_OUT := $(OUT_DIR)/cerberus
+CERBERUS_MAIN_PKG := ./cmd/cerberus
+SYNC_OUT := $(OUT_DIR)/sync
+SYNC_MAIN_PKG := ./cmd/sync
 
 GOBIN := $(shell go env GOPATH)/bin
 
@@ -28,17 +30,22 @@ default: build
 
 .PHONY: build
 build:
-	@echo BUILDING $(OUT)
-	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(OUT) $(MAIN_PKG)
+	@echo BUILDING $(CERBERUS_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(CERBERUS_OUT) $(CERBERUS_MAIN_PKG)
+	@echo BUILDING $(SYNC_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(SYNC_OUT) $(SYNC_MAIN_PKG)
 	@echo DONE
 
 .PHONY: linux
 linux: export GOOS := linux
 linux: export GOARCH := amd64
-linux: LINUX_OUT := $(OUT)-$(GOOS)-$(GOARCH)
+linux: LINUX_CERBERUS_OUT := $(CERBERUS_OUT)-$(GOOS)-$(GOARCH)
+linux: LINUX_SYNC_OUT := $(SYNC_OUT)-$(GOOS)-$(GOARCH)
 linux:
-	@echo BUILDING $(LINUX_OUT)
-	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_OUT) $(MAIN_PKG)
+	@echo BUILDING $(LINUX_CERBERUS_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_CERBERUS_OUT) $(CERBERUS_MAIN_PKG)
+	@echo BUILDING $(LINUX_SYNC_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_SYNC_OUT) $(SYNC_MAIN_PKG)
 	@echo DONE
 
 .PHONY: image

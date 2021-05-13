@@ -158,11 +158,11 @@ func TestS3_List(t *testing.T) {
 	text := []byte("cerberus")
 
 	for i := 0; i < 1010; i++ {
-		filename := fmt.Sprintf("pdv/owner/%016x", i)
+		filename := fmt.Sprintf("owner/pdv/%016x", i)
 		require.NoError(t, s.Write(ctx, bytes.NewReader(text), 8, filename))
 	}
 
-	l, err := s.List(ctx, "pdv/owner", 5, 1000)
+	l, err := s.List(ctx, "owner/pdv", 5, 1000)
 	require.NoError(t, err)
 	require.Len(t, l, 1000)
 
@@ -170,4 +170,25 @@ func TestS3_List(t *testing.T) {
 		expected := fmt.Sprintf("%016x", i+5)
 		require.EqualValues(t, expected, l[i])
 	}
+}
+
+func TestS3_DeleteData(t *testing.T) {
+	s, err := NewStorage(c, bucket)
+	require.NoError(t, err)
+
+	text := []byte("cerberus")
+
+	for i := 0; i < 1010; i++ {
+		filename := fmt.Sprintf("owner/pdv/%016x", i)
+		require.NoError(t, s.Write(ctx, bytes.NewReader(text), 8, filename))
+	}
+
+	l, err := s.List(ctx, "owner/pdv", 5, 1000)
+	require.NoError(t, err)
+	require.Len(t, l, 1000)
+
+	require.NoError(t, s.DeleteData(ctx, "owner"))
+	l, err = s.List(ctx, "owner/pdv", 5, 1000)
+	require.NoError(t, err)
+	require.Empty(t, l)
 }

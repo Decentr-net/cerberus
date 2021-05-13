@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/sirupsen/logrus"
@@ -95,4 +96,23 @@ func (s s3) List(ctx context.Context, prefix string, from uint64, limit uint16) 
 	}
 
 	return out, nil
+}
+
+// DeleteData ...
+func (s s3) DeleteData(ctx context.Context, address string) error {
+	ch := s.c.ListObjects(ctx, s.b, minio.ListObjectsOptions{
+		Prefix:    fmt.Sprintf("%s/", address),
+		Recursive: true,
+	})
+
+	b := strings.Builder{}
+	for err := range s.c.RemoveObjects(ctx, s.b, ch, minio.RemoveObjectsOptions{}) {
+		b.WriteString(fmt.Sprintf("failed to remove %s: %s\n", err.ObjectName, err.Err.Error()))
+	}
+
+	if b.String() != "" {
+		return errors.New(b.String())
+	}
+
+	return nil
 }

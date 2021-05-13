@@ -46,12 +46,17 @@ github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d/go.mod h1:
 github.com/ClickHouse/clickhouse-go v1.3.12/go.mod h1:EaI/sW7Azgz9UATzd5ZdZHRUhHgv5+JMS9NSr2smCJI=
 github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53/go.mod h1:+3IMCy2vIlbG1XG/0ggNQv0SvxCAIpPM5b1nCz56Xno=
 github.com/CloudyKit/jet/v3 v3.0.0/go.mod h1:HKQPgSJmdK8hdoAbKUUWajkHyHo4RaU5rMdUywE7VMo=
-github.com/Decentr-net/decentr v1.2.4 h1:gO18i10JQxcQnDy4AUepyLd2We2lv7a6AseLM9ISWVc=
-github.com/Decentr-net/decentr v1.2.4/go.mod h1:ehXkz6kZKY7w4P/2SWAj1ueL9oTRqfiWXnoAxKBGd+w=
+github.com/Decentr-net/ariadne v1.0.0 h1:huDz/OLGIUFGmd5A4gTBTmByieVqwQosR8OFGfAQbFQ=
+github.com/Decentr-net/ariadne v1.0.0/go.mod h1:9Bfj8E71pPyC0s8EyUedMk/LbOV2SmbHqch5z5ijRhs=
+github.com/Decentr-net/cerberus v1.0.1/go.mod h1:Lec373MgA9o1bPLkVHA2wNgbiYsAnGMWCE5u2tUjS8M=
+github.com/Decentr-net/decentr v1.0.2/go.mod h1:STlEXCBecIGtwT1t2C91o2X/OKdCmQLDlt16BhnhiaE=
+github.com/Decentr-net/decentr v1.2.6-0.20210501165306-33b638ede490 h1:/HiH0MefVTSHn/yBY/JCdnIVYiQhEaZpbsibitacDI4=
+github.com/Decentr-net/decentr v1.2.6-0.20210501165306-33b638ede490/go.mod h1:ehXkz6kZKY7w4P/2SWAj1ueL9oTRqfiWXnoAxKBGd+w=
 github.com/Decentr-net/go-api v0.0.5 h1:9qtiUsUXI8TjI5fCdANJ5Y14s6Y6E2y98sVMiDznEm0=
 github.com/Decentr-net/go-api v0.0.5/go.mod h1:tzgiKb/kz2ZXEpwXUUbXN3JIWKk/Gf8CQCQ8jk9xyV0=
 github.com/Decentr-net/go-broadcaster v0.0.1 h1:JOx7i8NPzAKHJxQebFyW64EtuYdUhXH9jDd334CfOtc=
 github.com/Decentr-net/go-broadcaster v0.0.1/go.mod h1:eQ9gSusDjqVXi6rMEAHTDsyWxRk2ZKJnRFjUH3zb8j4=
+github.com/Decentr-net/logrus v0.7.1/go.mod h1:EPFtMuGaa2CVrSbTXaCywqwqIAezkhWo7xqEfudEDp4=
 github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189 h1:UsQjUr0TwkLsllBJGRjShMOJ817F82iL1rK7rxHI6AQ=
 github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189/go.mod h1:zhIP1LNjBhoEQvIqKJbw0MIoHN43GjmnZI+ElQ73ab0=
 github.com/Decentr-net/logrus v0.7.2 h1:48PiVv7LCE6F4Wpcqq7JUvP6JXuiY9nN9SlugOuqthE=
@@ -256,6 +261,7 @@ github.com/go-playground/assert/v2 v2.0.1/go.mod h1:VDjEfimB/XKnb+ZQfWdccd7VUvSc
 github.com/go-playground/locales v0.13.0/go.mod h1:taPMhCMXrRLJO55olJkUXHZBHCxTMfnGwq/HNwmWNS8=
 github.com/go-playground/universal-translator v0.17.0/go.mod h1:UkSxE5sNxxRwHyU+Scu5vgOQjsIJAF8j9muTVoKLVtA=
 github.com/go-playground/validator/v10 v10.2.0/go.mod h1:uOYAAleCW8F/7oMFd6aG0GOhaH6EGOAJShg8Id5JGkI=
+github.com/go-redis/redis v6.15.8+incompatible/go.mod h1:NAIEuMOZ/fxfXJIrKDQDz8wamY7mA7PouImQ2Jvg6kA=
 github.com/go-redis/redis v6.15.9+incompatible h1:K0pv1D7EQUjfyoMql+r/jZqCLizCGKFlFgcHWWmHQjg=
 github.com/go-redis/redis v6.15.9+incompatible/go.mod h1:NAIEuMOZ/fxfXJIrKDQDz8wamY7mA7PouImQ2Jvg6kA=
 github.com/go-sql-driver/mysql v1.4.0/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
@@ -764,6 +770,7 @@ github.com/tendermint/tendermint v0.33.9 h1:rRKIfu5qAXX5f9bwX1oUXSZz/ALFJjDuivhk
 github.com/tendermint/tendermint v0.33.9/go.mod h1:0yUs9eIuuDq07nQql9BmI30FtYGcEC60Tu5JzB5IezM=
 github.com/tendermint/tm-db v0.5.1 h1:H9HDq8UEA7Eeg13kdYckkgwwkQLBnJGgX4PgLJRhieY=
 github.com/tendermint/tm-db v0.5.1/go.mod h1:g92zWjHpCYlEvQXvy9M168Su8V1IBEeawpXVVBaK4f4=
+github.com/testcontainers/testcontainers-go v0.7.0/go.mod h1:4dloDPrC94+8ebXA+Iei3Jy+gxF6uHQssJkB3mlP9Rg=
 github.com/testcontainers/testcontainers-go v0.8.0 h1:RF0179BF/6hZeIaa9/T7fJMr7QjzWMLIVL/5jl2JAKU=
 github.com/testcontainers/testcontainers-go v0.8.0/go.mod h1:m9jHAu+OOFfbE6wQf98maI/6e/LKasi+uX3MVyVox4A=
 github.com/tidwall/gjson v1.6.3/go.mod h1:BaHyNc5bjzYkPqgLq7mdVzeiRtULKULXLgZFKsxEHI0=

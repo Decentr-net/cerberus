@@ -118,6 +118,37 @@ func cleanup(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestPg_GetHeight(t *testing.T) {
+	defer cleanup(t)
+
+	h, err := s.GetHeight(context.Background())
+	require.NoError(t, err)
+	require.EqualValues(t, 0, h)
+}
+
+func TestPg_SetHeight(t *testing.T) {
+	defer cleanup(t)
+
+	require.NoError(t, s.SetHeight(ctx, 10))
+
+	h, err := s.GetHeight(context.Background())
+	require.NoError(t, err)
+	require.EqualValues(t, 10, h)
+}
+
+func TestPg_InTx(t *testing.T) {
+	defer cleanup(t)
+
+	require.NoError(t, s.InTx(context.Background(), func(tx storage.IndexStorage) error {
+		require.NoError(t, tx.SetHeight(ctx, 1))
+		return nil
+	}))
+
+	h, err := s.GetHeight(context.Background())
+	require.NoError(t, err)
+	require.EqualValues(t, 1, h)
+}
+
 func TestPg_SetProfile(t *testing.T) {
 	defer cleanup(t)
 
@@ -203,6 +234,30 @@ func TestPg_GetProfiles(t *testing.T) {
 		assert.Equal(t, p.Gender, v.Gender)
 		assert.Equal(t, p.Birthday.UTC(), v.Birthday.UTC())
 	}
+}
+
+func TestPg_DeleteProfile(t *testing.T) {
+	defer cleanup(t)
+
+	p := storage.SetProfileParams{
+		Address:   "address",
+		FirstName: "first_name",
+		LastName:  "last_name",
+		Bio:       "bio",
+		Avatar:    "avatar",
+		Gender:    "male",
+		Birthday:  date("2009-01-02"),
+	}
+
+	require.NoError(t, s.SetProfile(ctx, &p))
+
+	_, err := s.GetProfile(ctx, p.Address)
+	require.NoError(t, err)
+
+	require.NoError(t, s.DeleteProfile(ctx, p.Address))
+	_, err = s.GetProfile(ctx, p.Address)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, storage.ErrNotFound)
 }
 
 func date(d string) time.Time {

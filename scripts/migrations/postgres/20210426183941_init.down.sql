@@ -2,4 +2,6 @@ BEGIN;
 
 DROP TABLE profile CASCADE;
 
+DROP TABLE height;
+
 COMMIT;

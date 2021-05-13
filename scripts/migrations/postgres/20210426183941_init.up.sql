@@ -1,5 +1,11 @@
 BEGIN;
 
+CREATE TABLE height (
+    height BIGINT
+);
+
+INSERT INTO height VALUES(0);
+
 CREATE TABLE profile (
     address TEXT NOT NULL PRIMARY KEY,
     first_name TEXT NOT NULL DEFAULT '',

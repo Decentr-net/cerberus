@@ -2,23 +2,25 @@
 github.com/99designs/keyring
 # github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 github.com/ChainSafe/go-schnorrkel
-# github.com/Decentr-net/decentr v1.2.4
+# github.com/Decentr-net/ariadne v1.0.0
+## explicit
+github.com/Decentr-net/ariadne
+github.com/Decentr-net/ariadne/mock
+# github.com/Decentr-net/decentr v1.2.6-0.20210501165306-33b638ede490
 ## explicit
 github.com/Decentr-net/decentr/app
+github.com/Decentr-net/decentr/app/ante
 github.com/Decentr-net/decentr/x/community
 github.com/Decentr-net/decentr/x/community/client/cli
 github.com/Decentr-net/decentr/x/community/client/rest
 github.com/Decentr-net/decentr/x/community/keeper
 github.com/Decentr-net/decentr/x/community/types
 github.com/Decentr-net/decentr/x/pdv
+github.com/Decentr-net/decentr/x/pdv/ante
 github.com/Decentr-net/decentr/x/pdv/client/cli
+github.com/Decentr-net/decentr/x/pdv/client/rest
 github.com/Decentr-net/decentr/x/pdv/keeper
 github.com/Decentr-net/decentr/x/pdv/types
-github.com/Decentr-net/decentr/x/profile
-github.com/Decentr-net/decentr/x/profile/client/cli
-github.com/Decentr-net/decentr/x/profile/client/rest
-github.com/Decentr-net/decentr/x/profile/keeper
-github.com/Decentr-net/decentr/x/profile/types
 github.com/Decentr-net/decentr/x/token
 github.com/Decentr-net/decentr/x/token/client/cli
 github.com/Decentr-net/decentr/x/token/client/rest
@@ -248,7 +250,6 @@ github.com/dvsekhvalnov/jose2go/padding
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/getsentry/sentry-go v0.9.0
-## explicit
 github.com/getsentry/sentry-go
 github.com/getsentry/sentry-go/internal/crypto/randutil
 github.com/getsentry/sentry-go/internal/debug
