@@ -30,22 +30,31 @@ type DataV1 interface {
 	TypeV1() types.Type
 }
 
-// Cookie is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).
+// AdvertiserIDV1 contains id for an advertiser (e.g google, facebook).
+// swagger:model advertiserId
+type AdvertiserIDV1 struct {
+	// swagger:allOf advertiserId
+	DataV1
+
+	v1.AdvertiserID
+}
+
+// CookieV1 is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).
 // swagger:model cookie
-type Cookie struct {
+type CookieV1 struct {
 	// swagger:allOf cookie
 	DataV1
 
 	v1.Cookie
 }
 
-// LoginCookieV1 is the same as PDVDataCookie but with different type.
-// swagger:model login_cookie
-type LoginCookieV1 struct {
-	// swagger:allOf login_cookie
+// LocationV1 contains user's geolocation at a time.
+// swagger:model location
+type LocationV1 struct {
+	// swagger:allOf location
 	DataV1
 
-	v1.LoginCookie
+	v1.Location
 }
 
 // ProfileV1 is profile data.
@@ -55,6 +64,15 @@ type ProfileV1 struct {
 	DataV1
 
 	v1.Profile
+}
+
+// SearchHistoryV1 contains user's search request.
+// swagger:model searchHistory
+type SearchHistoryV1 struct {
+	// swagger:allOf searchHistory
+	DataV1
+
+	v1.SearchHistory
 }
 
 // PDVMeta contains info about PDV.

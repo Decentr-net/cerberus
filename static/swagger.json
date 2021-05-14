@@ -347,6 +347,21 @@
       "x-go-name": "Profile",
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
     },
+    "AdvertiserID": {
+      "type": "object",
+      "title": "AdvertiserID is id for advertiser..",
+      "properties": {
+        "advertiser": {
+          "type": "string",
+          "x-go-name": "Advertiser"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/v1"
+    },
     "Cookie": {
       "type": "object",
       "title": "Cookie is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).",
@@ -355,12 +370,12 @@
           "type": "string",
           "x-go-name": "Domain"
         },
-        "expiration_date": {
+        "expirationDate": {
           "type": "integer",
           "format": "uint64",
           "x-go-name": "ExpirationDate"
         },
-        "host_only": {
+        "hostOnly": {
           "type": "boolean",
           "x-go-name": "HostOnly"
         },
@@ -372,7 +387,7 @@
           "type": "string",
           "x-go-name": "Path"
         },
-        "same_site": {
+        "sameSite": {
           "type": "string",
           "x-go-name": "SameSite"
         },
@@ -382,6 +397,11 @@
         },
         "source": {
           "$ref": "#/definitions/Source"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Time"
         },
         "value": {
           "type": "string",
@@ -397,15 +417,22 @@
         "type": {
           "type": "string",
           "enum": [
+            "advertiserId",
             "cookie",
-            "login_cookie",
-            "profile"
+            "profile",
+            "searchHistory",
+            "location"
           ],
           "x-go-name": "TypeV1"
         }
       },
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger",
       "discriminator": "type"
+    },
+    "Date": {
+      "type": "object",
+      "title": "Date in rfc3999 format.",
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/types"
     },
     "Error": {
       "type": "object",
@@ -423,9 +450,30 @@
       "title": "Gender can be male or female.",
       "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/types"
     },
-    "LoginCookie": {
-      "title": "LoginCookie is the same as PDVDataCookie but with different type.",
-      "$ref": "#/definitions/Cookie"
+    "Location": {
+      "type": "object",
+      "title": "Location is user's geolocation.",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Latitude"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Longitude"
+        },
+        "requestedBy": {
+          "$ref": "#/definitions/Source"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Time"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/v1"
     },
     "ObjectTypes": {
       "type": "object",
@@ -483,18 +531,16 @@
           "x-go-name": "Bio"
         },
         "birthday": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "Birthday"
+          "$ref": "#/definitions/Date"
         },
-        "first_name": {
+        "firstName": {
           "type": "string",
           "x-go-name": "FirstName"
         },
         "gender": {
           "$ref": "#/definitions/Gender"
         },
-        "last_name": {
+        "lastName": {
           "type": "string",
           "x-go-name": "LastName"
         }
@@ -513,6 +559,26 @@
       },
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
     },
+    "SearchHistory": {
+      "type": "object",
+      "title": "SearchHistory is user's search history.",
+      "properties": {
+        "engine": {
+          "type": "string",
+          "x-go-name": "Engine"
+        },
+        "query": {
+          "type": "string",
+          "x-go-name": "Query"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Time"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/v1"
+    },
     "Source": {
       "type": "object",
       "title": "Source contains information about source of pdv.",
@@ -530,8 +596,50 @@
       },
       "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/types"
     },
+    "Time": {
+      "description": "Programs using times should typically store and pass them as values,\nnot pointers. That is, time variables and struct fields should be of\ntype time.Time, not *time.Time.\n\nA Time value can be used by multiple goroutines simultaneously except\nthat the methods GobDecode, UnmarshalBinary, UnmarshalJSON and\nUnmarshalText are not concurrency-safe.\n\nTime instants can be compared using the Before, After, and Equal methods.\nThe Sub method subtracts two instants, producing a Duration.\nThe Add method adds a Time and a Duration, producing a Time.\n\nThe zero value of type Time is January 1, year 1, 00:00:00.000000000 UTC.\nAs this time is unlikely to come up in practice, the IsZero method gives\na simple way of detecting a time that has not been initialized explicitly.\n\nEach Time has associated with it a Location, consulted when computing the\npresentation form of the time, such as in the Format, Hour, and Year methods.\nThe methods Local, UTC, and In return a Time with a specific location.\nChanging the location in this way changes only the presentation; it does not\nchange the instant in time being denoted and therefore does not affect the\ncomputations described in earlier paragraphs.\n\nRepresentations of a Time value saved by the GobEncode, MarshalBinary,\nMarshalJSON, and MarshalText methods store the Time.Location's offset, but not\nthe location name. They therefore lose information about Daylight Saving Time.\n\nIn addition to the required “wall clock” reading, a Time may contain an optional\nreading of the current process's monotonic clock, to provide additional precision\nfor comparison or subtraction.\nSee the “Monotonic Clocks” section in the package documentation for details.\n\nNote that the Go == operator compares not just the time instant but also the\nLocation and the monotonic clock reading. Therefore, Time values should not\nbe used as map or database keys without first guaranteeing that the\nidentical Location has been set for all values, which can be achieved\nthrough use of the UTC or Local method, and that the monotonic clock reading\nhas been stripped by setting t = t.Round(0). In general, prefer t.Equal(u)\nto t == u, since t.Equal uses the most accurate comparison available and\ncorrectly handles the case when only one of its arguments has a monotonic\nclock reading.",
+      "type": "string",
+      "format": "date-time",
+      "title": "A Time represents an instant in time with nanosecond precision."
+    },
+    "Timestamp": {
+      "type": "object",
+      "title": "Timestamp ...",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Time"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/v1"
+    },
+    "advertiserId": {
+      "title": "AdvertiserIDV1 contains id for an advertiser (e.g google, facebook).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/DataV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "advertiser": {
+              "type": "string",
+              "x-go-name": "Advertiser"
+            },
+            "id": {
+              "type": "string",
+              "x-go-name": "ID"
+            }
+          }
+        }
+      ],
+      "x-class": "advertiserId",
+      "x-go-name": "AdvertiserIDV1",
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
+    },
     "cookie": {
-      "title": "Cookie is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).",
+      "title": "CookieV1 is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).",
       "allOf": [
         {
           "$ref": "#/definitions/DataV1"
@@ -543,12 +651,12 @@
               "type": "string",
               "x-go-name": "Domain"
             },
-            "expiration_date": {
+            "expirationDate": {
               "type": "integer",
               "format": "uint64",
               "x-go-name": "ExpirationDate"
             },
-            "host_only": {
+            "hostOnly": {
               "type": "boolean",
               "x-go-name": "HostOnly"
             },
@@ -560,7 +668,7 @@
               "type": "string",
               "x-go-name": "Path"
             },
-            "same_site": {
+            "sameSite": {
               "type": "string",
               "x-go-name": "SameSite"
             },
@@ -570,6 +678,11 @@
             },
             "source": {
               "$ref": "#/definitions/Source"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "x-go-name": "Time"
             },
             "value": {
               "type": "string",
@@ -579,11 +692,11 @@
         }
       ],
       "x-class": "cookie",
-      "x-go-name": "Cookie",
+      "x-go-name": "CookieV1",
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
     },
-    "login_cookie": {
-      "title": "LoginCookieV1 is the same as PDVDataCookie but with different type.",
+    "location": {
+      "title": "LocationV1 contains user's geolocation at a time.",
       "allOf": [
         {
           "$ref": "#/definitions/DataV1"
@@ -591,47 +704,29 @@
         {
           "type": "object",
           "properties": {
-            "domain": {
-              "type": "string",
-              "x-go-name": "Domain"
+            "latitude": {
+              "type": "number",
+              "format": "double",
+              "x-go-name": "Latitude"
             },
-            "expiration_date": {
-              "type": "integer",
-              "format": "uint64",
-              "x-go-name": "ExpirationDate"
+            "longitude": {
+              "type": "number",
+              "format": "double",
+              "x-go-name": "Longitude"
             },
-            "host_only": {
-              "type": "boolean",
-              "x-go-name": "HostOnly"
-            },
-            "name": {
-              "type": "string",
-              "x-go-name": "Name"
-            },
-            "path": {
-              "type": "string",
-              "x-go-name": "Path"
-            },
-            "same_site": {
-              "type": "string",
-              "x-go-name": "SameSite"
-            },
-            "secure": {
-              "type": "boolean",
-              "x-go-name": "Secure"
-            },
-            "source": {
+            "requestedBy": {
               "$ref": "#/definitions/Source"
             },
-            "value": {
+            "timestamp": {
               "type": "string",
-              "x-go-name": "Value"
+              "format": "date-time",
+              "x-go-name": "Time"
             }
           }
         }
       ],
-      "x-class": "login_cookie",
-      "x-go-name": "LoginCookieV1",
+      "x-class": "location",
+      "x-go-name": "LocationV1",
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
     },
     "profile": {
@@ -652,18 +747,16 @@
               "x-go-name": "Bio"
             },
             "birthday": {
-              "type": "string",
-              "format": "date-time",
-              "x-go-name": "Birthday"
+              "$ref": "#/definitions/Date"
             },
-            "first_name": {
+            "firstName": {
               "type": "string",
               "x-go-name": "FirstName"
             },
             "gender": {
               "$ref": "#/definitions/Gender"
             },
-            "last_name": {
+            "lastName": {
               "type": "string",
               "x-go-name": "LastName"
             }
@@ -672,6 +765,35 @@
       ],
       "x-class": "profile",
       "x-go-name": "ProfileV1",
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
+    },
+    "searchHistory": {
+      "title": "SearchHistoryV1 contains user's search request.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/DataV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "engine": {
+              "type": "string",
+              "x-go-name": "Engine"
+            },
+            "query": {
+              "type": "string",
+              "x-go-name": "Query"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "x-go-name": "Time"
+            }
+          }
+        }
+      ],
+      "x-class": "searchHistory",
+      "x-go-name": "SearchHistoryV1",
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
     },
     "v1": {

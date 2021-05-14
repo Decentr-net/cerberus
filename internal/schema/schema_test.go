@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	v1 "github.com/Decentr-net/cerberus/internal/schema/v1"
@@ -15,43 +16,56 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
     "version": "v1",
 	"pdv": [
 		{
+			"type": "advertiserId",
+			"advertiser": "decentr",
+			"id": "12345qwert"
+		},
+		{
+			"timestamp": "2021-05-11T11:05:18Z",
+			"type": "cookie",
 			"source": {
 				"host": "https://decentr.xyz",
 				"path": "/"
 			},
-            "type": "cookie",
             "name": "my cookie",
             "value": "some value",
             "domain": "*",
-            "host_only": true,
+            "hostOnly": true,
             "path": "*",
             "secure": true,
-            "same_site": "None",
-            "expiration_date": 1861920000
+            "sameSite": "None",
+            "expirationDate": 1861920000
         },
+		{
+			"timestamp": "2021-05-11T11:05:18Z",
+			"type": "location",
+			"latitude": 37.24064741897542,
+			"longitude": -115.81599314492902,
+			"requestedBy": null
+		},
         {
-			"source": {
-				"host": "https://decentr.xyz",
-				"path": "/login"
-			},
-            "type": "login_cookie",
-            "name": "my cookie 2",
-            "value": "some value 2",
-            "domain": "*",
-            "host_only": true,
-            "path": "*",
-            "secure": true,
-            "same_site": "None",
-            "expiration_date": 1861920000
-        }
+            "type": "profile",
+            "firstName": "John",
+            "lastName": "Dorian",
+            "bio": "Just cool guy",
+            "gender": "male",
+            "avatar": "http://john.dorian/avatar.png",
+            "birthday": "1993-01-20"
+        },
+		{
+			"timestamp": "2021-05-11T11:05:18Z",
+			"type": "searchHistory",
+			"engine": "decentr",
+			"query": "the best crypto"
+		}
 	]
 }`
-
 	var p PDVWrapper
 	require.NoError(t, json.Unmarshal([]byte(data), &p))
 
 	d, err := json.Marshal(p.pdv.(*v1.PDV))
 	require.NoError(t, err)
 
-	require.JSONEq(t, data, string(d))
+	assert.JSONEq(t, data, string(d))
+	assert.True(t, p.Validate())
 }

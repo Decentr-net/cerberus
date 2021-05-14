@@ -27,16 +27,20 @@ const (
 
 // nolint
 const (
-	PDVCookieType      = types.PDVCookieType
-	PDVLoginCookieType = types.PDVLoginCookieType
-	PDVProfileType     = types.PDVProfileType
+	PDVAdvertiserIDType  = types.PDVAdvertiserIDType
+	PDVCookieType        = types.PDVCookieType
+	PDVLocationType      = types.PDVLocationType
+	PDVProfileType       = types.PDVProfileType
+	PDVSearchHistoryType = types.PDVSearchHistoryType
 )
 
 // nolint
 type (
-	V1Profile     = v1.Profile
-	V1Cookie      = v1.Cookie
-	V1LoginCookie = v1.LoginCookie
+	V1AdvertiserID  = v1.AdvertiserID
+	V1Cookie        = v1.Cookie
+	V1Location      = v1.Location
+	V1Profile       = v1.Profile
+	V1SearchHistory = v1.SearchHistory
 )
 
 // nolint: gochecknoglobals

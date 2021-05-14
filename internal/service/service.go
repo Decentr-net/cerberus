@@ -298,7 +298,7 @@ func getSetProfileParams(owner sdk.AccAddress, p schema.V1Profile) *storage.SetP
 		Bio:       p.Bio,
 		Avatar:    p.Avatar,
 		Gender:    string(p.Gender),
-		Birthday:  p.Birthday,
+		Birthday:  p.Birthday.Time,
 	}
 }
 

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -35,4 +36,18 @@ func (testPDVType) Type() Type {
 
 func (testPDVType) Validate() bool {
 	return true
+}
+
+func TestDate_UnmarshalText(t *testing.T) {
+	s := struct {
+		D Date
+	}{}
+
+	j := `{"D": "1990-02-05"}`
+
+	require.NoError(t, json.Unmarshal([]byte(j), &s))
+
+	b, err := json.Marshal(s)
+	require.NoError(t, err)
+	require.JSONEq(t, j, string(b))
 }

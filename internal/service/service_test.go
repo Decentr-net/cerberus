@@ -18,6 +18,7 @@ import (
 	blockchainmock "github.com/Decentr-net/cerberus/internal/blockchain/mock"
 	cryptomock "github.com/Decentr-net/cerberus/internal/crypto/mock"
 	"github.com/Decentr-net/cerberus/internal/schema"
+	"github.com/Decentr-net/cerberus/internal/schema/types"
 	v1 "github.com/Decentr-net/cerberus/internal/schema/v1"
 	"github.com/Decentr-net/cerberus/internal/storage"
 	storagemock "github.com/Decentr-net/cerberus/internal/storage/mock"
@@ -31,9 +32,9 @@ var testData = []byte("data")
 var testEncryptedData = []byte("data_encrypted")
 var errTest = errors.New("test")
 var rewardsMap = RewardMap{
-	schema.PDVCookieType:      2,
-	schema.PDVLoginCookieType: 4,
-	schema.PDVProfileType:     6,
+	schema.PDVCookieType:   2,
+	schema.PDVLocationType: 4,
+	schema.PDVProfileType:  6,
 }
 
 var pdv = v1.PDV{
@@ -51,19 +52,9 @@ var pdv = v1.PDV{
 		SameSite:       "None",
 		ExpirationDate: 1861920000,
 	},
-	&v1.LoginCookie{
-		Source: schema.Source{
-			Host: "decentr.net",
-			Path: "/",
-		},
-		Name:           "my cookie",
-		Value:          "some value",
-		Domain:         "*",
-		HostOnly:       true,
-		Path:           "*",
-		Secure:         true,
-		SameSite:       "None",
-		ExpirationDate: 1861920000,
+	&v1.Location{
+		Latitude:  1,
+		Longitude: -1,
 	},
 }
 
@@ -101,8 +92,8 @@ func TestService_SavePDV(t *testing.T) {
 
 	expectedMeta := PDVMeta{
 		ObjectTypes: map[schema.Type]uint16{
-			schema.PDVCookieType:      1,
-			schema.PDVLoginCookieType: 1,
+			schema.PDVCookieType:   1,
+			schema.PDVLocationType: 1,
 		},
 		Reward: 6,
 	}
@@ -135,7 +126,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 			Bio:       "bio",
 			Gender:    "male",
 			Avatar:    "avatar",
-			Birthday:  time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC),
+			Birthday:  mustDate("2020-02-01"),
 		},
 	}
 
@@ -216,7 +207,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				Bio:       "bio",
 				Avatar:    "avatar",
 				Gender:    "male",
-				Birthday:  pdv[0].(schema.V1Profile).Birthday,
+				Birthday:  pdv[0].(schema.V1Profile).Birthday.Time,
 			})).Return(nil)
 
 			fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath string) error {
@@ -398,15 +389,15 @@ func TestService_GetPDVMeta(t *testing.T) {
 
 	s := New(cr, fs, is, b, rewardsMap)
 
-	r := ioutil.NopCloser(bytes.NewBufferString(`{"object_types":{"cookie": 1, "login_cookie": 2}, "reward": 10}`))
+	r := ioutil.NopCloser(bytes.NewBufferString(`{"object_types":{"cookie": 1, "location": 2}, "reward": 10}`))
 	fs.EXPECT().Read(ctx, getMetaFilePath(testOwner, testID)).Return(r, nil)
 
 	meta, err := s.GetPDVMeta(ctx, testOwner, testID)
 	require.NoError(t, err)
 	require.Equal(t, PDVMeta{
 		ObjectTypes: map[schema.Type]uint16{
-			schema.PDVCookieType:      1,
-			schema.PDVLoginCookieType: 2,
+			schema.PDVCookieType:   1,
+			schema.PDVLocationType: 2,
 		},
 		Reward: 10,
 	}, meta)
@@ -544,4 +535,14 @@ func TestService_GetRewardsMap(t *testing.T) {
 	s := service{rewardMap: rm}
 
 	require.EqualValues(t, rm, s.GetRewardsMap())
+}
+
+func mustDate(s string) types.Date {
+	var d types.Date
+
+	if err := d.UnmarshalJSON([]byte(s)); err != nil {
+		panic(err)
+	}
+
+	return d
 }
