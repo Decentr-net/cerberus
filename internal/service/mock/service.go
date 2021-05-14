@@ -111,3 +111,17 @@ func (mr *MockServiceMockRecorder) GetProfiles(ctx, owner interface{}) *gomock.C
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfiles", reflect.TypeOf((*MockService)(nil).GetProfiles), ctx, owner)
 }
+
+// GetRewardsMap mocks base method
+func (m *MockService) GetRewardsMap() service.RewardMap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRewardsMap")
+	ret0, _ := ret[0].(service.RewardMap)
+	return ret0
+}
+
+// GetRewardsMap indicates an expected call of GetRewardsMap
+func (mr *MockServiceMockRecorder) GetRewardsMap() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardsMap", reflect.TypeOf((*MockService)(nil).GetRewardsMap))
+}
