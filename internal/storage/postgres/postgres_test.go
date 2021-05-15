@@ -166,6 +166,7 @@ func TestPg_SetProfile(t *testing.T) {
 		Address:   "address",
 		FirstName: "first_name",
 		LastName:  "last_name",
+		Emails:    []string{"email1", "email2"},
 		Bio:       "bio",
 		Avatar:    "avatar",
 		Gender:    "male",
@@ -183,6 +184,7 @@ func TestPg_SetProfile(t *testing.T) {
 		Address:   "address",
 		FirstName: "first_name2",
 		LastName:  "last_name2",
+		Emails:    []string{"email2"},
 		Bio:       "bio2",
 		Avatar:    "avatar2",
 		Gender:    "male2",
@@ -207,6 +209,7 @@ func TestPg_GetProfiles(t *testing.T) {
 		Address:   "address_1",
 		FirstName: "first_name",
 		LastName:  "last_name",
+		Emails:    []string{"email1", "email2"},
 		Bio:       "bio",
 		Avatar:    "avatar",
 		Gender:    "male",
@@ -229,6 +232,7 @@ func TestPg_GetProfiles(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("address_%d", i+1), v.Address)
 		assert.Equal(t, p.FirstName, v.FirstName)
 		assert.Equal(t, p.LastName, v.LastName)
+		assert.Equal(t, p.Emails, v.Emails)
 		assert.Equal(t, p.Bio, v.Bio)
 		assert.Equal(t, p.Avatar, v.Avatar)
 		assert.Equal(t, p.Gender, v.Gender)
