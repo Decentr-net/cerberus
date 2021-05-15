@@ -83,14 +83,15 @@ type server struct {
 // Profile ...
 // swagger:model APIProfile
 type Profile struct {
-	Address   string `json:"address"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Bio       string `json:"bio"`
-	Gender    string `json:"gender"`
-	Avatar    string `json:"avatar"`
-	Birthday  string `json:"birthday"`
-	CreatedAt string `json:"createdAt"`
+	Address   string   `json:"address"`
+	FirstName string   `json:"firstName"`
+	LastName  string   `json:"lastName"`
+	Emails    []string `json:"emails,omitempty"`
+	Bio       string   `json:"bio"`
+	Gender    string   `json:"gender"`
+	Avatar    string   `json:"avatar"`
+	Birthday  string   `json:"birthday"`
+	CreatedAt string   `json:"createdAt"`
 }
 
 // SetupRouter setups handlers to chi router.

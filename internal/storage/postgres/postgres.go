@@ -23,15 +23,16 @@ type pg struct {
 }
 
 type profileDTO struct {
-	Address   string      `db:"address"`
-	FirstName string      `db:"first_name"`
-	LastName  string      `db:"last_name"`
-	Bio       string      `db:"bio"`
-	Avatar    string      `db:"avatar"`
-	Gender    string      `db:"gender"`
-	Birthday  time.Time   `db:"birthday"`
-	UpdatedAt pq.NullTime `db:"updated_at"`
-	CreatedAt time.Time   `db:"created_at"`
+	Address   string         `db:"address"`
+	FirstName string         `db:"first_name"`
+	LastName  string         `db:"last_name"`
+	Emails    pq.StringArray `db:"emails"`
+	Bio       string         `db:"bio"`
+	Avatar    string         `db:"avatar"`
+	Gender    string         `db:"gender"`
+	Birthday  time.Time      `db:"birthday"`
+	UpdatedAt pq.NullTime    `db:"updated_at"`
+	CreatedAt time.Time      `db:"created_at"`
 }
 
 // New creates new instance of pg.
@@ -93,7 +94,7 @@ func (s pg) GetProfile(ctx context.Context, addr string) (*storage.Profile, erro
 	var p profileDTO
 	if err := sqlx.GetContext(ctx, s.ext, &p, `
 		SELECT
-			address, first_name, last_name, bio, avatar, gender, birthday, updated_at, created_at
+			address, first_name, last_name, emails, bio, avatar, gender, birthday, updated_at, created_at
 		FROM profile
 		WHERE address = $1
 	`, addr); err != nil {
@@ -112,7 +113,7 @@ func (s pg) GetProfiles(ctx context.Context, addr []string) ([]*storage.Profile,
 
 	query, args, err := sqlx.In(`
 			SELECT
-				address, first_name, last_name, bio, avatar, gender, birthday, updated_at, created_at
+				address, first_name, last_name, emails, bio, avatar, gender, birthday, updated_at, created_at
 			FROM profile
 			WHERE address IN (?)
 			ORDER BY address
@@ -141,6 +142,7 @@ func (s pg) SetProfile(ctx context.Context, p *storage.SetProfileParams) error {
 		Address:   p.Address,
 		FirstName: p.FirstName,
 		LastName:  p.LastName,
+		Emails:    p.Emails,
 		Bio:       p.Bio,
 		Avatar:    p.Avatar,
 		Gender:    p.Gender,
@@ -149,11 +151,12 @@ func (s pg) SetProfile(ctx context.Context, p *storage.SetProfileParams) error {
 
 	if _, err := sqlx.NamedExecContext(ctx, s.ext,
 		`
-			INSERT INTO profile(address, first_name, last_name, bio, avatar, gender, birthday)
-			VALUES(:address, :first_name, :last_name, :bio, :avatar, :gender, :birthday)
+			INSERT INTO profile(address, first_name, last_name, emails, bio, avatar, gender, birthday)
+			VALUES(:address, :first_name, :last_name, :emails, :bio, :avatar, :gender, :birthday)
 			ON CONFLICT(address) DO UPDATE SET
 				first_name=excluded.first_name,
 				last_name=excluded.last_name,
+				emails=excluded.emails,
 				bio=excluded.bio,
 				avatar=excluded.avatar,
 				gender=excluded.gender,
@@ -194,6 +197,7 @@ func toStorageProfile(p *profileDTO) *storage.Profile {
 		Address:   p.Address,
 		FirstName: p.FirstName,
 		LastName:  p.LastName,
+		Emails:    p.Emails,
 		Bio:       p.Bio,
 		Avatar:    p.Avatar,
 		Gender:    p.Gender,

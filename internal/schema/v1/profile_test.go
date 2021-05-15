@@ -17,6 +17,7 @@ func TestProfile_Validate(t *testing.T) {
 			p: Profile{
 				FirstName: "First",
 				LastName:  "Last",
+				Emails:    []string{"email1@decentr.net", "email2@decentr.xyz"},
 				Bio:       "Some BIO",
 				Gender:    "male",
 				Avatar:    "https://decentr.xyz/avatar.jpeg",
@@ -29,6 +30,7 @@ func TestProfile_Validate(t *testing.T) {
 			p: Profile{
 				FirstName: "VeryLongFirstNameVeryLongFirstNameVeryLongFirstNameVeryLongFirstN",
 				LastName:  "Last",
+				Emails:    []string{"email1@decentr.net", "email2@decentr.xyz"},
 				Bio:       "Some BIO",
 				Gender:    "male",
 				Avatar:    "https://decentr.xyz/avatar.jpeg",
@@ -41,6 +43,7 @@ func TestProfile_Validate(t *testing.T) {
 			p: Profile{
 				FirstName: "First",
 				LastName:  "VeryLongLastNameVeryLongLastNameVeryLongLastNameVeryLongLastNameV",
+				Emails:    []string{"email1@decentr.net", "email2@decentr.xyz"},
 				Bio:       "Some BIO",
 				Gender:    "male",
 				Avatar:    "https://decentr.xyz/avatar.jpeg",
@@ -53,6 +56,7 @@ func TestProfile_Validate(t *testing.T) {
 			p: Profile{
 				FirstName: "First",
 				LastName:  "Last",
+				Emails:    []string{"email1@decentr.net", "email2@decentr.xyz"},
 				Bio:       "Some BIO",
 				Gender:    "male",
 				Avatar:    "ftp://decentr.xyz/avatar.jpeg",
@@ -65,6 +69,7 @@ func TestProfile_Validate(t *testing.T) {
 			p: Profile{
 				FirstName: "First",
 				LastName:  "Last",
+				Emails:    []string{"email1@decentr.net", "email2@decentr.xyz"},
 				Bio:       "Some BIO",
 				Gender:    "coolguy",
 				Avatar:    "https://decentr.xyz/avatar.jpeg",
@@ -77,10 +82,50 @@ func TestProfile_Validate(t *testing.T) {
 			p: Profile{
 				FirstName: "First",
 				LastName:  "Last",
+				Emails:    []string{"email1@decentr.net", "email2@decentr.xyz"},
 				Bio:       "Some BIO",
 				Gender:    "female",
 				Avatar:    "https://decentr.xyz/avatar.jpeg",
 				Birthday:  mustDate("0010-01-01"),
+			},
+			valid: false,
+		},
+		{
+			name: "empty email",
+			p: Profile{
+				FirstName: "First",
+				LastName:  "Last",
+				Emails:    []string{},
+				Bio:       "Some BIO",
+				Gender:    "male",
+				Avatar:    "https://decentr.xyz/avatar.jpeg",
+				Birthday:  mustDate("1990-01-01"),
+			},
+			valid: false,
+		},
+		{
+			name: "nil email",
+			p: Profile{
+				FirstName: "First",
+				LastName:  "Last",
+				Emails:    nil,
+				Bio:       "Some BIO",
+				Gender:    "male",
+				Avatar:    "https://decentr.xyz/avatar.jpeg",
+				Birthday:  mustDate("1990-01-01"),
+			},
+			valid: false,
+		},
+		{
+			name: "invalid_email",
+			p: Profile{
+				FirstName: "First",
+				LastName:  "Last",
+				Emails:    []string{"email1#decentr.net"},
+				Bio:       "Some BIO",
+				Gender:    "male",
+				Avatar:    "https://decentr.xyz/avatar.jpeg",
+				Birthday:  mustDate("1990-01-01"),
 			},
 			valid: false,
 		},

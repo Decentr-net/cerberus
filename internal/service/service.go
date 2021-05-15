@@ -43,6 +43,7 @@ type Profile struct {
 	Address   string
 	FirstName string
 	LastName  string
+	Emails    []string
 	Bio       string
 	Avatar    string
 	Gender    string
@@ -295,6 +296,7 @@ func getSetProfileParams(owner sdk.AccAddress, p schema.V1Profile) *storage.SetP
 		Address:   owner.String(),
 		FirstName: p.FirstName,
 		LastName:  p.LastName,
+		Emails:    p.Emails,
 		Bio:       p.Bio,
 		Avatar:    p.Avatar,
 		Gender:    string(p.Gender),

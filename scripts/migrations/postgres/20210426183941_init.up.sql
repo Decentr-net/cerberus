@@ -10,6 +10,7 @@ CREATE TABLE profile (
     address TEXT NOT NULL PRIMARY KEY,
     first_name TEXT NOT NULL DEFAULT '',
     last_name TEXT NOT NULL DEFAULT '',
+    emails TEXT[],
     bio TEXT NOT NULL DEFAULT '',
     avatar TEXT NOT NULL DEFAULT '',
     gender TEXT NOT NULL DEFAULT '',

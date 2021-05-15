@@ -20,6 +20,7 @@ func TestPDV_Validate(t *testing.T) {
 		Profile{
 			FirstName: "First",
 			LastName:  "Last",
+			Emails:    []string{"test@decentr.xyz"},
 			Gender:    types.GenderMale,
 			Avatar:    "https://decentr.xyz/avatar.jpeg",
 			Birthday:  mustDate("1990-01-01"),
