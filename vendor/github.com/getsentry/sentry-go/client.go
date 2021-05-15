@@ -3,7 +3,6 @@ package sentry
 import (
 	"context"
 	"crypto/x509"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,8 +14,6 @@ import (
 	"sort"
 	"sync"
 	"time"
-
-	"github.com/getsentry/sentry-go/internal/debug"
 )
 
 // maxErrorDepth is the maximum number of errors reported in a chain of errors.
@@ -91,9 +88,7 @@ var globalEventProcessors []EventProcessor
 // AddGlobalEventProcessor adds processor to the global list of event
 // processors. Global event processors apply to all events.
 //
-// AddGlobalEventProcessor is deprecated. Most users will prefer to initialize
-// the SDK with Init and provide a ClientOptions.BeforeSend function or use
-// Scope.AddEventProcessor instead.
+// Deprecated: Use Scope.AddEventProcessor or Client.AddEventProcessor instead.
 func AddGlobalEventProcessor(processor EventProcessor) {
 	globalEventProcessors = append(globalEventProcessors, processor)
 }
@@ -117,13 +112,8 @@ type ClientOptions struct {
 	AttachStacktrace bool
 	// The sample rate for event submission in the range [0.0, 1.0]. By default,
 	// all events are sent. Thus, as a historical special case, the sample rate
-	// 0.0 is treated as if it was 1.0. To drop all events, set the DSN to the
-	// empty string.
+	// 0.0 is treated as if it was 1.0.
 	SampleRate float64
-	// The sample rate for sampling traces in the range [0.0, 1.0].
-	TracesSampleRate float64
-	// Used to customize the sampling of traces, overrides TracesSampleRate.
-	TracesSampler TracesSampler
 	// List of regexp strings that will be used to match against event's message
 	// and if applicable, caught errors type and value.
 	// If the match is found, then a whole event will be dropped.
@@ -169,29 +159,17 @@ type ClientOptions struct {
 }
 
 // Client is the underlying processor that is used by the main API and Hub
-// instances. It must be created with NewClient.
+// instances.
 type Client struct {
 	options         ClientOptions
 	dsn             *Dsn
 	eventProcessors []EventProcessor
 	integrations    []Integration
-	// Transport is read-only. Replacing the transport of an existing client is
-	// not supported, create a new client instead.
-	Transport Transport
+	Transport       Transport
 }
 
-// NewClient creates and returns an instance of Client configured using
-// ClientOptions.
-//
-// Most users will not create clients directly. Instead, initialize the SDK with
-// Init and use the package-level functions (for simple programs that run on a
-// single goroutine) or hub methods (for concurrent programs, for example web
-// servers).
+// NewClient creates and returns an instance of Client configured using ClientOptions.
 func NewClient(options ClientOptions) (*Client, error) {
-	if options.TracesSampleRate != 0.0 && options.TracesSampler != nil {
-		return nil, errors.New("TracesSampleRate and TracesSampler are mutually exclusive")
-	}
-
 	if options.Debug {
 		debugWriter := options.DebugWriter
 		if debugWriter == nil {
@@ -210,13 +188,6 @@ func NewClient(options ClientOptions) (*Client, error) {
 
 	if options.Environment == "" {
 		options.Environment = os.Getenv("SENTRY_ENVIRONMENT")
-	}
-
-	if env := os.Getenv("SENTRYGODEBUG"); env == "dumphttp=1" {
-		options.HTTPTransport = &debug.Transport{
-			RoundTripper: http.DefaultTransport,
-			Output:       os.Stderr,
-		}
 	}
 
 	var dsn *Dsn
@@ -240,26 +211,17 @@ func NewClient(options ClientOptions) (*Client, error) {
 }
 
 func (client *Client) setupTransport() {
-	opts := client.options
-	transport := opts.Transport
+	transport := client.options.Transport
 
 	if transport == nil {
-		if opts.Dsn == "" {
+		if client.options.Dsn == "" {
 			transport = new(noopTransport)
 		} else {
-			httpTransport := NewHTTPTransport()
-			// When tracing is enabled, use larger buffer to
-			// accommodate more concurrent events.
-			// TODO(tracing): consider using separate buffers per
-			// event type.
-			if opts.TracesSampleRate != 0 || opts.TracesSampler != nil {
-				httpTransport.BufferSize = 1000
-			}
-			transport = httpTransport
+			transport = NewHTTPTransport()
 		}
 	}
 
-	transport.Configure(opts)
+	transport.Configure(client.options)
 	client.Transport = transport
 }
 
@@ -286,13 +248,7 @@ func (client *Client) setupIntegrations() {
 	}
 }
 
-// AddEventProcessor adds an event processor to the client. It must not be
-// called from concurrent goroutines. Most users will prefer to use
-// ClientOptions.BeforeSend or Scope.AddEventProcessor instead.
-//
-// Note that typical programs have only a single client created by Init and the
-// client is shared among multiple hubs, one per goroutine, such that adding an
-// event processor to the client affects all hubs that share the client.
+// AddEventProcessor adds an event processor to the client.
 func (client *Client) AddEventProcessor(processor EventProcessor) {
 	client.eventProcessors = append(client.eventProcessors, processor)
 }
@@ -464,31 +420,16 @@ func (client *Client) processEvent(event *Event, hint *EventHint, scope EventMod
 
 	options := client.Options()
 
-	// The default error event sample rate for all SDKs is 1.0 (send all).
-	//
-	// In Go, the zero value (default) for float64 is 0.0, which means that
-	// constructing a client with NewClient(ClientOptions{}), or, equivalently,
-	// initializing the SDK with Init(ClientOptions{}) without an explicit
-	// SampleRate would drop all events.
-	//
-	// To retain the desired default behavior, we exceptionally flip SampleRate
-	// from 0.0 to 1.0 here. Setting the sample rate to 0.0 is not very useful
-	// anyway, and the same end result can be achieved in many other ways like
-	// not initializing the SDK, setting the DSN to the empty string or using an
-	// event processor that always returns nil.
-	//
-	// An alternative API could be such that default options don't need to be
-	// the same as Go's zero values, for example using the Functional Options
-	// pattern. That would either require a breaking change if we want to reuse
-	// the obvious NewClient name, or a new function as an alternative
-	// constructor.
-	if options.SampleRate == 0.0 {
-		options.SampleRate = 1.0
-	}
-
-	if !sample(options.SampleRate) {
-		Logger.Println("Event dropped due to SampleRate hit.")
-		return nil
+	// TODO: Reconsider if its worth going away from default implementation
+	// of other SDKs. In Go zero value (default) for float32 is 0.0,
+	// which means that if someone uses ClientOptions{} struct directly
+	// and we would not check for 0 here, we'd skip all events by default
+	if options.SampleRate != 0.0 {
+		randomFloat := rng.Float64()
+		if randomFloat > options.SampleRate {
+			Logger.Println("Event dropped due to SampleRate hit.")
+			return nil
+		}
 	}
 
 	if event = client.prepareEvent(event, hint, scope); event == nil {
@@ -517,7 +458,7 @@ func (client *Client) prepareEvent(event *Event, hint *EventHint, scope EventMod
 	}
 
 	if event.Timestamp.IsZero() {
-		event.Timestamp = time.Now()
+		event.Timestamp = time.Now().UTC()
 	}
 
 	if event.Level == "" {
@@ -599,10 +540,4 @@ func (client Client) integrationAlreadyInstalled(name string) bool {
 		}
 	}
 	return false
-}
-
-// sample returns true with the given probability, which must be in the range
-// [0.0, 1.0].
-func sample(probability float64) bool {
-	return rng.Float64() < probability
 }

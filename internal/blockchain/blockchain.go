@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Decentr-net/decentr/app"
-	pdv "github.com/Decentr-net/decentr/x/pdv/types"
+	operations "github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/Decentr-net/go-broadcaster"
 )
 
@@ -37,7 +37,7 @@ func New(b *broadcaster.Broadcaster) Blockchain {
 }
 
 func (b blockchain) DistributeReward(receiver sdk.AccAddress, id uint64, reward uint64) error {
-	msg := pdv.NewMsgDistributeRewards(b.b.From(), []pdv.Reward{{
+	msg := operations.NewMsgDistributeRewards(b.b.From(), []operations.Reward{{
 		Receiver: receiver,
 		ID:       id,
 		Reward:   reward,

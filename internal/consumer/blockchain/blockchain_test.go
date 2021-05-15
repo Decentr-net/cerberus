@@ -13,7 +13,7 @@ import (
 
 	"github.com/Decentr-net/ariadne"
 	ariadnemock "github.com/Decentr-net/ariadne/mock"
-	pdv "github.com/Decentr-net/decentr/x/pdv/types"
+	"github.com/Decentr-net/decentr/x/operations"
 
 	"github.com/Decentr-net/cerberus/internal/storage"
 	storagemock "github.com/Decentr-net/cerberus/internal/storage/mock"
@@ -66,7 +66,7 @@ func TestBlockchain_processBlockFunc(t *testing.T) {
 	}{
 		{
 			name: "delete_account",
-			msg: pdv.MsgResetAccount{
+			msg: operations.MsgResetAccount{
 				Owner:        owner,
 				AccountOwner: owner2,
 			},

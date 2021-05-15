@@ -331,6 +331,13 @@
           "type": "string",
           "x-go-name": "CreatedAt"
         },
+        "emails": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Emails"
+        },
         "firstName": {
           "type": "string",
           "x-go-name": "FirstName"
@@ -532,6 +539,13 @@
         },
         "birthday": {
           "$ref": "#/definitions/Date"
+        },
+        "emails": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Emails"
         },
         "firstName": {
           "type": "string",
@@ -748,6 +762,13 @@
             },
             "birthday": {
               "$ref": "#/definitions/Date"
+            },
+            "emails": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "x-go-name": "Emails"
             },
             "firstName": {
               "type": "string",

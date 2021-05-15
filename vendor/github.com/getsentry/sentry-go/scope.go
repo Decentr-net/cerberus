@@ -63,7 +63,7 @@ func NewScope() *Scope {
 // and optionally throws the old one if limit is reached.
 func (scope *Scope) AddBreadcrumb(breadcrumb *Breadcrumb, limit int) {
 	if breadcrumb.Timestamp.IsZero() {
-		breadcrumb.Timestamp = time.Now()
+		breadcrumb.Timestamp = time.Now().UTC()
 	}
 
 	scope.mu.Lock()
@@ -278,20 +278,12 @@ func (scope *Scope) SetLevel(level Level) {
 	scope.level = level
 }
 
-// SetTransaction sets the transaction name for the current transaction.
-func (scope *Scope) SetTransaction(name string) {
+// SetTransaction sets new transaction name for the current transaction.
+func (scope *Scope) SetTransaction(transactionName string) {
 	scope.mu.Lock()
 	defer scope.mu.Unlock()
 
-	scope.transaction = name
-}
-
-// Transaction returns the transaction name for the current transaction.
-func (scope *Scope) Transaction() (name string) {
-	scope.mu.RLock()
-	defer scope.mu.RUnlock()
-
-	return scope.transaction
+	scope.transaction = transactionName
 }
 
 // Clone returns a copy of the current scope with all data copied over.

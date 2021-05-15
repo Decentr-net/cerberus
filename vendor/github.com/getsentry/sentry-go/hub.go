@@ -92,21 +92,30 @@ func (hub *Hub) LastEventID() EventID {
 	return hub.lastEventID
 }
 
-// stackTop returns the top layer of the hub stack. Valid hubs always have at
-// least one layer, therefore stackTop always return a non-nil pointer.
 func (hub *Hub) stackTop() *layer {
 	hub.mu.RLock()
 	defer hub.mu.RUnlock()
 
 	stack := hub.stack
+	if stack == nil {
+		return nil
+	}
+
 	stackLen := len(*stack)
+	if stackLen == 0 {
+		return nil
+	}
 	top := (*stack)[stackLen-1]
+
 	return top
 }
 
 // Clone returns a copy of the current Hub with top-most scope and client copied over.
 func (hub *Hub) Clone() *Hub {
 	top := hub.stackTop()
+	if top == nil {
+		return nil
+	}
 	scope := top.scope
 	if scope != nil {
 		scope = scope.Clone()
@@ -117,12 +126,18 @@ func (hub *Hub) Clone() *Hub {
 // Scope returns top-level Scope of the current Hub or nil if no Scope is bound.
 func (hub *Hub) Scope() *Scope {
 	top := hub.stackTop()
+	if top == nil {
+		return nil
+	}
 	return top.scope
 }
 
 // Client returns top-level Client of the current Hub or nil if no Client is bound.
 func (hub *Hub) Client() *Client {
 	top := hub.stackTop()
+	if top == nil {
+		return nil
+	}
 	return top.Client()
 }
 
@@ -130,8 +145,13 @@ func (hub *Hub) Client() *Client {
 func (hub *Hub) PushScope() *Scope {
 	top := hub.stackTop()
 
+	var client *Client
+	if top != nil {
+		client = top.Client()
+	}
+
 	var scope *Scope
-	if top.scope != nil {
+	if top != nil && top.scope != nil {
 		scope = top.scope.Clone()
 	} else {
 		scope = NewScope()
@@ -141,29 +161,21 @@ func (hub *Hub) PushScope() *Scope {
 	defer hub.mu.Unlock()
 
 	*hub.stack = append(*hub.stack, &layer{
-		client: top.Client(),
+		client: client,
 		scope:  scope,
 	})
 
 	return scope
 }
 
-// PopScope drops the most recent scope.
-//
-// Calls to PopScope must be coordinated with PushScope. For most cases, using
-// WithScope should be more convenient.
-//
-// Calls to PopScope that do not match previous calls to PushScope are silently
-// ignored.
+// PopScope pops the most recent scope for the current Hub.
 func (hub *Hub) PopScope() {
 	hub.mu.Lock()
 	defer hub.mu.Unlock()
 
 	stack := *hub.stack
 	stackLen := len(stack)
-	if stackLen > 1 {
-		// Never pop the last item off the stack, the stack should always have
-		// at least one item.
+	if stackLen > 0 {
 		*hub.stack = stack[0 : stackLen-1]
 	}
 }
@@ -171,7 +183,9 @@ func (hub *Hub) PopScope() {
 // BindClient binds a new Client for the current Hub.
 func (hub *Hub) BindClient(client *Client) {
 	top := hub.stackTop()
-	top.SetClient(client)
+	if top != nil {
+		top.SetClient(client)
+	}
 }
 
 // WithScope runs f in an isolated temporary scope.
@@ -365,15 +379,6 @@ func GetHubFromContext(ctx context.Context) *Hub {
 		return hub
 	}
 	return nil
-}
-
-// hubFromContext returns either a hub stored in the context or the current hub.
-// The return value is guaranteed to be non-nil, unlike GetHubFromContext.
-func hubFromContext(ctx context.Context) *Hub {
-	if hub, ok := ctx.Value(HubContextKey).(*Hub); ok {
-		return hub
-	}
-	return currentHub
 }
 
 // SetHubOnContext stores given Hub instance on the Context struct and returns a new Context.

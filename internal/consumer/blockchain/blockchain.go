@@ -11,7 +11,7 @@ import (
 
 	"github.com/Decentr-net/ariadne"
 	"github.com/Decentr-net/decentr/app"
-	"github.com/Decentr-net/decentr/x/pdv"
+	"github.com/Decentr-net/decentr/x/operations"
 
 	"github.com/Decentr-net/cerberus/internal/consumer"
 	"github.com/Decentr-net/cerberus/internal/storage"
@@ -76,7 +76,7 @@ func (b blockchain) processBlockFunc(ctx context.Context) func(block ariadne.Blo
 				var err error
 
 				switch msg := msg.(type) {
-				case pdv.MsgResetAccount:
+				case operations.MsgResetAccount:
 					err = processMsgResetAccount(ctx, is, b.fs, msg)
 				default:
 					log.WithField("msg", fmt.Sprintf("%s/%s", msg.Route(), msg.Type())).Debug("skip message")
@@ -96,7 +96,7 @@ func (b blockchain) processBlockFunc(ctx context.Context) func(block ariadne.Blo
 	}
 }
 
-func processMsgResetAccount(ctx context.Context, is storage.IndexStorage, fs storage.FileStorage, msg pdv.MsgResetAccount) error {
+func processMsgResetAccount(ctx context.Context, is storage.IndexStorage, fs storage.FileStorage, msg operations.MsgResetAccount) error {
 	if err := is.DeleteProfile(ctx, msg.AccountOwner.String()); err != nil {
 		return fmt.Errorf("failed to delete profile: %w", err)
 	}
