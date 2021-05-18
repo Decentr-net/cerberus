@@ -12,7 +12,7 @@
   "info": {
     "description": "The Cerberus is an users' data keeper. The Cerberus encrypts data and pushes it into S3.",
     "title": "Cerberus",
-    "version": "1.0.1"
+    "version": "1.2.1"
   },
   "basePath": "/v1",
   "paths": {

@@ -672,3 +672,119 @@ func Test_getRewardsConfig(t *testing.T) {
 		"history": 2
 	}`, w.Body.String())
 }
+
+func Test_savePDVHander_Amount(t *testing.T) {
+	tt := []struct {
+		name  string
+		body  string
+		valid bool
+	}{
+		{
+			name:  "success",
+			body:  string(pdv),
+			valid: true,
+		},
+		{
+			name: "profile",
+			body: `{
+                "version": "v1",
+				"pdv": [
+				{
+		            "type": "profile",
+		            "firstName": "John",
+		            "lastName": "Dorian",
+		            "emails": ["dev@decentr.xyz"],
+		            "bio": "Just cool guy",
+		            "gender": "male",
+		            "avatar": "http://john.dorian/avatar.png",
+		            "birthday": "1993-01-20"
+		        }
+				]
+			}`,
+			valid: true,
+		},
+		{
+			name: "too much",
+			body: `{
+                "version": "v1",
+				"pdv": [
+				{
+					"timestamp": "2021-05-11T11:05:18Z",
+					"type": "searchHistory",
+					"engine": "decentr",
+					"query": "the best crypto"
+				},
+				{
+					"timestamp": "2021-05-11T11:05:18Z",
+					"type": "searchHistory",
+					"engine": "decentr",
+					"query": "the best crypto"
+				},
+				{
+					"timestamp": "2021-05-11T11:05:18Z",
+					"type": "searchHistory",
+					"engine": "decentr",
+					"query": "the best crypto"
+				},
+				{
+					"timestamp": "2021-05-11T11:05:18Z",
+					"type": "searchHistory",
+					"engine": "decentr",
+					"query": "the best crypto"
+				},
+				{
+					"timestamp": "2021-05-11T11:05:18Z",
+					"type": "searchHistory",
+					"engine": "decentr",
+					"query": "the best crypto"
+				}
+				]
+			}`,
+			valid: false,
+		},
+		{
+			name: "too little",
+			body: `{
+                "version": "v1",
+				"pdv": [
+				{
+					"timestamp": "2021-05-11T11:05:18Z",
+					"type": "searchHistory",
+					"engine": "decentr",
+					"query": "the best crypto"
+				}
+				]
+			}`,
+			valid: false,
+		},
+	}
+
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, w, r := newTestParameters(t, http.MethodPost, "v1/pdv", []byte(tc.body))
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			srv := mock.NewMockService(ctrl)
+
+			srv.EXPECT().SavePDV(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+			router := chi.NewRouter()
+			c, err := lru.NewARC(10)
+			require.NoError(t, err)
+			s := server{s: srv, pdvMetaCache: c, minPDVCount: 2, maxPDVCount: 4}
+			router.Post("/v1/pdv", s.savePDVHandler)
+
+			router.ServeHTTP(w, r)
+			if tc.valid {
+				require.Equal(t, http.StatusCreated, w.Code)
+			} else {
+				require.Equal(t, http.StatusBadRequest, w.Code)
+			}
+		})
+	}
+}

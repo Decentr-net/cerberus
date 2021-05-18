@@ -3,40 +3,17 @@
 
 Cerberus is a Decentr oracle. Cerberus stores and validates PDV (private data value).
 
-## Run
-### Docker
-#### Local image
-```
-make image
-docker run -it --rm -e "HTTP_HOST=0.0.0.0" -e "HTTP_PORT=7070" -e "LOG_LEVEL=debug" -e "S3_ENDPOINT=localhost:9000" -e "S3_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE" -e "S3_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" -e "S3_USE_SSL=false" -e "S3_BUCKET=cerberus" -e "ENCRYPT_KEY=0102030405060708090a0b0c0d0e0f10201f1e1d1c1b1a191817161514131211" -p "7070:7070" cerberus-local
-```
-#### Docker Compose
-```
-make image
-docker-compose -f scripts/docker-compose.yml up -d
-```
-### From source
-```
-go run cmd/cerberus/main.go \
-    --http.host=0.0.0.0 \
-    --http.port=8080 \
-    --s3.endpoint=localhost:9000 \
-    --s3.region=us-east-2 \
-    --s3.access-key-id=AKIAIOSFODNN7EXAMPLE \
-    --s3.secret-access-key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
-    --s3.use-ssl=false \
-    --s3.bucket=cerberus \
-    --encrypt-key=0102030405060708090a0b0c0d0e0f10201f1e1d1c1b1a191817161514131211 \
-    --log.level=debug
-```
-
 ## Parameters
+### cerberusd
 | CLI param         | Environment var          | Default | Description
 |---------------|------------------|---------------|---------------------------------
 | http.host         | HTTP_HOST         | 0.0.0.0  | host to bind server
 | http.port    | HTTP_PORT    | 8080  | port to listen
 | http.max-body-size    | HTTP_MAX_BODY_SIZE    | 8000000  | max requests' body size in bytes
-| sentry.dsn    | SENTRY_DSN    |  | sentry dsn
+| postgres    | POSTGRES    | host=localhost port=5432 user=postgres password=root sslmode=disable  | postgres dsn
+| postgres.max_open_connections    | POSTGRES_MAX_OPEN_CONNECTIONS    | 0 | postgres maximal open connections count, 0 means unlimited
+| postgres.max_idle_connections    | POSTGRES_MAX_IDLE_CONNECTIONS    | 5 | postgres maximal idle connections count
+| postgres.migrations    | POSTGRES_MIGRATIONS    | /migrations/postgres | postgres migrations directory
 | s3.endpoint    | S3_ENDPOINT    | localhost:9000  | s3 storage endpoint
 | s3.region    | S3_REGION    |  | s3 storage region
 | s3.access-key-id    | S3_ACCESS_KEY_ID    |  | Access KeyID for S3 storage
@@ -47,8 +24,28 @@ go run cmd/cerberus/main.go \
 | min-pdv-count | MIN_PDV_COUNT | 100 | minimal count of pdv to save
 | max-pdv-count | MAX_PDV_COUNT | 100 | maximal count of pdv to save
 | encrypt-key    | ENCRYPT_KEY    |   | private key for data encryption in hex
+| sentry.dsn    | SENTRY_DSN    |  | sentry dsn
 | log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
 
+### syncd
+| CLI param         | Environment var          | Default | Description
+|---------------|------------------|---------------|---------------------------------
+| blockchain.node   | BLOCKCHAIN_NODE    | http://zeus.testnet.decentr.xyz:26657 | true | decentr node address
+| blockchain.timeout   | BLOCKCHAIN_TIMEOUT    | 5s| true | timeout for requests to blockchain node
+| blockchain.retry_interval   | BLOCKCHAIN_RETRY_INTERVAL    | 2s | true | interval to be waited on error before retry
+| blockchain.last_block_retry_interval   | BLOCKCHAIN_LAST_BLOCK_RETRY_INTERVAL    | 1s | true | duration to be waited when new block isn't produced before retry
+| postgres    | POSTGRES    | host=localhost port=5432 user=postgres password=root sslmode=disable  | postgres dsn
+| postgres.max_open_connections    | POSTGRES_MAX_OPEN_CONNECTIONS    | 0 | postgres maximal open connections count, 0 means unlimited
+| postgres.max_idle_connections    | POSTGRES_MAX_IDLE_CONNECTIONS    | 5 | postgres maximal idle connections count
+| postgres.migrations    | POSTGRES_MIGRATIONS    | /migrations/postgres | postgres migrations directory
+| s3.endpoint    | S3_ENDPOINT    | localhost:9000  | s3 storage endpoint
+| s3.region    | S3_REGION    |  | s3 storage region
+| s3.access-key-id    | S3_ACCESS_KEY_ID    |  | Access KeyID for S3 storage
+| s3.secret-access-key    | S3_SECRET_ACCESS_KEY    |   | Secret Key for S3 storage
+| s3.use-ssl    | S3_USE_SSL    | false  | do use ssl for S3 storage connection?
+| s3.bucket    | S3_BUCKET    | cerberus  | bucket name for S3 storage
+| sentry.dsn    | SENTRY_DSN    |  | sentry dsn
+| log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
 
 ## Development
 ### Makefile
