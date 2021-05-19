@@ -92,8 +92,10 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if l := uint16(len(p.Data())); l < s.minPDVCount || l > s.maxPDVCount {
-		api.WriteError(w, http.StatusBadRequest, "forbidden pdv count")
-		return
+		if l != 1 || p.Data()[0].Type() != schema.PDVProfileType {
+			api.WriteError(w, http.StatusBadRequest, "forbidden pdv count")
+			return
+		}
 	}
 
 	owner, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
