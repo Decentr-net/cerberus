@@ -418,7 +418,7 @@ func (s *server) getProfilesHandler(w http.ResponseWriter, r *http.Request) {
 			Gender:    v.Gender,
 			Avatar:    v.Avatar,
 			Birthday:  v.Birthday.Format(dateFormat),
-			CreatedAt: v.CreatedAt.Format(dateFormat),
+			CreatedAt: v.CreatedAt.Unix(),
 		}
 
 		if requestedBy == p.Address {

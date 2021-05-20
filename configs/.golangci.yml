@@ -7,6 +7,7 @@ run:
     - integration
   skip-dirs:
     - vendor
+    - scripts
     - internal/server/swagger
   modules-download-mode: vendor
 
