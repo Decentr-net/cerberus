@@ -91,7 +91,7 @@ type Profile struct {
 	Gender    string   `json:"gender"`
 	Avatar    string   `json:"avatar"`
 	Birthday  string   `json:"birthday"`
-	CreatedAt string   `json:"createdAt"`
+	CreatedAt int64    `json:"createdAt"`
 }
 
 // SetupRouter setups handlers to chi router.

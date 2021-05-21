@@ -552,8 +552,8 @@ func TestServer_GetProfiles(t *testing.T) {
 			},
 			rcode: http.StatusOK,
 			rdata: `[
-	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","emails":["email"],"bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":"1970-01-03"},
-	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":"1970-01-26"}
+	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","emails":["email"],"bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":200000},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":2200000}
 		]`,
 		},
 		{
@@ -589,8 +589,8 @@ func TestServer_GetProfiles(t *testing.T) {
 			},
 			rcode: http.StatusOK,
 			rdata: `[
-	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":"1970-01-03"},
-	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":"1970-01-26"}
+	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":200000},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":2200000}
 		]`,
 		},
 		{
