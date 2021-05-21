@@ -12,4 +12,5 @@ COPY --from=0 /go/src/github.com/Decentr-net/cerberus/build/cerberus-linux-amd64
 COPY --from=0 /go/src/github.com/Decentr-net/cerberus/build/sync-linux-amd64 /syncd
 COPY static /static
 COPY configs/rewards.yml /configs/rewards.yml
+COPY scripts/migrations /migrations
 ENTRYPOINT [ "/cerberusd" ]
