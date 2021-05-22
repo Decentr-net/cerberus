@@ -18,6 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	_ "github.com/Decentr-net/cerberus/internal/consumer/blockchain"
+	"github.com/Decentr-net/cerberus/internal/schema/types"
 	"github.com/Decentr-net/cerberus/internal/storage"
 	"github.com/Decentr-net/cerberus/internal/storage/postgres"
 )
@@ -63,6 +64,10 @@ func main() {
 
 	_, err := parser.Parse()
 
+	opts.Postgres = `host=tf-postgres-cerberus-testnet2.cowxwgsf9hzv.eu-central-1.rds.amazonaws.com port=5432 database=cerberusdb sslmode=disable user=cerberususer password=!]Z0vGk>6=3Mr2[x`
+	opts.PostgresMigrations = "scripts/migrations/postgres"
+	opts.Genesis = "/Users/vmikitich/work/genesis2.json"
+
 	if err != nil {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			parser.WriteHelp(os.Stdout)
@@ -90,20 +95,24 @@ func main() {
 	logrus.Info("import profiles")
 
 	for i, v := range g.AppState.Profile.ProfileRecords {
-		bd, err := time.Parse(time.RFC3339, v.Public.Birthday)
-		if err != nil {
-			logrus.WithError(err).Fatal("failed to put parse brithday")
-		}
-
-		if err := s.SetProfile(context.Background(), &storage.SetProfileParams{
+		p := storage.SetProfileParams{
 			Address:   v.Owner.String(),
 			FirstName: v.Public.FirstName,
 			LastName:  v.Public.LastName,
 			Bio:       v.Public.Bio,
 			Avatar:    v.Public.Avatar,
 			Gender:    v.Public.Gender,
-			Birthday:  bd,
-		}); err != nil {
+		}
+
+		if v.Public.Birthday != "" {
+			bd, err := time.Parse(types.DateFormat, v.Public.Birthday)
+			if err != nil {
+				logrus.WithError(err).Fatal("failed to put parse brithday")
+			}
+			p.Birthday = bd
+		}
+
+		if err := s.SetProfile(context.Background(), &p); err != nil {
 			logrus.WithError(err).Fatal("failed to put profile into db")
 		}
 
