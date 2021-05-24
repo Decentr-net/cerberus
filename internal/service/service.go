@@ -281,7 +281,7 @@ func (s *service) processPDV(ctx context.Context, owner sdk.AccAddress, p schema
 	for _, d := range p.Data() {
 		switch d.Type() {
 		case schema.PDVProfileType:
-			if err := s.is.SetProfile(ctx, getSetProfileParams(owner, d.(schema.V1Profile))); err != nil {
+			if err := s.is.SetProfile(ctx, getSetProfileParams(owner, *d.(*schema.V1Profile))); err != nil {
 				return PDVMeta{}, fmt.Errorf("failed to set profile: %w", err)
 			}
 		default:

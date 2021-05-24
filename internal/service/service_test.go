@@ -120,7 +120,7 @@ func TestService_SavePDV(t *testing.T) {
 func TestService_SavePDV_Profile(t *testing.T) {
 	// nolint:govet
 	pdv := v1.PDV{
-		v1.Profile{
+		&v1.Profile{
 			FirstName: "first",
 			LastName:  "last",
 			Emails:    []string{"email1", "email2"},
@@ -209,7 +209,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				Bio:       "bio",
 				Avatar:    "avatar",
 				Gender:    "male",
-				Birthday:  pdv[0].(schema.V1Profile).Birthday.Time,
+				Birthday:  pdv[0].(*schema.V1Profile).Birthday.Time,
 			})).Return(nil)
 
 			fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath string) error {

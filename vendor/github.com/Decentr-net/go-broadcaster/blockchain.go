@@ -161,7 +161,7 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) error {
 	}
 
 	if txBldr, err = utils.EnrichWithGas(txBldr, b.ctx, msgs); err != nil {
-		return errors.New("failed to calculate gas")
+		return fmt.Errorf("failed to calculate gas: %w", err)
 	}
 
 	txBytes, err := txBldr.BuildAndSign(b.ctx.GetFromName(), b.genesisKeyPass, msgs)
