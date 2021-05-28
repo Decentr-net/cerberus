@@ -32,6 +32,9 @@ type Broadcaster struct {
 	num            uint64
 	seq            uint64
 
+	gas    uint64
+	gasAdj float64
+
 	mu sync.Mutex
 }
 
@@ -47,6 +50,9 @@ type Config struct {
 	From           string
 	ChainID        string
 	GenesisKeyPass string
+
+	Gas       uint64
+	GasAdjust float64
 }
 
 // New returns new instance of broadcaster
@@ -82,6 +88,9 @@ func New(cdc *codec.Codec, cfg Config) (*Broadcaster, error) {
 		chainID:        cfg.ChainID,
 		genesisKeyPass: cfg.GenesisKeyPass,
 		mu:             sync.Mutex{},
+
+		gas:    cfg.Gas,
+		gasAdj: cfg.GasAdjust,
 	}
 
 	if err := b.refreshSequence(); err != nil {
@@ -149,7 +158,7 @@ func (b *Broadcaster) Ping() error {
 }
 
 func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) error {
-	txBldr := auth.NewTxBuilder(b.enc, b.num, b.seq, 0, 1.0, false,
+	txBldr := auth.NewTxBuilder(b.enc, b.num, b.seq, b.gas, b.gasAdj, false,
 		b.chainID, memo, nil, nil).WithKeybase(b.ctx.Keybase)
 
 	b.mu.Lock()
