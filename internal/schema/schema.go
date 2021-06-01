@@ -59,6 +59,11 @@ type PDVWrapper struct {
 	pdv types.PDV
 }
 
+// MarshalJSON ...
+func (p PDVWrapper) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.pdv)
+}
+
 // UnmarshalJSON ...
 func (p *PDVWrapper) UnmarshalJSON(b []byte) error {
 	var i struct {

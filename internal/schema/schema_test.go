@@ -6,8 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	v1 "github.com/Decentr-net/cerberus/internal/schema/v1"
 )
 
 func TestPDV_UnmarshalJSON(t *testing.T) {
@@ -64,7 +62,7 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 	var p PDVWrapper
 	require.NoError(t, json.Unmarshal([]byte(data), &p))
 
-	d, err := json.Marshal(p.pdv.(*v1.PDV))
+	d, err := json.Marshal(p)
 	require.NoError(t, err)
 
 	assert.JSONEq(t, data, string(d))
