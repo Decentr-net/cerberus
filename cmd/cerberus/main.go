@@ -15,6 +15,7 @@ import (
 
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/golang-migrate/migrate/v4"
 	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -70,6 +71,7 @@ var opts = struct {
 	BlockchainKeyringBackend     string `long:"blockchain.keyring_backend" env:"BLOCKCHAIN_KEYRING_BACKEND" default:"test" description:"decentrcli keyring backend"`
 	BlockchainKeyringPromptInput string `long:"blockchain.keyring_prompt_input" env:"BLOCKCHAIN_KEYRING_PROMPT_INPUT" description:"decentrcli keyring prompt input"`
 	BlockchainGas                uint64 `long:"blockchain.gas" env:"BLOCKCHAIN_GAS" default:"10" description:"gas amount"`
+	BlockchainFee                string `long:"blockchain.fee" env:"BLOCKCHAIN_FEE" default:"1udec" description:"transaction fee"`
 
 	RewardMapConfig string `long:"reward-map-config" env:"REWARD_MAP_CONFIG" default:"configs/rewards.yml" description:"path to yaml config with pdv rewards"`
 	MinPDVCount     uint16 `long:"min-pdv-count" env:"MIN_PDV_COUNT" default:"100" description:"minimal count of pdv to save"`
@@ -203,6 +205,11 @@ func mustExtractEncryptKey() [32]byte {
 }
 
 func mustGetBroadcaster() *broadcaster.Broadcaster {
+	fee, err := sdk.ParseCoin(opts.BlockchainFee)
+	if err != nil {
+		logrus.WithError(err).Error("failed to parse fee")
+	}
+
 	b, err := broadcaster.New(app.MakeCodec(), broadcaster.Config{
 		CLIHome:            opts.BlockchainClientHome,
 		KeyringBackend:     opts.BlockchainKeyringBackend,
@@ -213,7 +220,8 @@ func mustGetBroadcaster() *broadcaster.Broadcaster {
 		ChainID:            opts.BlockchainChainID,
 		GenesisKeyPass:     keys.DefaultKeyPass,
 		Gas:                opts.BlockchainGas,
-		GasAdjust:          1.0,
+		GasAdjust:          1.2,
+		Fees:               sdk.Coins{fee},
 	})
 
 	if err != nil {

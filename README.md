@@ -27,6 +27,8 @@ Cerberus is a Decentr oracle. Cerberus stores and validates PDV (private data va
 | blockchain.client_home   | BLOCKCHAIN_CLIENT_HOME    | ~/.decentrcli | true | decentrcli home directory
 | blockchain.keyring_backend   | BLOCKCHAIN_KEYRING_BACKEND    | test | true | decentrcli keyring backend
 | blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
+| blockchain.gas   | BLOCKCHAIN_GAS    | 10 | false | gas amount
+| blockchain.fee   | BLOCKCHAIN_FEE    | 1udec | false | transaction fee
 | reward-map-config | REWARD_MAP_CONFIG | configs/rewards.yml | path to yaml [config](configs/rewards.yml) with pdv rewards
 | min-pdv-count | MIN_PDV_COUNT | 100 | minimal count of pdv to save
 | max-pdv-count | MAX_PDV_COUNT | 100 | maximal count of pdv to save
