@@ -16,7 +16,8 @@ func TestAdvertiserID_Validate(t *testing.T) {
 			name: "valid",
 			d: AdvertiserID{
 				Advertiser: "advertiser",
-				ID:         "12345",
+				Name:       "Name1",
+				Value:      "Value1",
 			},
 			valid: true,
 		},
@@ -24,15 +25,26 @@ func TestAdvertiserID_Validate(t *testing.T) {
 			name: "empty_advertiser",
 			d: AdvertiserID{
 				Advertiser: "",
-				ID:         "12345",
+				Name:       "Name1",
+				Value:      "Value1",
 			},
 			valid: false,
 		},
 		{
-			name: "empty_id",
+			name: "empty_name",
 			d: AdvertiserID{
 				Advertiser: "advertiser",
-				ID:         "",
+				Name:       "",
+				Value:      "Value1",
+			},
+			valid: false,
+		},
+		{
+			name: "empty_value",
+			d: AdvertiserID{
+				Advertiser: "advertiser",
+				Name:       "Name1",
+				Value:      "",
 			},
 			valid: false,
 		},
