@@ -16,7 +16,8 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 		{
 			"type": "advertiserId",
 			"advertiser": "decentr",
-			"id": "12345qwert"
+			"name": "12345qwert",
+			"value": "12345value"
 		},
 		{
 			"timestamp": "2021-05-11T11:05:18Z",
