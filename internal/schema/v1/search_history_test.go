@@ -17,7 +17,8 @@ func TestSearchHistory_Validate(t *testing.T) {
 			name: "valid",
 			d: SearchHistory{
 				Timestamp: Timestamp{Time: time.Now()},
-				Engine:    "decentr.xyz",
+				Engine:    "decentr",
+				Domain:    "decentr.xyz",
 				Query:     "the best crypto",
 			},
 			valid: true,
@@ -27,6 +28,7 @@ func TestSearchHistory_Validate(t *testing.T) {
 			d: SearchHistory{
 				Timestamp: Timestamp{Time: time.Now()},
 				Engine:    "",
+				Domain:    "decentr.xyz",
 				Query:     "the best crypto",
 			},
 			valid: false,
@@ -35,7 +37,18 @@ func TestSearchHistory_Validate(t *testing.T) {
 			name: "empty searchLine",
 			d: SearchHistory{
 				Timestamp: Timestamp{Time: time.Now()},
-				Engine:    "decentr.xyz",
+				Engine:    "decentr",
+				Domain:    "decentr.xyz",
+				Query:     "",
+			},
+			valid: false,
+		},
+		{
+			name: "empty domain",
+			d: SearchHistory{
+				Timestamp: Timestamp{Time: time.Now()},
+				Engine:    "decentr",
+				Domain:    "",
 				Query:     "",
 			},
 			valid: false,
@@ -43,8 +56,9 @@ func TestSearchHistory_Validate(t *testing.T) {
 		{
 			name: "invalid timestamp",
 			d: SearchHistory{
-				Engine: "decentr.xyz",
+				Engine: "decentr",
 				Query:  "something",
+				Domain: "decentr.xyz",
 			},
 			valid: false,
 		},

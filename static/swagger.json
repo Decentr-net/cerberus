@@ -582,6 +582,10 @@
       "type": "object",
       "title": "SearchHistory is user's search history.",
       "properties": {
+        "domain": {
+          "type": "string",
+          "x-go-name": "Domain"
+        },
         "engine": {
           "type": "string",
           "x-go-name": "Engine"
@@ -806,6 +810,10 @@
         {
           "type": "object",
           "properties": {
+            "domain": {
+              "type": "string",
+              "x-go-name": "Domain"
+            },
             "engine": {
               "type": "string",
               "x-go-name": "Engine"
