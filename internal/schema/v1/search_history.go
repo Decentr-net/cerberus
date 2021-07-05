@@ -4,6 +4,7 @@ import "github.com/Decentr-net/cerberus/internal/schema/types"
 
 const (
 	maxSearchEngineLength = 20
+	maxDomainLength       = 255
 	maxSearchQueryLength  = 2000
 )
 
@@ -11,6 +12,7 @@ const (
 type SearchHistory struct {
 	Timestamp
 
+	Domain string `json:"domain"`
 	Engine string `json:"engine"`
 	Query  string `json:"query"`
 }
@@ -22,11 +24,13 @@ func (SearchHistory) Type() types.Type {
 
 // Validate ...
 func (d SearchHistory) Validate() bool {
-	if d.Engine == "" || d.Query == "" {
+	if d.Engine == "" || d.Query == "" || d.Domain == "" {
 		return false
 	}
 
-	if len(d.Engine) > maxSearchEngineLength || len(d.Query) > maxSearchQueryLength {
+	if len(d.Engine) > maxSearchEngineLength ||
+		len(d.Query) > maxSearchQueryLength ||
+		len(d.Domain) > maxDomainLength {
 		return false
 	}
 

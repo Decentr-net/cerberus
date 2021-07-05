@@ -56,6 +56,7 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 			"timestamp": "2021-05-11T11:05:18Z",
 			"type": "searchHistory",
 			"engine": "decentr",
+			"domain": "decentr.xyz",
 			"query": "the best crypto"
 		}
 	]
