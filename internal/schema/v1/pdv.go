@@ -4,23 +4,12 @@ package schema
 import (
 	"encoding/json"
 	"reflect"
-	"time"
 
 	"github.com/Decentr-net/cerberus/internal/schema/types"
 )
 
 // Version ...
 const Version types.Version = "v1"
-
-// Timestamp ...
-type Timestamp struct {
-	Time time.Time `json:"timestamp"`
-}
-
-// Validate ...
-func (t Timestamp) Validate() bool {
-	return !t.Time.IsZero()
-}
 
 var _ types.PDV = PDV{}
 

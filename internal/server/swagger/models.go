@@ -85,6 +85,9 @@ type PDVMeta struct {
 
 // ObjectTypes contains count of each pdv type in batch.
 type ObjectTypes struct {
-	Cookie      uint16 `json:"cookie"`
-	LoginCookie uint16 `json:"login_cookie"`
+	AdvertiserID    uint16 `json:"advertiserId"`
+	Cookie          uint16 `json:"cookie"`
+	Location        uint16 `json:"location"`
+	Profile         uint16 `json:"profile"`
+	SearchHistoryV1 uint16 `json:"searchHistory"`
 }

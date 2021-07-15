@@ -24,7 +24,7 @@ MOCKGEN_NAME := mockgen
 MOCKGEN_VERSION := v1.4.3
 
 SWAGGER_NAME := swagger
-SWAGGER_VERSION := v0.26.0
+SWAGGER_VERSION := v0.27.0
 
 default: build
 

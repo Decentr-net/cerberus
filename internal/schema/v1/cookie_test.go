@@ -18,7 +18,7 @@ func TestCookie_Validate(t *testing.T) {
 		{
 			name: "valid",
 			c: Cookie{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Source: types.Source{
 					Host: "https://decentr.xyz",
 					Path: "/?something#",
@@ -37,7 +37,7 @@ func TestCookie_Validate(t *testing.T) {
 		{
 			name: "valid minimal",
 			c: Cookie{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Source:    types.Source{Host: "https://decentr.xyz"},
 				Name:      "name",
 				Value:     "value",
@@ -47,7 +47,7 @@ func TestCookie_Validate(t *testing.T) {
 		{
 			name: "without name",
 			c: Cookie{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Source:    types.Source{Host: "https://decentr.xyz"},
 				Value:     "value",
 			},
@@ -56,7 +56,7 @@ func TestCookie_Validate(t *testing.T) {
 		{
 			name: "without value",
 			c: Cookie{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Source:    types.Source{Host: "https://decentr.xyz"},
 				Name:      "name",
 			},
@@ -65,7 +65,7 @@ func TestCookie_Validate(t *testing.T) {
 		{
 			name: "without host",
 			c: Cookie{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Name:      "name",
 				Value:     "value",
 			},
@@ -74,7 +74,7 @@ func TestCookie_Validate(t *testing.T) {
 		{
 			name: "invalid host",
 			c: Cookie{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Source:    types.Source{Host: "abc"},
 				Name:      "name",
 				Value:     "value",

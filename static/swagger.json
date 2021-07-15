@@ -443,7 +443,7 @@
     },
     "Date": {
       "type": "object",
-      "title": "Date in rfc3999 format.",
+      "title": "Date in ISO-8601 format (yyyy-mm-dd).",
       "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/types"
     },
     "Error": {
@@ -491,15 +491,30 @@
       "type": "object",
       "title": "ObjectTypes contains count of each pdv type in batch.",
       "properties": {
+        "advertiserId": {
+          "type": "integer",
+          "format": "uint16",
+          "x-go-name": "AdvertiserID"
+        },
         "cookie": {
           "type": "integer",
           "format": "uint16",
           "x-go-name": "Cookie"
         },
-        "login_cookie": {
+        "location": {
           "type": "integer",
           "format": "uint16",
-          "x-go-name": "LoginCookie"
+          "x-go-name": "Location"
+        },
+        "profile": {
+          "type": "integer",
+          "format": "uint16",
+          "x-go-name": "Profile"
+        },
+        "searchHistory": {
+          "type": "integer",
+          "format": "uint16",
+          "x-go-name": "SearchHistoryV1"
         }
       },
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server/swagger"
@@ -627,7 +642,7 @@
     },
     "Timestamp": {
       "type": "object",
-      "title": "Timestamp ...",
+      "title": "Timestamp in RFC-3339 format.",
       "properties": {
         "timestamp": {
           "type": "string",
@@ -635,7 +650,7 @@
           "x-go-name": "Time"
         }
       },
-      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/v1"
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/types"
     },
     "advertiserId": {
       "title": "AdvertiserIDV1 contains id for an advertiser (e.g google, facebook).",
