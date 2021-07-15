@@ -12,7 +12,7 @@ import (
 func TestPDV_Validate(t *testing.T) {
 	require.True(t, PDV{
 		Cookie{
-			Timestamp: Timestamp{Time: time.Now()},
+			Timestamp: types.Timestamp{Time: time.Now()},
 			Source:    types.Source{Host: "https://decentr.xyz"},
 			Name:      "cookie",
 			Value:     "value",

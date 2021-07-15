@@ -18,7 +18,7 @@ func TestLocation_Validate(t *testing.T) {
 		{
 			name: "valid",
 			l: Location{
-				Timestamp:   Timestamp{Time: time.Now()},
+				Timestamp:   types.Timestamp{Time: time.Now()},
 				Latitude:    10,
 				Longitude:   -10,
 				RequestedBy: &types.Source{Host: "decentr.xyz"},
@@ -28,7 +28,7 @@ func TestLocation_Validate(t *testing.T) {
 		{
 			name: "valid_zero",
 			l: Location{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Latitude:  0,
 				Longitude: 0,
 			},
@@ -37,7 +37,7 @@ func TestLocation_Validate(t *testing.T) {
 		{
 			name: "valid_limit",
 			l: Location{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Latitude:  -90,
 				Longitude: -180,
 			},
@@ -46,7 +46,7 @@ func TestLocation_Validate(t *testing.T) {
 		{
 			name: "invalid",
 			l: Location{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Latitude:  -91,
 				Longitude: -180,
 			},
@@ -63,7 +63,7 @@ func TestLocation_Validate(t *testing.T) {
 		{
 			name: "invalid source",
 			l: Location{
-				Timestamp:   Timestamp{Time: time.Now()},
+				Timestamp:   types.Timestamp{Time: time.Now()},
 				Latitude:    0,
 				Longitude:   0,
 				RequestedBy: &types.Source{},

@@ -6,7 +6,7 @@ import (
 
 // Cookie is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).
 type Cookie struct {
-	Timestamp
+	types.Timestamp
 
 	Source types.Source `json:"source"`
 

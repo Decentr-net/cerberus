@@ -35,9 +35,14 @@ const (
 	DataSizeLimit = 8 * 1024
 )
 
-// Date in rfc3999 format.
+// Date in ISO-8601 format (yyyy-mm-dd).
 type Date struct {
 	time.Time
+}
+
+// Timestamp in RFC-3339 format.
+type Timestamp struct {
+	Time time.Time `json:"timestamp"`
 }
 
 // Gender can be male or female.
@@ -187,4 +192,9 @@ func IsValidAvatar(str string) bool {
 		return false
 	}
 	return url.Scheme == "http" || url.Scheme == "https"
+}
+
+// Validate ...
+func (t Timestamp) Validate() bool {
+	return !t.Time.IsZero()
 }

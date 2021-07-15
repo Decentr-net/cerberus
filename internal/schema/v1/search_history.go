@@ -1,6 +1,8 @@
 package schema
 
-import "github.com/Decentr-net/cerberus/internal/schema/types"
+import (
+	"github.com/Decentr-net/cerberus/internal/schema/types"
+)
 
 const (
 	maxSearchEngineLength = 20
@@ -10,7 +12,7 @@ const (
 
 // SearchHistory is user's search history.
 type SearchHistory struct {
-	Timestamp
+	types.Timestamp
 
 	Domain string `json:"domain"`
 	Engine string `json:"engine"`

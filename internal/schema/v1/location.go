@@ -1,10 +1,12 @@
 package schema
 
-import "github.com/Decentr-net/cerberus/internal/schema/types"
+import (
+	"github.com/Decentr-net/cerberus/internal/schema/types"
+)
 
 // Location is user's geolocation.
 type Location struct {
-	Timestamp
+	types.Timestamp
 
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`

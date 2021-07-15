@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/Decentr-net/cerberus/internal/schema/types"
 )
 
 func TestSearchHistory_Validate(t *testing.T) {
@@ -16,7 +18,7 @@ func TestSearchHistory_Validate(t *testing.T) {
 		{
 			name: "valid",
 			d: SearchHistory{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Engine:    "decentr",
 				Domain:    "decentr.xyz",
 				Query:     "the best crypto",
@@ -26,7 +28,7 @@ func TestSearchHistory_Validate(t *testing.T) {
 		{
 			name: "empty engine",
 			d: SearchHistory{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Engine:    "",
 				Domain:    "decentr.xyz",
 				Query:     "the best crypto",
@@ -36,7 +38,7 @@ func TestSearchHistory_Validate(t *testing.T) {
 		{
 			name: "empty searchLine",
 			d: SearchHistory{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Engine:    "decentr",
 				Domain:    "decentr.xyz",
 				Query:     "",
@@ -46,7 +48,7 @@ func TestSearchHistory_Validate(t *testing.T) {
 		{
 			name: "empty domain",
 			d: SearchHistory{
-				Timestamp: Timestamp{Time: time.Now()},
+				Timestamp: types.Timestamp{Time: time.Now()},
 				Engine:    "decentr",
 				Domain:    "",
 				Query:     "",
