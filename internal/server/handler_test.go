@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Decentr-net/cerberus/internal/throttler"
+
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
@@ -164,7 +166,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			})
 			c, err := lru.NewARC(10)
 			require.NoError(t, err)
-			s := server{s: srv, pdvMetaCache: c, maxPDVCount: 100}
+			s := server{s: srv, pdvMetaCache: c, maxPDVCount: 100, savePDVThrottler: throttler.New(5 * time.Minute)}
 			router.Post("/v1/pdv", s.savePDVHandler)
 
 			router.ServeHTTP(w, r)
@@ -174,6 +176,41 @@ func TestServer_SavePDVHandler(t *testing.T) {
 			assert.Equal(t, tc.rdata, w.Body.String())
 		})
 	}
+}
+
+func TestServerSavePDV_Throttler(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	srv := mock.NewMockService(ctrl)
+
+	c, err := lru.NewARC(10)
+	require.NoError(t, err)
+	s := server{s: srv, pdvMetaCache: c, maxPDVCount: 100, savePDVThrottler: throttler.New(10 * time.Minute)}
+
+	body := pdv
+
+	var pdv schema.PDVWrapper
+	require.NoError(t, json.Unmarshal(body, &pdv))
+	srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner types.AccAddress) (uint64, service.PDVMeta, error) {
+		assert.Equal(t, testOwner, owner.String())
+		return 1, service.PDVMeta{}, nil
+	})
+
+	router := chi.NewRouter()
+
+	do := func() *httptest.ResponseRecorder {
+		_, w, r := newTestParameters(t, http.MethodPost, "v1/pdv", body)
+		router.Post("/v1/pdv", s.savePDVHandler)
+		router.ServeHTTP(w, r)
+		return w
+	}
+
+	do()
+	time.Sleep(1 * time.Second)
+	w := do()
+
+	assert.Equal(t, http.StatusTooManyRequests, w.Code)
 }
 
 func TestServer_ListPDVHandler(t *testing.T) {
@@ -776,7 +813,7 @@ func Test_savePDVHander_Amount(t *testing.T) {
 			router := chi.NewRouter()
 			c, err := lru.NewARC(10)
 			require.NoError(t, err)
-			s := server{s: srv, pdvMetaCache: c, minPDVCount: 2, maxPDVCount: 4}
+			s := server{s: srv, pdvMetaCache: c, savePDVThrottler: throttler.New(1 * time.Minute), minPDVCount: 2, maxPDVCount: 4}
 			router.Post("/v1/pdv", s.savePDVHandler)
 
 			router.ServeHTTP(w, r)

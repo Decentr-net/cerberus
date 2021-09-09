@@ -14,11 +14,10 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	"github.com/Decentr-net/go-api"
-	logging "github.com/Decentr-net/logrus/context"
-
 	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/service"
+	"github.com/Decentr-net/go-api"
+	logging "github.com/Decentr-net/logrus/context"
 )
 
 // SavePDVResponse ...
@@ -104,6 +103,12 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if s.savePDVThrottler.Throttle(owner.String()) {
+		api.WriteError(w, http.StatusTooManyRequests,
+			fmt.Sprintf("too many requests for %s", owner.String()))
+		return
+	}
+
 	id, meta, err := s.s.SavePDV(r.Context(), p, owner)
 	if err != nil {
 		api.WriteInternalErrorf(r.Context(), w, "failed to save pdv: %s", err.Error())
@@ -111,6 +116,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.pdvMetaCache.Add(getCacheKey(owner.String(), id), meta)
+	s.savePDVThrottler.Reset(owner.String())
 
 	api.WriteOK(w, http.StatusCreated, SavePDVResponse{ID: id})
 }

@@ -13,6 +13,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Decentr-net/cerberus/internal/throttler"
+
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -50,6 +52,8 @@ var opts = struct {
 	MaxBodySize    int64         `long:"http.max-body-size" env:"HTTP_MAX_BODY_SIZE" default:"8000000" description:"max request's body size"`
 
 	SentryDSN string `long:"sentry.dsn" env:"SENTRY_DSN" description:"sentry dsn"`
+
+	SavePDVThrottlePeriod time.Duration `long:"save-pdv-throttle-period" env:"SAVE_PDV_THROTTLE_PERIOD" default:"10m" description:"how often the user can send PDV to save"`
 
 	S3Endpoint        string `long:"s3.endpoint" env:"S3_ENDPOINT" default:"localhost:9000" description:"s3 endpoint'"`
 	S3Region          string `long:"s3.region" env:"S3_REGION" default:"" description:"s3 region"`
@@ -143,7 +147,7 @@ func main() {
 	b := mustGetBroadcaster()
 
 	server.SetupRouter(newServiceOrDie(fs, is, blockchain.New(b)), r,
-		opts.RequestTimeout, opts.MaxBodySize, opts.MinPDVCount, opts.MaxPDVCount)
+		opts.RequestTimeout, opts.MaxBodySize, throttler.New(opts.SavePDVThrottlePeriod), opts.MinPDVCount, opts.MaxPDVCount)
 	health.SetupRouter(r, fs, health.PingFunc(b.PingContext), health.PingFunc(db.PingContext))
 
 	srv := http.Server{
