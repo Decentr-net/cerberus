@@ -49,10 +49,10 @@ import (
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	"github.com/Decentr-net/go-api"
-
 	_ "github.com/Decentr-net/cerberus/internal/server/swagger" // import models to be generated into swagger.json
 	"github.com/Decentr-net/cerberus/internal/service"
+	"github.com/Decentr-net/cerberus/internal/throttler"
+	"github.com/Decentr-net/go-api"
 )
 
 //go:generate swagger generate spec -t swagger -m -c . -o ../../static/swagger.json
@@ -74,7 +74,8 @@ func init() { // nolint:gochecknoinits
 type server struct {
 	s service.Service
 
-	pdvMetaCache *lru.ARCCache
+	pdvMetaCache     *lru.ARCCache
+	savePDVThrottler throttler.Throttler
 
 	minPDVCount uint16
 	maxPDVCount uint16
@@ -95,7 +96,8 @@ type Profile struct {
 }
 
 // SetupRouter setups handlers to chi router.
-func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBodySize int64, minPDVCount, maxPDVCount uint16) {
+func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBodySize int64,
+	spt throttler.Throttler, minPDVCount, maxPDVCount uint16) {
 	r.Use(
 		api.FileServerMiddleware("/docs", "static"),
 		api.LoggerMiddleware,
@@ -113,8 +115,9 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 	}
 
 	srv := server{
-		s:            s,
-		pdvMetaCache: c,
+		s:                s,
+		pdvMetaCache:     c,
+		savePDVThrottler: spt,
 
 		minPDVCount: minPDVCount,
 		maxPDVCount: maxPDVCount,

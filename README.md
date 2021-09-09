@@ -20,15 +20,16 @@ Cerberus is a Decentr oracle. Cerberus stores and validates PDV (private data va
 | s3.secret-access-key    | S3_SECRET_ACCESS_KEY    |   | Secret Key for S3 storage
 | s3.use-ssl    | S3_USE_SSL    | false  | do use ssl for S3 storage connection?
 | s3.bucket    | S3_BUCKET    | cerberus  | bucket name for S3 storage
-| blockchain.node   | BLOCKCHAIN_NODE    | http://zeus.testnet.decentr.xyz:26657 | true | decentr node address
-| blockchain.from   | BLOCKCHAIN_FROM    | | true | decentr account name to send stakes
-| blockchain.tx_memo   | BLOCKCHAIN_TX_MEMO    | | false | decentr tx's memo
-| blockchain.chain_id   | BLOCKCHAIN_CHAIN_ID    | testnet | true| decentr chain id
-| blockchain.client_home   | BLOCKCHAIN_CLIENT_HOME    | ~/.decentrcli | true | decentrcli home directory
-| blockchain.keyring_backend   | BLOCKCHAIN_KEYRING_BACKEND    | test | true | decentrcli keyring backend
-| blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
-| blockchain.gas   | BLOCKCHAIN_GAS    | 10 | false | gas amount
-| blockchain.fee   | BLOCKCHAIN_FEE    | 1udec | false | transaction fee
+| save-pdv-throttle-period    | SAVE_PDV_THROTTLE_PERIOD    | 10m  | how often the user can send PDV to save
+| blockchain.node   | BLOCKCHAIN_NODE    | http://zeus.testnet.decentr.xyz:26657  | decentr node address
+| blockchain.from   | BLOCKCHAIN_FROM    |  | decentr account name to send stakes
+| blockchain.tx_memo   | BLOCKCHAIN_TX_MEMO    | | decentr tx's memo
+| blockchain.chain_id   | BLOCKCHAIN_CHAIN_ID    | testnet | decentr chain id
+| blockchain.client_home   | BLOCKCHAIN_CLIENT_HOME    | ~/.decentrcli | decentrcli home directory
+| blockchain.keyring_backend   | BLOCKCHAIN_KEYRING_BACKEND    | test | decentrcli keyring backend
+| blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | decentrcli keyring prompt input
+| blockchain.gas   | BLOCKCHAIN_GAS    | 10  | gas amount
+| blockchain.fee   | BLOCKCHAIN_FEE    | 1udec  | transaction fee
 | reward-map-config | REWARD_MAP_CONFIG | configs/rewards.yml | path to yaml [config](configs/rewards.yml) with pdv rewards
 | min-pdv-count | MIN_PDV_COUNT | 100 | minimal count of pdv to save
 | max-pdv-count | MAX_PDV_COUNT | 100 | maximal count of pdv to save
