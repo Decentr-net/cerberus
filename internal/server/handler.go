@@ -26,6 +26,64 @@ type SavePDVResponse struct {
 	ID uint64 `json:"id"`
 }
 
+// SaveImageResponse ...
+// swagger:model SaveImageResponse
+type SaveImageResponse struct {
+	HD    string `json:"hd"`
+	Thumb string `json:"thumb"`
+}
+
+// saveImageHandler resizes and saves the given message into storage.
+func (s *server) saveImageHandler(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation POST /images Image Save
+	//
+	// Resizes (1920x1080, 480x270) and saves images
+	// ---
+	// security:
+	// - public_key: []
+	//   signature: []
+	// produces:
+	// - application/json
+	// consumes:
+	// - multipart/form-data
+	// responses:
+	//   '200':
+	//     description: image successfully resized and saved as HD (1920x1080) and thumbnail (480x270)
+	//     schema:
+	//       "$ref": "#/definitions/SaveImageResponse"
+	//   '500':
+	//      description: internal server error
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	if err := api.Verify(r); err != nil {
+		api.WriteVerifyError(r.Context(), w, err)
+		return
+	}
+
+	owner, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
+	if err != nil {
+		api.WriteError(w, http.StatusBadRequest, fmt.Sprintf("failed to decode owner address: %s", err.Error()))
+		return
+	}
+
+	hdPath, thumbPath, err := s.s.SaveImage(r.Context(), r.Body, owner.String())
+	if err != nil {
+		if errors.Is(err, service.ErrImageInvalidFormat) {
+			api.WriteError(w, http.StatusBadRequest, "request body is not an image")
+			return
+		}
+
+		api.WriteInternalErrorf(r.Context(), w, "failed to save image: %s", err.Error())
+		return
+	}
+
+	api.WriteOK(w, http.StatusOK, SaveImageResponse{
+		HD:    hdPath,
+		Thumb: thumbPath,
+	})
+}
+
 // savePDVHandler encrypts and puts PDV data into storage.
 func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /pdv PDV Save

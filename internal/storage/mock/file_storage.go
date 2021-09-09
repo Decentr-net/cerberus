@@ -79,17 +79,18 @@ func (mr *MockFileStorageMockRecorder) Read(ctx, path interface{}) *gomock.Call 
 }
 
 // Write mocks base method
-func (m *MockFileStorage) Write(ctx context.Context, data io.Reader, size int64, path string) error {
+func (m *MockFileStorage) Write(ctx context.Context, data io.Reader, size int64, path, contentType string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Write", ctx, data, size, path)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "Write", ctx, data, size, path, contentType)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Write indicates an expected call of Write
-func (mr *MockFileStorageMockRecorder) Write(ctx, data, size, path interface{}) *gomock.Call {
+func (mr *MockFileStorageMockRecorder) Write(ctx, data, size, path, contentType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockFileStorage)(nil).Write), ctx, data, size, path)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockFileStorage)(nil).Write), ctx, data, size, path, contentType)
 }
 
 // DeleteData mocks base method

@@ -129,6 +129,8 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 	r.Get("/v1/pdv/{owner}/{id}/meta", srv.getPDVMetaHandler)
 	r.Get("/v1/profiles", srv.getProfilesHandler)
 
+	r.Post("/v1/images", srv.saveImageHandler)
+
 	r.Get("/v1/configs/rewards", srv.getRewardsConfigHandler)
 }
 

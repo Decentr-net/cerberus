@@ -67,9 +67,12 @@ func (s s3) Read(ctx context.Context, path string) (io.ReadCloser, error) {
 }
 
 // Write puts file into s3 storage.
-func (s s3) Write(ctx context.Context, r io.Reader, size int64, path string) error {
-	_, err := s.c.PutObject(ctx, s.b, path, r, size, minio.PutObjectOptions{DisableMultipart: true, ContentType: "binary/octet-stream"})
-	return err
+func (s s3) Write(ctx context.Context, r io.Reader, size int64, path string, contentType string) (string, error) {
+	i, err := s.c.PutObject(ctx, s.b, path, r, size, minio.PutObjectOptions{DisableMultipart: true, ContentType: contentType})
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("https://%s.s3.amazonaws.com/%s", i.Bucket, i.Key), nil
 }
 
 // List returns objects by prefix with paging.

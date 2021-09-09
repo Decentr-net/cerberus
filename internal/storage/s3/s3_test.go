@@ -106,7 +106,9 @@ func TestS3_Write(t *testing.T) {
 	s, err := NewStorage(c, bucket)
 	require.NoError(t, err)
 
-	assert.NoError(t, s.Write(ctx, strings.NewReader("example"), 7, "file"))
+	path, err := s.Write(ctx, strings.NewReader("example"), 7, "file", "image/jpeg")
+	assert.NoError(t, err)
+	require.NotEmpty(t, path)
 }
 
 func TestS3_Read(t *testing.T) {
@@ -139,7 +141,8 @@ func TestS3_Write_Read(t *testing.T) {
 
 	text := []byte("cerberus")
 
-	require.NoError(t, s.Write(ctx, bytes.NewReader(text), 8, "cerberus"))
+	_, err = s.Write(ctx, bytes.NewReader(text), 8, "cerberus", "image/jpeg")
+	require.NoError(t, err)
 
 	rc, err := s.Read(ctx, "cerberus")
 	require.NoError(t, err)
@@ -159,7 +162,8 @@ func TestS3_List(t *testing.T) {
 
 	for i := 0; i < 1010; i++ {
 		filename := fmt.Sprintf("owner/pdv/%016x", i)
-		require.NoError(t, s.Write(ctx, bytes.NewReader(text), 8, filename))
+		_, err = s.Write(ctx, bytes.NewReader(text), 8, filename, "image/jpeg")
+		require.NoError(t, err)
 	}
 
 	l, err := s.List(ctx, "owner/pdv", 5, 1000)
@@ -180,7 +184,8 @@ func TestS3_DeleteData(t *testing.T) {
 
 	for i := 0; i < 1010; i++ {
 		filename := fmt.Sprintf("owner/pdv/%016x", i)
-		require.NoError(t, s.Write(ctx, bytes.NewReader(text), 8, filename))
+		_, err := s.Write(ctx, bytes.NewReader(text), 8, filename, "image/jpeg")
+		require.NoError(t, err)
 	}
 
 	l, err := s.List(ctx, "owner/pdv", 5, 1000)
