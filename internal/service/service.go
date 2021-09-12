@@ -7,10 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math"
 	"strconv"
 	"time"
+
+	"github.com/disintegration/imaging"
+	"github.com/google/uuid"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sirupsen/logrus"
@@ -26,7 +30,10 @@ import (
 //go:generate mockgen -destination=./mock/service.go -package=mock -source=service.go
 
 // ErrNotFound means that requested object is not found.
-var ErrNotFound = errors.New("not found")
+var (
+	ErrNotFound           = errors.New("not found")
+	ErrImageInvalidFormat = errors.New("image invalid format")
+)
 
 // RewardMap contains dictionary with PDV types and rewards for them.
 type RewardMap map[schema.Type]uint64
@@ -54,6 +61,8 @@ type Profile struct {
 
 // Service interface provides service's logic's methods.
 type Service interface {
+	// SaveImage sends Image to storage.
+	SaveImage(ctx context.Context, r io.Reader, owner string) (string, string, error)
 	// SavePDV sends PDV to storage.
 	SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddress) (uint64, PDVMeta, error)
 	// ListPDV lists PDVs.
@@ -63,7 +72,7 @@ type Service interface {
 	// GetPDVMeta returns PDVs meta.
 	GetPDVMeta(ctx context.Context, owner string, id uint64) (PDVMeta, error)
 
-	// GetProfile ...
+	// GetProfiles ...
 	GetProfiles(ctx context.Context, owner []string) ([]*Profile, error)
 
 	// GetRewardsMap ...
@@ -120,8 +129,10 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 		return 0, PDVMeta{}, fmt.Errorf("failed to create encrypting reader: %w", err)
 	}
 
+	const contentType = "binary/octet-stream"
+
 	log.WithField("filepath", filepath).Debug("writing meta into the storage")
-	if err := s.fs.Write(ctx, enc, size, filepath); err != nil {
+	if _, err := s.fs.Write(ctx, enc, size, filepath, contentType); err != nil {
 		return 0, PDVMeta{}, fmt.Errorf("failed to write meta data to storage: %w", err)
 	}
 
@@ -132,7 +143,7 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 
 	log.WithField("filepath", filepath).Debug("writing meta into the storage")
 	mr := bytes.NewReader(data)
-	if err := s.fs.Write(ctx, mr, mr.Size(), getMetaFilePath(owner.String(), id)); err != nil {
+	if _, err := s.fs.Write(ctx, mr, mr.Size(), getMetaFilePath(owner.String(), id), contentType); err != nil {
 		return 0, PDVMeta{}, fmt.Errorf("failed to write meta meta to storage: %w", err)
 	}
 
@@ -148,6 +159,38 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 	}
 
 	return id, meta, nil
+}
+
+func (s *service) SaveImage(ctx context.Context, r io.Reader, owner string) (string, string, error) {
+	src, err := imaging.Decode(r)
+	if err != nil {
+		return "", "", ErrImageInvalidFormat
+	}
+
+	upload := func(width, height int, p string) (string, error) {
+		fit := imaging.Fit(src, width, height, imaging.Lanczos)
+		buf := bytes.Buffer{}
+		if err := imaging.Encode(&buf, fit, imaging.JPEG); err != nil {
+			return "", fmt.Errorf("failed to encode image: %w", err)
+		}
+
+		return s.fs.Write(ctx, &buf, int64(buf.Len()), p, "image/jpeg")
+	}
+
+	// image is stored under the account prefix therefore images will be deleted as soon as account folder is deleted
+	path := fmt.Sprintf("%s/%s", owner, uuid.New())
+
+	hdPath, err := upload(1920, 1080, path)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to save hd image: %w", err)
+	}
+
+	thumbPath, err := upload(480, 270, path+"/thumb")
+	if err != nil {
+		return "", "", fmt.Errorf("failed to save thumb image: %s", err)
+	}
+
+	return hdPath, thumbPath, nil
 }
 
 // ListPDV lists PDVs.
@@ -241,7 +284,7 @@ func (s *service) GetProfiles(ctx context.Context, owner []string) ([]*Profile, 
 	return out, nil
 }
 
-// GetRewardsConfig ...
+// GetRewardsMap ...
 func (s *service) GetRewardsMap() RewardMap {
 	return s.rewardMap
 }

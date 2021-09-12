@@ -40,6 +40,41 @@
         }
       }
     },
+    "/images": {
+      "post": {
+        "security": [
+          {
+            "public_key": [],
+            "signature": []
+          }
+        ],
+        "description": "Resizes (1920x1080, 480x270) and saves images",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Image"
+        ],
+        "operationId": "Save",
+        "responses": {
+          "200": {
+            "description": "image successfully resized and saved as HD (1920x1080) and thumbnail (480x270)",
+            "schema": {
+              "$ref": "#/definitions/SaveImageResponse"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/pdv": {
       "post": {
         "security": [
@@ -580,6 +615,21 @@
         }
       },
       "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/v1"
+    },
+    "SaveImageResponse": {
+      "type": "object",
+      "title": "SaveImageResponse ...",
+      "properties": {
+        "hd": {
+          "type": "string",
+          "x-go-name": "HD"
+        },
+        "thumb": {
+          "type": "string",
+          "x-go-name": "Thumb"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
     },
     "SavePDVResponse": {
       "type": "object",

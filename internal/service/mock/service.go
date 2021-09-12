@@ -10,6 +10,7 @@ import (
 	service "github.com/Decentr-net/cerberus/internal/service"
 	types "github.com/cosmos/cosmos-sdk/types"
 	gomock "github.com/golang/mock/gomock"
+	io "io"
 	reflect "reflect"
 )
 
@@ -34,6 +35,22 @@ func NewMockService(ctrl *gomock.Controller) *MockService {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockService) EXPECT() *MockServiceMockRecorder {
 	return m.recorder
+}
+
+// SaveImage mocks base method
+func (m *MockService) SaveImage(ctx context.Context, r io.Reader, owner string) (string, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveImage", ctx, r, owner)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// SaveImage indicates an expected call of SaveImage
+func (mr *MockServiceMockRecorder) SaveImage(ctx, r, owner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveImage", reflect.TypeOf((*MockService)(nil).SaveImage), ctx, r, owner)
 }
 
 // SavePDV mocks base method

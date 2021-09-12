@@ -5,12 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"image"
 	"io"
 	"io/ioutil"
+	"strings"
 	"testing"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/disintegration/imaging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -58,6 +61,55 @@ var pdv = v1.PDV{
 	},
 }
 
+func TestService_SaveImage(t *testing.T) {
+	tt := []struct {
+		file           string
+		x1, y1, x2, y2 int
+	}{
+		{"1920x1080.png", 1920, 1080, 480, 270},
+		{"100x100.png", 100, 100, 100, 100},
+	}
+
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.file, func(t *testing.T) {
+			t.Parallel()
+
+			body, err := ioutil.ReadFile("testdata/" + tc.file)
+			require.NoError(t, err)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			fs := storagemock.NewMockFileStorage(ctrl)
+			fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath, contentType string) (string, error) {
+				require.NotZero(t, size)
+				img, err := imaging.Decode(r)
+				require.NoError(t, err)
+
+				bonds := img.Bounds()
+				if !strings.Contains(filepath, "thumb") {
+					require.Equal(t, bonds.Size(), image.Pt(tc.x1, tc.y1))
+				} else {
+					require.Equal(t, bonds.Size(), image.Pt(tc.x2, tc.y2))
+				}
+
+				return filepath, nil
+			}).Times(2)
+
+			s := service{
+				fs: fs,
+			}
+
+			hd, thumb, err := s.SaveImage(context.Background(), bytes.NewReader(body), "owner")
+			require.NoError(t, err)
+			require.NotEmpty(t, hd)
+			require.NotEmpty(t, thumb)
+			require.True(t, strings.HasPrefix(thumb, hd))
+		})
+	}
+}
+
 func TestService_SavePDV(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -79,7 +131,7 @@ func TestService_SavePDV(t *testing.T) {
 		return bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil
 	})
 
-	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath string) error {
+	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath, contentType string) (string, error) {
 		require.Equal(t, getPDVFilePath(testOwner, expectedID), filepath)
 
 		data, err := ioutil.ReadAll(r)
@@ -87,7 +139,7 @@ func TestService_SavePDV(t *testing.T) {
 		require.Equal(t, testEncryptedData, data)
 		require.EqualValues(t, len(data), size)
 
-		return nil
+		return "", nil
 	})
 
 	expectedMeta := PDVMeta{
@@ -98,7 +150,7 @@ func TestService_SavePDV(t *testing.T) {
 		Reward: 6,
 	}
 
-	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath string) error {
+	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath, contentType string) (string, error) {
 		require.Equal(t, getMetaFilePath(testOwner, expectedID), filepath)
 
 		var m PDVMeta
@@ -106,7 +158,7 @@ func TestService_SavePDV(t *testing.T) {
 
 		require.Equal(t, expectedMeta, m)
 
-		return nil
+		return "", nil
 	})
 
 	b.EXPECT().DistributeReward(testOwnerSdkAddr, expectedID, expectedMeta.Reward).Return(nil)
@@ -182,7 +234,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				return bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil
 			})
 
-			fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath string) error {
+			fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath, contentType string) (string, error) {
 				require.Equal(t, getPDVFilePath(testOwner, expectedID), filepath)
 
 				data, err := ioutil.ReadAll(r)
@@ -190,7 +242,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				require.Equal(t, testEncryptedData, data)
 				require.EqualValues(t, len(data), size)
 
-				return nil
+				return "", nil
 			})
 
 			is.EXPECT().GetProfile(ctx, testOwner).DoAndReturn(func(_ context.Context, _ string) (*storage.Profile, error) {
@@ -212,7 +264,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				Birthday:  pdv[0].(*schema.V1Profile).Birthday.Time,
 			})).Return(nil)
 
-			fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath string) error {
+			fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath, contentType string) (string, error) {
 				require.Equal(t, getMetaFilePath(testOwner, expectedID), filepath)
 
 				var m PDVMeta
@@ -220,7 +272,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 
 				require.Equal(t, tc.meta, m)
 
-				return nil
+				return "", nil
 			})
 
 			if tc.meta.Reward > 0 {
@@ -266,7 +318,7 @@ func TestService_SavePDV_StorageError(t *testing.T) {
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil)
 
-	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(errTest)
+	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return("", errTest)
 
 	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Error(t, err)
@@ -285,8 +337,8 @@ func TestService_SavePDV_BlockchainError(t *testing.T) {
 	s := New(cr, fs, is, b, rewardsMap)
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil)
-	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil)
+	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil)
 
 	b.EXPECT().DistributeReward(testOwnerSdkAddr, gomock.Any(), gomock.Any()).Return(errTest)
 
