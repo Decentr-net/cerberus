@@ -67,8 +67,16 @@ func (s s3) Read(ctx context.Context, path string) (io.ReadCloser, error) {
 }
 
 // Write puts file into s3 storage.
-func (s s3) Write(ctx context.Context, r io.Reader, size int64, path string, contentType string) (string, error) {
-	i, err := s.c.PutObject(ctx, s.b, path, r, size, minio.PutObjectOptions{DisableMultipart: true, ContentType: contentType})
+func (s s3) Write(ctx context.Context, r io.Reader, size int64, path string, contentType string, isPublicRead bool) (string, error) {
+	opt := minio.PutObjectOptions{
+		DisableMultipart: true,
+		ContentType:      contentType,
+	}
+	if isPublicRead {
+		opt.UserMetadata = map[string]string{"x-amz-acl": "public-read"}
+	}
+
+	i, err := s.c.PutObject(ctx, s.b, path, r, size, opt)
 	if err != nil {
 		return "", err
 	}
