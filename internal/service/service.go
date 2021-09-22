@@ -4,6 +4,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"io/ioutil"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/disintegration/imaging"
@@ -132,7 +134,7 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 	const contentType = "binary/octet-stream"
 
 	log.WithField("filepath", filepath).Debug("writing meta into the storage")
-	if _, err := s.fs.Write(ctx, enc, size, filepath, contentType); err != nil {
+	if _, err := s.fs.Write(ctx, enc, size, filepath, contentType, false); err != nil {
 		return 0, PDVMeta{}, fmt.Errorf("failed to write meta data to storage: %w", err)
 	}
 
@@ -143,7 +145,7 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 
 	log.WithField("filepath", filepath).Debug("writing meta into the storage")
 	mr := bytes.NewReader(data)
-	if _, err := s.fs.Write(ctx, mr, mr.Size(), getMetaFilePath(owner.String(), id), contentType); err != nil {
+	if _, err := s.fs.Write(ctx, mr, mr.Size(), getMetaFilePath(owner.String(), id), contentType, false); err != nil {
 		return 0, PDVMeta{}, fmt.Errorf("failed to write meta meta to storage: %w", err)
 	}
 
@@ -162,7 +164,37 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 }
 
 func (s *service) SaveImage(ctx context.Context, r io.Reader, owner string) (string, string, error) {
-	src, err := imaging.Decode(r)
+	dataImage, err := ioutil.ReadAll(r)
+	if err != nil {
+		return "", "", ErrImageInvalidFormat
+	}
+
+	// image has data:image/jpeg;base64, or data:image/png;base64, prefix
+	idx := bytes.Index(dataImage, []byte(","))
+	if idx == -1 {
+		return "", "", ErrImageInvalidFormat
+	}
+
+	contentType := strings.Trim(string(dataImage[5:idx]), ";base64")
+	dataImage = dataImage[(idx + 1):]
+	var format imaging.Format
+
+	switch contentType {
+	case "image/png":
+		format = imaging.PNG
+	case "image/jpeg":
+		format = imaging.JPEG
+	default:
+		return "", "", ErrImageInvalidFormat
+	}
+
+	byteImage, err := base64.StdEncoding.DecodeString(string(dataImage))
+	if err != nil {
+		println(err.Error())
+		return "", "", ErrImageInvalidFormat
+	}
+
+	src, err := imaging.Decode(bytes.NewReader(byteImage))
 	if err != nil {
 		return "", "", ErrImageInvalidFormat
 	}
@@ -170,11 +202,11 @@ func (s *service) SaveImage(ctx context.Context, r io.Reader, owner string) (str
 	upload := func(width, height int, p string) (string, error) {
 		fit := imaging.Fit(src, width, height, imaging.Lanczos)
 		buf := bytes.Buffer{}
-		if err := imaging.Encode(&buf, fit, imaging.JPEG); err != nil {
+		if err := imaging.Encode(&buf, fit, format); err != nil {
 			return "", fmt.Errorf("failed to encode image: %w", err)
 		}
 
-		return s.fs.Write(ctx, &buf, int64(buf.Len()), p, "image/jpeg")
+		return s.fs.Write(ctx, &buf, int64(buf.Len()), p, contentType, true)
 	}
 
 	// image is stored under the account prefix therefore images will be deleted as soon as account folder is deleted

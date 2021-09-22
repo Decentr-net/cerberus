@@ -1,4 +1,4 @@
-//+build integration
+// +build integration
 
 package s3
 
@@ -106,7 +106,7 @@ func TestS3_Write(t *testing.T) {
 	s, err := NewStorage(c, bucket)
 	require.NoError(t, err)
 
-	path, err := s.Write(ctx, strings.NewReader("example"), 7, "file", "image/jpeg")
+	path, err := s.Write(ctx, strings.NewReader("example"), 7, "file", "image/jpeg", false)
 	assert.NoError(t, err)
 	require.NotEmpty(t, path)
 }
@@ -141,7 +141,7 @@ func TestS3_Write_Read(t *testing.T) {
 
 	text := []byte("cerberus")
 
-	_, err = s.Write(ctx, bytes.NewReader(text), 8, "cerberus", "image/jpeg")
+	_, err = s.Write(ctx, bytes.NewReader(text), 8, "cerberus", "image/jpeg", false)
 	require.NoError(t, err)
 
 	rc, err := s.Read(ctx, "cerberus")
@@ -162,7 +162,7 @@ func TestS3_List(t *testing.T) {
 
 	for i := 0; i < 1010; i++ {
 		filename := fmt.Sprintf("owner/pdv/%016x", i)
-		_, err = s.Write(ctx, bytes.NewReader(text), 8, filename, "image/jpeg")
+		_, err = s.Write(ctx, bytes.NewReader(text), 8, filename, "image/jpeg", false)
 		require.NoError(t, err)
 	}
 
@@ -184,7 +184,7 @@ func TestS3_DeleteData(t *testing.T) {
 
 	for i := 0; i < 1010; i++ {
 		filename := fmt.Sprintf("owner/pdv/%016x", i)
-		_, err := s.Write(ctx, bytes.NewReader(text), 8, filename, "image/jpeg")
+		_, err := s.Write(ctx, bytes.NewReader(text), 8, filename, "image/jpeg", true)
 		require.NoError(t, err)
 	}
 
