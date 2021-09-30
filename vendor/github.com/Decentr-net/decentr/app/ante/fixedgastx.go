@@ -13,25 +13,28 @@ type FixedGasTxDecorator struct {
 func NewFixedGasTxDecorator(pk operations.Keeper, ck community.Keeper) FixedGasTxDecorator {
 	config := map[string]func(ctx sdk.Context) sdk.Gas{
 		operations.MsgResetAccount{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return pk.GetFixedGasParams(ctx).ResetAccount
+			return pk.GetParams(ctx).FixedGas.ResetAccount
+		},
+		operations.MsgBanAccount{}.Type(): func(ctx sdk.Context) sdk.Gas {
+			return pk.GetParams(ctx).FixedGas.BanAccount
 		},
 		operations.MsgDistributeRewards{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return pk.GetFixedGasParams(ctx).DistributeRewards
+			return pk.GetParams(ctx).FixedGas.DistributeRewards
 		},
 		community.MsgCreatePost{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return ck.GetFixedGasParams(ctx).CreatePost
+			return ck.GetParams(ctx).FixedGas.CreatePost
 		},
 		community.MsgDeletePost{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return ck.GetFixedGasParams(ctx).DeletePost
+			return ck.GetParams(ctx).FixedGas.DeletePost
 		},
 		community.MsgSetLike{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return ck.GetFixedGasParams(ctx).SetLike
+			return ck.GetParams(ctx).FixedGas.SetLike
 		},
 		community.MsgFollow{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return ck.GetFixedGasParams(ctx).Follow
+			return ck.GetParams(ctx).FixedGas.Follow
 		},
 		community.MsgUnfollow{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return ck.GetFixedGasParams(ctx).Unfollow
+			return ck.GetParams(ctx).FixedGas.Unfollow
 		},
 	}
 
@@ -44,8 +47,22 @@ func (fgm FixedGasTxDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 	for _, msg := range tx.GetMsgs() {
 		if fixedGas, ok := fgm.config[msg.Type()]; ok {
 			limit := ctx.GasMeter().Limit()
-			consumed := fixedGas(ctx)
-			return ctx.WithGasMeter(NewFixedGasMeter(consumed, limit)), nil
+
+			// pass infinite gas meter since fixedGas requires gas to read parameters from keeper
+			// this gas should be skipped
+			consumed := fixedGas(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
+
+			// prepare new context
+			ctx := ctx.WithGasMeter(NewFixedGasMeter(consumed, limit))
+
+			if consumed == 0 {
+				// special case: consumed gas is zero, what could be for DistributeRewards trx
+				// set min gas price to zero, otherwise sdkerrors.ErrInsufficientFee occurs
+				zeroDecCoins := sdk.NewDecCoins()
+				return next(ctx.WithMinGasPrices(zeroDecCoins), tx, simulate)
+			}
+
+			return next(ctx, tx, simulate)
 		}
 	}
 

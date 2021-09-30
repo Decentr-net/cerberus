@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 )
 
 const (
@@ -22,18 +23,39 @@ var (
 	KeyFixedGas   = []byte("FixedGas")
 )
 
-// ParamKeyTable type declaration for parameters
-func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable(
-		params.NewParamSetPair(KeyModerators, &DefaultModerators, validateModerators),
-		params.NewParamSetPair(KeyFixedGas, FixedGasParams{}, validateFixedGasParams),
-	)
+type Params struct {
+	Moderators []string       `json:"moderators" yaml:"moderators"`
+	FixedGas   FixedGasParams `json:"fixed_gas" yaml:"fixed_gas"`
+}
+
+// ParamKeyTable for community module
+func ParamKeyTable() subspace.KeyTable {
+	return subspace.NewKeyTable().RegisterParamSet(&Params{})
+}
+
+func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
+	return subspace.ParamSetPairs{
+		params.NewParamSetPair(KeyModerators, &p.Moderators, validateModerators),
+		params.NewParamSetPair(KeyFixedGas, &p.FixedGas, validateFixedGasParams),
+	}
+}
+
+// DefaultParams returns a default set of parameters.
+func DefaultParams() Params {
+	return Params{
+		Moderators: DefaultModerators,
+		FixedGas:   DefaultFixedGasParams(),
+	}
 }
 
 func validateModerators(i interface{}) error {
 	moderators, ok := i.([]string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if len(moderators) == 0 {
+		return fmt.Errorf("can not be empty")
 	}
 
 	for _, moderator := range moderators {
@@ -55,7 +77,7 @@ type FixedGasParams struct {
 func DefaultFixedGasParams() FixedGasParams {
 	return FixedGasParams{
 		CreatePost: 1000,
-		DeletePost: 1000,
+		DeletePost: 100,
 		SetLike:    100,
 		Follow:     100,
 		Unfollow:   100,
@@ -63,29 +85,21 @@ func DefaultFixedGasParams() FixedGasParams {
 }
 
 func validateFixedGasParams(i interface{}) error {
-	v, ok := i.(FixedGasParams)
+	_, ok := i.(FixedGasParams)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if v.CreatePost <= 0 {
-		return fmt.Errorf("create post must be positive: %d", v.CreatePost)
+	return nil
+}
+
+func (p Params) Validate() error {
+	if err := validateModerators(p.Moderators); err != nil {
+		return fmt.Errorf("invalid moderators: %w", err)
 	}
 
-	if v.DeletePost <= 0 {
-		return fmt.Errorf("delete post must be positive: %d", v.DeletePost)
-	}
-
-	if v.SetLike <= 0 {
-		return fmt.Errorf("set like must be positive: %d", v.SetLike)
-	}
-
-	if v.Follow <= 0 {
-		return fmt.Errorf("follow must be positive: %d", v.Follow)
-	}
-
-	if v.Unfollow <= 0 {
-		return fmt.Errorf("unfollow must be positive: %d", v.Unfollow)
+	if err := validateFixedGasParams(p.FixedGas); err != nil {
+		return fmt.Errorf("invalid fixed_gas: %w", err)
 	}
 
 	return nil

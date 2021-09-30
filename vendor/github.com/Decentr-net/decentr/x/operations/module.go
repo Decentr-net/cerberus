@@ -3,9 +3,6 @@ package operations
 import (
 	"encoding/json"
 
-	"github.com/Decentr-net/decentr/x/operations/client/cli"
-	"github.com/Decentr-net/decentr/x/operations/client/rest"
-	"github.com/Decentr-net/decentr/x/token"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,6 +10,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/Decentr-net/decentr/x/community"
+	"github.com/Decentr-net/decentr/x/operations/client/cli"
+	"github.com/Decentr-net/decentr/x/operations/client/rest"
+	"github.com/Decentr-net/decentr/x/token"
 )
 
 // type check to ensure the interface is properly implemented
@@ -72,16 +74,20 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper       Keeper
-	tokensKeeper token.Keeper
+	keeper          Keeper
+	tokensKeeper    token.Keeper
+	communityKeeper community.Keeper
+	supplyKeeper    SupplyKeeper
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k Keeper, tk token.Keeper) AppModule {
+func NewAppModule(k Keeper, tk token.Keeper, ck community.Keeper, sk SupplyKeeper) AppModule {
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
-		tokensKeeper:   tk,
+		AppModuleBasic:  AppModuleBasic{},
+		keeper:          k,
+		tokensKeeper:    tk,
+		communityKeeper: ck,
+		supplyKeeper:    sk,
 	}
 }
 
@@ -96,14 +102,17 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.tokensKeeper)
+	return NewHandler(am.keeper,
+		am.tokensKeeper,
+		am.communityKeeper,
+		am.supplyKeeper)
 }
 func (am AppModule) QuerierRoute() string {
 	return QuerierRoute
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.keeper)
+	return NewQuerier(am.keeper, am.tokensKeeper)
 }
 
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}

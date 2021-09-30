@@ -29,5 +29,9 @@ type (
 	Keeper               = keeper.Keeper
 	MsgDistributeRewards = types.MsgDistributeRewards
 	MsgResetAccount      = types.MsgResetAccount
+	MsgBanAccount        = types.MsgBanAccount
+	MsgMint              = types.MsgMint
+	MsgBurn              = types.MsgBurn
 	FixedGasParams       = types.FixedGasParams
+	SupplyKeeper         = types.SupplyKeeper
 )

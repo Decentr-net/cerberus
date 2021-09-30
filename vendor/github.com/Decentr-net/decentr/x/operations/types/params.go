@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 )
 
 const (
@@ -23,13 +24,32 @@ var (
 	KeyMinGasPrice = []byte("MinGasPrice")
 )
 
-// ParamKeyTable type declaration for parameters
-func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable(
-		params.NewParamSetPair(KeySupervisors, &DefaultSupervisors, validateSupervisors),
-		params.NewParamSetPair(KeyFixedGas, FixedGasParams{}, validateFixedGasParams),
-		params.NewParamSetPair(KeyMinGasPrice, &DefaultMinGasPrice, validateMinGasPrice),
-	)
+type Params struct {
+	Supervisors []string       `json:"supervisors" yaml:"supervisors"`
+	FixedGas    FixedGasParams `json:"fixed_gas" yaml:"fixed_gas"`
+	MinGasPrice sdk.DecCoin    `json:"min_gas_price" yaml:"min_gas_price"`
+}
+
+// ParamKeyTable for operations module
+func ParamKeyTable() subspace.KeyTable {
+	return subspace.NewKeyTable().RegisterParamSet(&Params{})
+}
+
+func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
+	return subspace.ParamSetPairs{
+		params.NewParamSetPair(KeySupervisors, &p.Supervisors, validateSupervisors),
+		params.NewParamSetPair(KeyFixedGas, &p.FixedGas, validateFixedGasParams),
+		params.NewParamSetPair(KeyMinGasPrice, &p.MinGasPrice, validateMinGasPrice),
+	}
+}
+
+// DefaultParams returns a default set of parameters.
+func DefaultParams() Params {
+	return Params{
+		Supervisors: DefaultSupervisors,
+		FixedGas:    DefaultFixedGasParams(),
+		MinGasPrice: DefaultMinGasPrice,
+	}
 }
 
 func validateMinGasPrice(i interface{}) error {
@@ -51,6 +71,10 @@ func validateSupervisors(i interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
+	if len(owners) == 0 {
+		return fmt.Errorf("can not be empty")
+	}
+
 	for _, owner := range owners {
 		if _, err := sdk.AccAddressFromBech32(owner); err != nil {
 			return fmt.Errorf("%s is an invalid supervisor address, err=%w", owner, err)
@@ -60,33 +84,43 @@ func validateSupervisors(i interface{}) error {
 }
 
 type FixedGasParams struct {
-	ResetAccount      sdk.Gas `json:"delete_account" yaml:"delete_account"`
+	ResetAccount      sdk.Gas `json:"reset_account" yaml:"reset_account"`
+	BanAccount        sdk.Gas `json:"ban_account" yaml:"ban_account"`
 	DistributeRewards sdk.Gas `json:"distribute_rewards" yaml:"distribute_rewards"`
 }
 
-func NewFixedGasParams(resetAccount, distributeReward sdk.Gas) FixedGasParams {
+func NewFixedGasParams(resetAccount, distributeReward, banAccount sdk.Gas) FixedGasParams {
 	return FixedGasParams{
 		ResetAccount:      resetAccount,
 		DistributeRewards: distributeReward,
+		BanAccount:        banAccount,
 	}
 }
 
 func DefaultFixedGasParams() FixedGasParams {
-	return NewFixedGasParams(100, 100)
+	return NewFixedGasParams(0, 0, 0)
 }
 
 func validateFixedGasParams(i interface{}) error {
-	v, ok := i.(FixedGasParams)
+	_, ok := i.(FixedGasParams)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if v.ResetAccount <= 0 {
-		return fmt.Errorf("reset account be positive: %d", v.ResetAccount)
+	return nil
+}
+
+func (p Params) Validate() error {
+	if err := validateSupervisors(p.Supervisors); err != nil {
+		return fmt.Errorf("invalid supervisors: %w", err)
 	}
 
-	if v.DistributeRewards <= 0 {
-		return fmt.Errorf("distribute rewards be positive: %d", v.DistributeRewards)
+	if err := validateFixedGasParams(p.FixedGas); err != nil {
+		return fmt.Errorf("invalid fixed_gas: %w", err)
+	}
+
+	if err := validateMinGasPrice(p.MinGasPrice); err != nil {
+		return fmt.Errorf("invalid min_gas_price: %w", err)
 	}
 
 	return nil
