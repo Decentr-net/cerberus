@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Decentr-net/ariadne"
-	"github.com/Decentr-net/decentr/app"
-	"github.com/Decentr-net/decentr/x/operations"
+	"github.com/Decentr-net/decentr/config"
+	operationstypes "github.com/Decentr-net/decentr/x/operations/types"
 
 	"github.com/Decentr-net/cerberus/internal/consumer"
 	"github.com/Decentr-net/cerberus/internal/storage"
@@ -19,9 +18,7 @@ import (
 
 // nolint:gochecknoinits
 func init() {
-	c := sdk.GetConfig()
-	c.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
-	c.Seal()
+	config.SetAddressPrefixes()
 }
 
 var log = logrus.WithField("package", "blockchain")
@@ -76,10 +73,10 @@ func (b blockchain) processBlockFunc(ctx context.Context) func(block ariadne.Blo
 				var err error
 
 				switch msg := msg.(type) {
-				case operations.MsgResetAccount:
+				case *operationstypes.MsgResetAccount:
 					err = processMsgResetAccount(ctx, is, b.fs, msg)
 				default:
-					log.WithField("msg", fmt.Sprintf("%s/%s", msg.Route(), msg.Type())).Debug("skip message")
+					log.WithField("msg", msg.String()).Debug("skip message")
 				}
 
 				if err != nil {
@@ -96,18 +93,18 @@ func (b blockchain) processBlockFunc(ctx context.Context) func(block ariadne.Blo
 	}
 }
 
-func processMsgResetAccount(ctx context.Context, is storage.IndexStorage, fs storage.FileStorage, msg operations.MsgResetAccount) error {
-	if err := is.DeleteProfile(ctx, msg.AccountOwner.String()); err != nil {
+func processMsgResetAccount(ctx context.Context, is storage.IndexStorage, fs storage.FileStorage, msg *operationstypes.MsgResetAccount) error {
+	if err := is.DeleteProfile(ctx, msg.Address.String()); err != nil {
 		return fmt.Errorf("failed to delete profile: %w", err)
 	}
 
-	if err := is.DeletePDV(ctx, msg.AccountOwner.String()); err != nil {
+	if err := is.DeletePDV(ctx, msg.Address.String()); err != nil {
 		return fmt.Errorf("failed to delete index: %w", err)
 	}
 
 	go func() {
-		if err := fs.DeleteData(ctx, msg.AccountOwner.String()); err != nil {
-			logrus.WithError(err).WithField("account", msg.AccountOwner).Error("failed to delete data")
+		if err := fs.DeleteData(ctx, msg.Address.String()); err != nil {
+			logrus.WithError(err).WithField("account", msg.Address).Error("failed to delete data")
 		}
 	}()
 

@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	m "github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -273,7 +274,7 @@ func TestPg_SetPDVMeta(t *testing.T) {
 		ObjectTypes: map[schema.Type]uint16{
 			"cookie": 1,
 		},
-		Reward: 1,
+		Reward: sdk.NewDecWithPrec(1, 6),
 	}
 
 	require.NoError(t, s.SetPDVMeta(ctx, "1", 1, "tx", exp))
@@ -303,7 +304,7 @@ func TestPg_ListPDV(t *testing.T) {
 			ObjectTypes: map[schema.Type]uint16{
 				"cookie": 1,
 			},
-			Reward: 1,
+			Reward: sdk.NewDecWithPrec(1, 6),
 		}))
 	}
 
@@ -328,7 +329,7 @@ func TestPg_DeletePDV(t *testing.T) {
 			ObjectTypes: map[schema.Type]uint16{
 				"cookie": 1,
 			},
-			Reward: 1,
+			Reward: sdk.NewDecWithPrec(1, 6),
 		}))
 	}
 

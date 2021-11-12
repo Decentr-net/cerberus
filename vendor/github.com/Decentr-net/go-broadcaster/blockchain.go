@@ -2,20 +2,29 @@
 package broadcaster
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
-	clicontext "github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/spf13/pflag"
+
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/tendermint/spm/cosmoscmd"
+
+	"github.com/Decentr-net/decentr/app"
+	"github.com/Decentr-net/decentr/config"
 )
+
+func init() {
+	config.SetAddressPrefixes()
+}
 
 // ErrTxInMempoolCache is returned when tx is already broadcast and exists in mempool cache.
 var ErrTxInMempoolCache = errors.New("tx is already in mempool cache")
@@ -24,33 +33,23 @@ var errInvalidSequence = errors.New("invalid sequence")
 
 // Broadcaster provides functionality to broadcast messages to cosmos based blockchain node.
 type Broadcaster struct {
-	ctx clicontext.CLIContext
-	enc sdk.TxEncoder
-
-	genesisKeyPass string
-	chainID        string
-	num            uint64
-	seq            uint64
-
-	fees   sdk.Coins
-	gas    uint64
-	gasAdj float64
+	ctx client.Context
+	txf tx.Factory
 
 	mu sync.Mutex
 }
 
 // Config ...
 type Config struct {
-	CLIHome            string
+	KeyringRootDir     string
 	KeyringBackend     string
 	KeyringPromptInput string
 
 	NodeURI       string
 	BroadcastMode string
 
-	From           string
-	ChainID        string
-	GenesisKeyPass string
+	From    string
+	ChainID string
 
 	Fees      sdk.Coins
 	Gas       uint64
@@ -58,42 +57,54 @@ type Config struct {
 }
 
 // New returns new instance of broadcaster
-func New(cdc *codec.Codec, cfg Config) (*Broadcaster, error) {
-	kb, err := keys.NewKeyring(sdk.KeyringServiceName(),
+func New(cfg Config) (*Broadcaster, error) {
+	kr, err := keyring.New(
+		config.AppName,
 		cfg.KeyringBackend,
-		cfg.CLIHome,
-		bytes.NewBufferString(cfg.KeyringPromptInput),
+		cfg.KeyringRootDir,
+		strings.NewReader(cfg.KeyringPromptInput),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create keyring: %w", err)
 	}
 
-	acc, err := kb.Get(cfg.From)
+	acc, err := kr.Key(cfg.From)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account: %w", err)
 	}
 
-	cliCtx := clicontext.NewCLIContext().
-		WithCodec(cdc).
+	c, err := client.NewClientFromNode(cfg.NodeURI)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client: %w", err)
+	}
+
+	encodingConfig := cosmoscmd.MakeEncodingConfig(app.ModuleBasics)
+	ctx := client.Context{}.
+		WithCodec(encodingConfig.Marshaler).
+		WithChainID(cfg.ChainID).
+		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
+		WithTxConfig(encodingConfig.TxConfig).
+		WithLegacyAmino(encodingConfig.Amino).
+		WithAccountRetriever(types.AccountRetriever{}).
 		WithBroadcastMode(cfg.BroadcastMode).
-		WithNodeURI(cfg.NodeURI).
+		WithHomeDir(cfg.KeyringRootDir).
+		WithKeyring(kr).
 		WithFrom(acc.GetName()).
 		WithFromName(acc.GetName()).
 		WithFromAddress(acc.GetAddress()).
-		WithChainID(cfg.ChainID)
-	cliCtx.Keybase = kb
+		WithNodeURI(cfg.NodeURI).
+		WithClient(c)
+
+	factory := tx.NewFactoryCLI(ctx, &pflag.FlagSet{}).
+		WithFees(cfg.Fees.String()).
+		WithGas(cfg.Gas).
+		WithGasAdjustment(cfg.GasAdjust)
 
 	b := &Broadcaster{
-		ctx: cliCtx,
-		enc: utils.GetTxEncoder(cdc),
+		ctx: ctx,
+		txf: factory,
 
-		chainID:        cfg.ChainID,
-		genesisKeyPass: cfg.GenesisKeyPass,
-		mu:             sync.Mutex{},
-
-		fees:   cfg.Fees,
-		gas:    cfg.Gas,
-		gasAdj: cfg.GasAdjust,
+		mu: sync.Mutex{},
 	}
 
 	if err := b.refreshSequence(); err != nil {
@@ -109,13 +120,13 @@ func (b *Broadcaster) From() sdk.AccAddress {
 }
 
 // GetHeight returns current height.
-func (b *Broadcaster) GetHeight() (uint64, error) {
+func (b *Broadcaster) GetHeight(ctx context.Context) (uint64, error) {
 	c, err := b.ctx.GetNode()
 	if err != nil {
 		return 0, fmt.Errorf("failed get node: %w", err)
 	}
 
-	i, err := c.ABCIInfo()
+	i, err := c.ABCIInfo(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to fetch ABCIInfo: %w", err)
 	}
@@ -147,28 +158,13 @@ func (b *Broadcaster) Broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, e
 	return out, nil
 }
 
-// PingContext pings node with context.
-func (b *Broadcaster) PingContext(ctx context.Context) error {
-	err := make(chan error)
-	go func() {
-		err <- b.Ping()
-	}()
-
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case e := <-err:
-		return e
-	}
-}
-
 // PingContext pings node.
-func (b *Broadcaster) Ping() error {
+func (b *Broadcaster) PingContext(ctx context.Context) error {
 	c, err := b.ctx.GetNode()
 	if err != nil {
 		return fmt.Errorf("failed to get rpc client: %w", err)
 	}
-	if _, err := c.ABCIInfo(); err != nil {
+	if _, err := c.ABCIInfo(ctx); err != nil {
 		return fmt.Errorf("failed to check node status: %w", err)
 	}
 
@@ -176,26 +172,38 @@ func (b *Broadcaster) Ping() error {
 }
 
 func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	txBldr := auth.NewTxBuilder(b.enc, b.num, b.seq, b.gas, b.gasAdj, false,
-		b.chainID, memo, b.fees, nil).WithKeybase(b.ctx.Keybase)
+	txf := b.txf.WithMemo(memo)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	txBldr, err := utils.PrepareTxBuilder(txBldr, b.ctx)
+	if txf.GasAdjustment() == 0 {
+		txf = txf.WithGasAdjustment(1)
+	}
+
+	if txf.Gas() == 0 {
+		_, gas, err := tx.CalculateGas(b.ctx, txf, msgs...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate gas: %w", err)
+		}
+		txf = txf.WithGas(gas)
+	}
+
+	unsignedTx, err := tx.BuildUnsignedTx(txf, msgs...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to prepare builder: %w", err)
+		return nil, fmt.Errorf("failed to build tx: %w", err)
 	}
 
-	if txBldr, err = utils.EnrichWithGas(txBldr, b.ctx, msgs); err != nil {
-		return nil, fmt.Errorf("failed to calculate gas: %w", err)
+	if err := tx.Sign(txf, b.ctx.GetFromName(), unsignedTx, true); err != nil {
+		return nil, fmt.Errorf("failed to sign tx: %w", err)
 	}
 
-	txBytes, err := txBldr.BuildAndSign(b.ctx.GetFromName(), b.genesisKeyPass, msgs)
+	txBytes, err := b.ctx.TxConfig.TxEncoder()(unsignedTx.GetTx())
 	if err != nil {
-		return nil, fmt.Errorf("failed to build and sign tx: %w", err)
+		return nil, fmt.Errorf("failed to encode tx: %w", err)
 	}
 
+	// broadcast to a Tendermint node
 	resp, err := b.ctx.BroadcastTx(txBytes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to broadcast tx: %w", err)
@@ -213,17 +221,22 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, e
 		return nil, fmt.Errorf("failed to broadcast tx: %s", resp.String())
 	}
 
-	b.seq++
+	b.txf = b.txf.WithSequence(b.txf.Sequence() + 1)
 
-	return &resp, nil
+	return resp, nil
 }
 
 func (b *Broadcaster) refreshSequence() error {
-	b.seq, b.num = 0, 0
+	if err := b.txf.AccountRetriever().EnsureExists(b.ctx, b.From()); err != nil {
+		return fmt.Errorf("failed to EnsureExists: %w", err)
+	}
 
-	var err error
+	num, seq, err := b.txf.AccountRetriever().GetAccountNumberSequence(b.ctx, b.From())
+	if err != nil {
+		return fmt.Errorf("failed to get GetAccountNumberSequence: %w", err)
+	}
 
-	b.num, b.seq, err = auth.NewAccountRetriever(b.ctx).GetAccountNumberSequence(b.ctx.GetFromAddress())
+	b.txf = b.txf.WithAccountNumber(num).WithSequence(seq)
 
-	return err
+	return nil
 }

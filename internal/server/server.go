@@ -44,38 +44,31 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
-	lru "github.com/hashicorp/golang-lru"
-	"github.com/sirupsen/logrus"
-	"github.com/tendermint/go-amino"
-	"github.com/tendermint/tendermint/crypto/secp256k1"
+
+	"github.com/Decentr-net/decentr/config"
+	"github.com/Decentr-net/go-api"
 
 	_ "github.com/Decentr-net/cerberus/internal/blockchain"     // set address prefix for addresses validation
 	_ "github.com/Decentr-net/cerberus/internal/server/swagger" // import models to be generated into swagger.json
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/internal/throttler"
-	"github.com/Decentr-net/go-api"
 )
 
 //go:generate swagger generate spec -t swagger -m -c . -o ../../static/swagger.json
 
 const (
-	existenceCacheSize        = 100000
-	defaultLimit       uint64 = 100
+	defaultLimit uint64 = 100
 
 	dateFormat = "2006-01-02"
 )
 
-var cdc = amino.NewCodec() // nolint:gochecknoglobals
-
 func init() { // nolint:gochecknoinits
-	cdc.RegisterConcrete(secp256k1.PubKeySecp256k1{},
-		secp256k1.PubKeyAminoName, nil)
+	config.SetAddressPrefixes()
 }
 
 type server struct {
 	s service.Service
 
-	pdvMetaCache     *lru.ARCCache
 	savePDVThrottler throttler.Throttler
 
 	minPDVCount uint16
@@ -110,14 +103,8 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 		api.BodyLimiterMiddleware(maxBodySize),
 	)
 
-	c, err := lru.NewARC(existenceCacheSize)
-	if err != nil {
-		logrus.WithError(err).Fatal("failed to create cache")
-	}
-
 	srv := server{
 		s:                s,
-		pdvMetaCache:     c,
 		savePDVThrottler: spt,
 
 		minPDVCount: minPDVCount,

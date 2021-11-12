@@ -22,7 +22,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/Decentr-net/ariadne"
-	decentr "github.com/Decentr-net/decentr/app"
 	"github.com/Decentr-net/logrus/sentry"
 
 	"github.com/Decentr-net/cerberus/internal/consumer"
@@ -46,7 +45,7 @@ var opts = struct {
 	PostgresMaxIdleConnections int    `long:"postgres.max_idle_connections" env:"POSTGRES_MAX_IDLE_CONNECTIONS" default:"5" description:"postgres maximal idle connections count"`
 	PostgresMigrations         string `long:"postgres.migrations" env:"POSTGRES_MIGRATIONS" default:"migrations/postgres" description:"postgres migrations directory"`
 
-	BlockchainNode                   string        `long:"blockchain.node" env:"BLOCKCHAIN_NODE" default:"http://zeus.testnet.decentr.xyz:26657" description:"decentr node address"`
+	BlockchainNode                   string        `long:"blockchain.node" env:"BLOCKCHAIN_NODE" default:"zeus.testnet.decentr.xyz:9090" description:"decentr node grpc address"`
 	BlockchainTimeout                time.Duration `long:"blockchain.timeout" env:"BLOCKCHAIN_TIMEOUT" default:"5s" description:"timeout for requests to blockchain node"`
 	BlockchainRetryInterval          time.Duration `long:"blockchain.retry_interval" env:"BLOCKCHAIN_RETRY_INTERVAL" default:"2s" description:"interval to be waited on error before retry"`
 	BlockchainLastBlockRetryInterval time.Duration `long:"blockchain.last_block_retry_interval" env:"BLOCKCHAIN_LAST_BLOCK_RETRY_INTERVAL" default:"1s" description:"duration to be waited when new block isn't produced before retry"`
@@ -183,7 +182,7 @@ func mustGetDB() *sql.DB {
 }
 
 func mustGetConsumer(fs storage.FileStorage, is storage.IndexStorage) consumer.Consumer {
-	fetcher, err := ariadne.New(opts.BlockchainNode, decentr.MakeCodec(), opts.BlockchainTimeout)
+	fetcher, err := ariadne.New(context.Background(), opts.BlockchainNode, opts.BlockchainTimeout)
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to create blocks fetcher")
 	}

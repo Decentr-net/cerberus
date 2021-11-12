@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -100,7 +101,7 @@ func TestImpl_Produce(t *testing.T) {
 			ObjectTypes: map[schema.Type]uint16{
 				schema.PDVCookieType: 1,
 			},
-			Reward: 1,
+			Reward: sdk.NewDecWithPrec(1, 6),
 		},
 		Data: []byte(`{}`),
 	}))

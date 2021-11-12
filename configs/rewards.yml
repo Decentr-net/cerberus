@@ -1,5 +1,5 @@
-advertiserId: 1
-searchHistory: 1
-profile: 1
-cookie: 1
-location: 1
+advertiserId: "0.000001"
+searchHistory: "0.000001"
+profile: "0.000001"
+cookie: "0.000001"
+location: "0.000001"

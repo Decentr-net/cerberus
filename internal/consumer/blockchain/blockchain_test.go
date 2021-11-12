@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
+	ctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/Decentr-net/ariadne"
 	ariadnemock "github.com/Decentr-net/ariadne/mock"
-	"github.com/Decentr-net/decentr/x/operations"
+	operationstypes "github.com/Decentr-net/decentr/x/operations/types"
 
 	"github.com/Decentr-net/cerberus/internal/storage"
 	storagemock "github.com/Decentr-net/cerberus/internal/storage/mock"
@@ -66,9 +67,9 @@ func TestBlockchain_processBlockFunc(t *testing.T) {
 	}{
 		{
 			name: "delete_account",
-			msg: operations.MsgResetAccount{
-				Owner:        owner,
-				AccountOwner: owner2,
+			msg: &operationstypes.MsgResetAccount{
+				Owner:   owner,
+				Address: owner2,
 			},
 			expect: func(fs *storagemock.MockFileStorage, is *storagemock.MockIndexStorage) {
 				fs.EXPECT().DeleteData(gomock.Any(), owner2.String()).Return(nil)
@@ -93,17 +94,24 @@ func TestBlockchain_processBlockFunc(t *testing.T) {
 			is.EXPECT().SetHeight(gomock.Any(), uint64(1)).Return(nil)
 			tc.expect(fs, is)
 
+			msg, err := ctypes.NewAnyWithValue(tc.msg)
+			require.NoError(t, err)
 			block := ariadne.Block{
 				Height: 1,
 				Time:   timestamp,
 				Txs: []sdk.Tx{
-					auth.StdTx{
-						Msgs: []sdk.Msg{tc.msg},
+					&tx.Tx{
+						Body: &tx.TxBody{
+							Messages: []*ctypes.Any{
+								msg,
+							},
+						},
 					},
 				},
 			}
 
 			require.NoError(t, blockchain{fs: fs, is: is}.processBlockFunc(context.Background())(block))
+			time.Sleep(100 * time.Millisecond) // wait for routine
 		})
 	}
 }

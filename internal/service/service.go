@@ -39,7 +39,7 @@ var (
 )
 
 // RewardMap contains dictionary with PDV types and rewards for them.
-type RewardMap map[schema.Type]uint64
+type RewardMap map[schema.Type]sdk.Dec
 
 // Blacklist contains attributes of worthless pdv.
 // swagger:model Blacklist
@@ -276,7 +276,7 @@ func (s *service) GetBlacklist() Blacklist {
 
 func (s *service) calculateMeta(ctx context.Context, owner sdk.AccAddress, p schema.PDV) (*entities.PDVMeta, error) {
 	t := make(map[schema.Type]uint16)
-	var reward uint64
+	reward := sdk.ZeroDec()
 
 	for _, d := range p.Data() {
 		t[d.Type()] = t[d.Type()] + 1
@@ -305,7 +305,7 @@ func (s *service) calculateMeta(ctx context.Context, owner sdk.AccAddress, p sch
 		default:
 		}
 
-		reward += s.rewardMap[d.Type()]
+		reward = reward.Add(s.rewardMap[d.Type()])
 	}
 
 	return &entities.PDVMeta{

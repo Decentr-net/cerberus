@@ -7,8 +7,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/crypto"
-	amino "github.com/tendermint/tendermint/crypto/encoding/amino"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 )
 
 // PublicKeyHeader is name for public key http header.
@@ -33,12 +34,7 @@ func GetSignature(r *http.Request) (crypto.PubKey, []byte, error) {
 		return nil, nil, ErrInvalidPublicKey
 	}
 
-	pk, err := amino.PubKeyFromBytes(GetAminoSecp256k1PubKey(k))
-	if err != nil {
-		return nil, nil, ErrInvalidPublicKey
-	}
-
-	return pk, s, nil
+	return secp256k1.PubKey(k), s, nil
 }
 
 // Sign signs http request.
@@ -53,7 +49,7 @@ func Sign(r *http.Request, pk crypto.PrivKey) error {
 		return fmt.Errorf("failed to sign digest: %w", err)
 	}
 
-	r.Header.Set(PublicKeyHeader, hex.EncodeToString(pk.PubKey().Bytes()[5:])) // truncate amino codec prefix
+	r.Header.Set(PublicKeyHeader, hex.EncodeToString(pk.PubKey().Bytes())) // truncate amino codec prefix
 	r.Header.Set(SignatureHeader, hex.EncodeToString(s))
 
 	return nil
@@ -70,7 +66,7 @@ func Verify(r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if !k.VerifyBytes(d, s) {
+	if !k.VerifySignature(d, s) {
 		return ErrNotVerified
 	}
 
@@ -88,7 +84,11 @@ func GetMessageToSign(r *http.Request) ([]byte, error) {
 	return append(body, []byte(r.URL.Path)...), nil
 }
 
-// GetAminoSecp256k1PubKey adds amino secp256k1 pubkey prefix to pubkey(including length-prefix).
-func GetAminoSecp256k1PubKey(k []byte) []byte {
-	return append([]byte{235, 90, 233, 135, 33}, k...)
+func GetAddressFromPubKey(k string) (sdk.AccAddress, error) {
+	b, err := hex.DecodeString(k)
+	if err != nil {
+		return nil, err
+	}
+
+	return sdk.AccAddress(secp256k1.PubKey(b).Address()), err
 }

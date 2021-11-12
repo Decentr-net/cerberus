@@ -40,9 +40,9 @@ var (
 	testEncryptedData   = []byte("data_encrypted")
 	errTest             = errors.New("test")
 	rewardsMap          = RewardMap{
-		schema.PDVCookieType:   2,
-		schema.PDVLocationType: 4,
-		schema.PDVProfileType:  6,
+		schema.PDVCookieType:   sdk.NewDecWithPrec(2, 6),
+		schema.PDVLocationType: sdk.NewDecWithPrec(4, 6),
+		schema.PDVProfileType:  sdk.NewDecWithPrec(6, 6),
 	}
 )
 
@@ -142,7 +142,7 @@ func TestService_SavePDV(t *testing.T) {
 			schema.PDVCookieType:   1,
 			schema.PDVLocationType: 1,
 		},
-		Reward: 6,
+		Reward: sdk.NewDecWithPrec(6, 6),
 	}
 
 	p.EXPECT().Produce(ctx, gomock.Eq(&producer.PDVMessage{
@@ -177,7 +177,7 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 		ObjectTypes: map[schema.Type]uint16{
 			schema.PDVCookieType: 1,
 		},
-		Reward: 0,
+		Reward: sdk.ZeroDec(),
 	}
 
 	p.EXPECT().Produce(ctx, gomock.Eq(&producer.PDVMessage{
@@ -233,7 +233,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				ObjectTypes: map[schema.Type]uint16{
 					schema.PDVProfileType: 1,
 				},
-				Reward: 0,
+				Reward: sdk.ZeroDec(),
 			},
 		},
 		{
@@ -243,7 +243,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				ObjectTypes: map[schema.Type]uint16{
 					schema.PDVProfileType: 1,
 				},
-				Reward: 6,
+				Reward: sdk.NewDecWithPrec(6, 6),
 			},
 		},
 	}
@@ -439,7 +439,7 @@ func TestService_GetPDVMeta(t *testing.T) {
 			schema.PDVCookieType:   1,
 			schema.PDVLocationType: 2,
 		},
-		Reward: 10,
+		Reward: sdk.NewDecWithPrec(10, 6),
 	}
 	is.EXPECT().GetPDVMeta(gomock.Any(), testOwner, testID).Return(exp, nil)
 
@@ -572,8 +572,8 @@ func TestService_GetProfiles(t *testing.T) {
 
 func TestService_GetRewardsMap(t *testing.T) {
 	rm := RewardMap{
-		"m": 1,
-		"t": 2,
+		"m": sdk.NewDecWithPrec(1, 6),
+		"t": sdk.NewDecWithPrec(2, 6),
 	}
 	s := service{rewardMap: rm}
 
