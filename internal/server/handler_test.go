@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Decentr-net/cerberus/internal/throttler"
-
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
@@ -28,9 +26,12 @@ import (
 	apitest "github.com/Decentr-net/go-api/test"
 	logging "github.com/Decentr-net/logrus/context"
 
+	_ "github.com/Decentr-net/cerberus/internal/blockchain"
+	"github.com/Decentr-net/cerberus/internal/entities"
 	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/internal/service/mock"
+	"github.com/Decentr-net/cerberus/internal/throttler"
 )
 
 const testOwner = "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz"
@@ -150,9 +151,13 @@ func TestServer_SavePDVHandler(t *testing.T) {
 				var pdv schema.PDVWrapper
 				require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
 
-				srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner types.AccAddress) (uint64, service.PDVMeta, error) {
+				srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner types.AccAddress) (uint64, *entities.PDVMeta, error) {
+					if tc.err != nil {
+						return 0, nil, tc.err
+					}
+
 					assert.Equal(t, testOwner, owner.String())
-					return 1, service.PDVMeta{}, tc.err
+					return 1, &entities.PDVMeta{}, tc.err
 				})
 			}
 
@@ -192,9 +197,9 @@ func TestServerSavePDV_Throttler(t *testing.T) {
 
 	var pdv schema.PDVWrapper
 	require.NoError(t, json.Unmarshal(body, &pdv))
-	srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner types.AccAddress) (uint64, service.PDVMeta, error) {
+	srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner types.AccAddress) (uint64, *entities.PDVMeta, error) {
 		assert.Equal(t, testOwner, owner.String())
-		return 1, service.PDVMeta{}, nil
+		return 1, &entities.PDVMeta{}, nil
 	})
 
 	router := chi.NewRouter()
@@ -439,7 +444,7 @@ func TestServer_GetPDVMeta(t *testing.T) {
 		name  string
 		owner string
 		id    string
-		f     func(_ context.Context, owner string, id uint64) (service.PDVMeta, error)
+		f     func(_ context.Context, owner string, id uint64) (*entities.PDVMeta, error)
 		rcode int
 		rdata string
 		rlog  string
@@ -448,8 +453,8 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			name:  "success",
 			owner: testOwner,
 			id:    "1",
-			f: func(_ context.Context, owner string, id uint64) (service.PDVMeta, error) {
-				return service.PDVMeta{ObjectTypes: map[schema.Type]uint16{schema.PDVCookieType: 1}, Reward: 2}, nil
+			f: func(_ context.Context, owner string, id uint64) (*entities.PDVMeta, error) {
+				return &entities.PDVMeta{ObjectTypes: map[schema.Type]uint16{schema.PDVCookieType: 1}, Reward: 2}, nil
 			},
 			rcode: http.StatusOK,
 			rdata: `{"object_types":{"cookie": 1}, "reward": 2}`,
@@ -459,8 +464,8 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			name:  "doesn't exists",
 			owner: testOwner,
 			id:    "1",
-			f: func(_ context.Context, owner string, id uint64) (service.PDVMeta, error) {
-				return service.PDVMeta{}, service.ErrNotFound
+			f: func(_ context.Context, owner string, id uint64) (*entities.PDVMeta, error) {
+				return nil, service.ErrNotFound
 			},
 			rcode: http.StatusNotFound,
 			rdata: fmt.Sprintf(`{"error":"PDV '%s' not found"}`, "1"),
@@ -488,8 +493,8 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			name:  "internal error",
 			owner: testOwner,
 			id:    "1",
-			f: func(_ context.Context, owner string, id uint64) (service.PDVMeta, error) {
-				return service.PDVMeta{}, errors.New("test error")
+			f: func(_ context.Context, owner string, id uint64) (*entities.PDVMeta, error) {
+				return nil, errors.New("test error")
 			},
 			rcode: http.StatusInternalServerError,
 			rdata: `{"error":"internal error"}`,
@@ -552,7 +557,7 @@ func TestServer_GetProfiles(t *testing.T) {
 		name         string
 		url          string
 		owner        []string
-		f            func(_ context.Context, owner []string) ([]*service.Profile, error)
+		f            func(_ context.Context, owner []string) ([]*entities.Profile, error)
 		unauthorized bool
 		rcode        int
 		rdata        string
@@ -561,8 +566,8 @@ func TestServer_GetProfiles(t *testing.T) {
 			name:  "success",
 			url:   "v1/profiles?address=decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz,decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
 			owner: []string{testOwner, testOwner},
-			f: func(_ context.Context, owner []string) ([]*service.Profile, error) {
-				return []*service.Profile{
+			f: func(_ context.Context, owner []string) ([]*entities.Profile, error) {
+				return []*entities.Profile{
 					{
 						Address:   "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
 						FirstName: "2",
@@ -598,8 +603,8 @@ func TestServer_GetProfiles(t *testing.T) {
 			url:          "v1/profiles?address=decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz,decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
 			owner:        []string{testOwner, testOwner},
 			unauthorized: true,
-			f: func(_ context.Context, owner []string) ([]*service.Profile, error) {
-				return []*service.Profile{
+			f: func(_ context.Context, owner []string) ([]*entities.Profile, error) {
+				return []*entities.Profile{
 					{
 						Address:   "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
 						FirstName: "2",

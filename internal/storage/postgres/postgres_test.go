@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,17 +14,20 @@ import (
 	m "github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 
+	"github.com/Decentr-net/cerberus/internal/entities"
+	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/storage"
 )
 
 var (
-	db  *sql.DB
+	db  *sqlx.DB
 	ctx = context.Background()
 	s   storage.IndexStorage
 )
@@ -33,7 +35,7 @@ var (
 func TestMain(m *testing.M) {
 	shutdown := setup()
 
-	s = New(db)
+	s = New(db.DB)
 
 	code := m.Run()
 	shutdown()
@@ -70,7 +72,7 @@ func setup() func() {
 
 	dsn := fmt.Sprintf("host=%s port=%d user=postgres password=root sslmode=disable", host, port.Int())
 
-	db, err = sql.Open("postgres", dsn)
+	db, err = sqlx.Open("postgres", dsn)
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to open connection")
 	}
@@ -113,13 +115,13 @@ func migrate(username, password, hostname, dbname string, port int) {
 	}
 }
 
-func cleanup(t *testing.T) {
-	_, err := db.ExecContext(ctx, `DELETE FROM profile`)
-	require.NoError(t, err)
+func cleanup() {
+	db.MustExecContext(ctx, `DELETE FROM profile`)
+	db.MustExecContext(ctx, `DELETE FROM pdv`)
 }
 
 func TestPg_GetHeight(t *testing.T) {
-	defer cleanup(t)
+	t.Cleanup(cleanup)
 
 	h, err := s.GetHeight(context.Background())
 	require.NoError(t, err)
@@ -127,7 +129,7 @@ func TestPg_GetHeight(t *testing.T) {
 }
 
 func TestPg_SetHeight(t *testing.T) {
-	defer cleanup(t)
+	t.Cleanup(cleanup)
 
 	require.NoError(t, s.SetHeight(ctx, 10))
 
@@ -137,7 +139,7 @@ func TestPg_SetHeight(t *testing.T) {
 }
 
 func TestPg_InTx(t *testing.T) {
-	defer cleanup(t)
+	t.Cleanup(cleanup)
 
 	require.NoError(t, s.InTx(context.Background(), func(tx storage.IndexStorage) error {
 		require.NoError(t, tx.SetHeight(ctx, 1))
@@ -150,7 +152,7 @@ func TestPg_InTx(t *testing.T) {
 }
 
 func TestPg_SetProfile(t *testing.T) {
-	defer cleanup(t)
+	t.Cleanup(cleanup)
 
 	compare := func(expected storage.SetProfileParams, p *storage.Profile) {
 		assert.Equal(t, expected.Address, p.Address)
@@ -203,7 +205,7 @@ func TestPg_SetProfile(t *testing.T) {
 }
 
 func TestPg_GetProfiles(t *testing.T) {
-	defer cleanup(t)
+	t.Cleanup(cleanup)
 
 	p := storage.SetProfileParams{
 		Address:   "address_1",
@@ -241,7 +243,7 @@ func TestPg_GetProfiles(t *testing.T) {
 }
 
 func TestPg_DeleteProfile(t *testing.T) {
-	defer cleanup(t)
+	t.Cleanup(cleanup)
 
 	p := storage.SetProfileParams{
 		Address:   "address",
@@ -262,6 +264,60 @@ func TestPg_DeleteProfile(t *testing.T) {
 	_, err = s.GetProfile(ctx, p.Address)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, storage.ErrNotFound)
+}
+
+func TestPg_SetPDVMeta(t *testing.T) {
+	t.Cleanup(cleanup)
+
+	exp := &entities.PDVMeta{
+		ObjectTypes: map[schema.Type]uint16{
+			"cookie": 1,
+		},
+		Reward: 1,
+	}
+
+	require.NoError(t, s.SetPDVMeta(ctx, "1", 1, "tx", exp))
+
+	var tx string
+	require.NoError(t, db.GetContext(ctx, &tx, `SELECT tx FROM pdv WHERE id = 1`))
+	require.Equal(t, "tx", tx)
+
+	act, err := s.GetPDVMeta(ctx, "1", 1)
+	require.NoError(t, err)
+	require.Equal(t, exp, act)
+}
+
+func TestPg_GetPDVMeta(t *testing.T) {
+	t.Cleanup(cleanup)
+
+	act, err := s.GetPDVMeta(ctx, "1", 1)
+	require.ErrorIs(t, err, storage.ErrNotFound)
+	require.Nil(t, act)
+}
+
+func TestPg_ListPDV(t *testing.T) {
+	t.Cleanup(cleanup)
+
+	for i := 1; i <= 10; i++ {
+		require.NoError(t, s.SetPDVMeta(ctx, "1", uint64(i), "tx", &entities.PDVMeta{
+			ObjectTypes: map[schema.Type]uint16{
+				"cookie": 1,
+			},
+			Reward: 1,
+		}))
+	}
+
+	ids, err := s.ListPDV(ctx, "1", 0, 3)
+	require.NoError(t, err)
+	require.Equal(t, []uint64{1, 2, 3}, ids)
+
+	ids, err = s.ListPDV(ctx, "1", 8, 3)
+	require.NoError(t, err)
+	require.Equal(t, []uint64{9, 10}, ids)
+
+	ids, err = s.ListPDV(ctx, "2", 8, 3)
+	require.NoError(t, err)
+	require.Empty(t, ids)
 }
 
 func date(d string) time.Time {

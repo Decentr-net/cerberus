@@ -4,6 +4,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -12,11 +13,14 @@ import (
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 
+	"github.com/Decentr-net/cerberus/internal/entities"
 	"github.com/Decentr-net/cerberus/internal/storage"
 )
 
 var log = logrus.WithField("layer", "storage").WithField("package", "postgres")
 var errBeginCalledWithinTx = errors.New("can not run WithLockedHeight in tx")
+
+var _ storage.IndexStorage = pg{}
 
 type pg struct {
 	ext sqlx.ExtContext
@@ -36,8 +40,8 @@ type profileDTO struct {
 }
 
 // New creates new instance of pg.
-func New(db *sql.DB) storage.IndexStorage {
-	return pg{
+func New(db *sql.DB) *pg { // nolint:golint
+	return &pg{
 		ext: sqlx.NewDb(db, "postgres"),
 	}
 }
@@ -173,6 +177,55 @@ func (s pg) SetProfile(ctx context.Context, p *storage.SetProfileParams) error {
 func (s pg) DeleteProfile(ctx context.Context, addr string) error {
 	if _, err := s.ext.ExecContext(ctx, `DELETE FROM profile WHERE address = $1`, addr); err != nil {
 		return fmt.Errorf("failed to delete: %w", err)
+	}
+
+	return nil
+}
+
+func (s pg) ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error) {
+	var out []uint64
+	if err := sqlx.SelectContext(ctx, s.ext, &out, `
+		SELECT id FROM pdv
+		WHERE owner = $1 AND id > $2
+		ORDER BY id
+		LIMIT $3
+	`, owner, from, limit); err != nil {
+		return nil, fmt.Errorf("failed to select: %w", err)
+	}
+
+	return out, nil
+}
+
+func (s pg) GetPDVMeta(ctx context.Context, address string, id uint64) (*entities.PDVMeta, error) {
+	var meta json.RawMessage
+	if err := sqlx.GetContext(ctx, s.ext, &meta, `
+		SELECT meta FROM pdv
+		WHERE owner = $1 AND id = $2
+	`, address, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, storage.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get: %w", err)
+	}
+
+	var out entities.PDVMeta
+	if err := json.Unmarshal(meta, &out); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal meta: %w", err)
+	}
+
+	return &out, nil
+}
+
+func (s pg) SetPDVMeta(ctx context.Context, address string, id uint64, tx string, m *entities.PDVMeta) error {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return fmt.Errorf("failed to marshal meta: %w", err)
+	}
+
+	if _, err := s.ext.ExecContext(ctx, `
+		INSERT INTO pdv(owner, id, tx, meta) VALUES($1, $2, $3, $4)
+	`, address, id, tx, b); err != nil {
+		return fmt.Errorf("failed to insert: %w", err)
 	}
 
 	return nil

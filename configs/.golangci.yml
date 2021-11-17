@@ -89,6 +89,11 @@ linters:
 
 issues:
   exclude-rules:
+    - path: .*cmd.*
+      linters:
+        - lll
+        - golint
+        - gochecknoglobals
     - path: _test\.go
       linters:
         - gocyclo

@@ -25,13 +25,13 @@ func NewCrypto(key [32]byte) icrypto.Crypto {
 }
 
 // Encrypt returns reader with encrypted src data.
-func (c *crypto) Encrypt(src io.Reader) (io.Reader, int64, error) {
+func (c *crypto) Encrypt(src []byte) ([]byte, error) {
 	buf := bytes.NewBuffer([]byte{})
-	n, err := sio.Encrypt(buf, src, c.c)
+	_, err := sio.Encrypt(buf, bytes.NewReader(src), c.c)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	return buf, n, nil
+	return buf.Bytes(), nil
 }
 
 // Decrypt returns reader with decrypted src data.

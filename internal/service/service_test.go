@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"image"
 	"io"
@@ -13,14 +12,18 @@ import (
 	"testing"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/disintegration/imaging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	blockchainmock "github.com/Decentr-net/cerberus/internal/blockchain/mock"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	_ "github.com/Decentr-net/cerberus/internal/blockchain"
 	cryptomock "github.com/Decentr-net/cerberus/internal/crypto/mock"
+	"github.com/Decentr-net/cerberus/internal/entities"
+	"github.com/Decentr-net/cerberus/internal/producer"
+	producermock "github.com/Decentr-net/cerberus/internal/producer/mock"
 	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/schema/types"
 	v1 "github.com/Decentr-net/cerberus/internal/schema/v1"
@@ -126,32 +129,15 @@ func TestService_SavePDV(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
 	expectedID := uint64(time.Now().Unix())
 
-	cr.EXPECT().Encrypt(gomock.Any()).DoAndReturn(func(r io.Reader) (io.Reader, int64, error) {
-		data, err := ioutil.ReadAll(r)
-		require.NoError(t, err)
-		require.NotEmpty(t, data)
+	cr.EXPECT().Encrypt(gomock.Any()).Return(testEncryptedData, nil)
 
-		return bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil
-	})
-
-	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath, contentType string, isPublicRead bool) (string, error) {
-		require.Equal(t, getPDVFilePath(testOwner, expectedID), filepath)
-
-		data, err := ioutil.ReadAll(r)
-		require.NoError(t, err)
-		require.Equal(t, testEncryptedData, data)
-		require.EqualValues(t, len(data), size)
-
-		return "", nil
-	})
-
-	expectedMeta := PDVMeta{
+	expectedMeta := &entities.PDVMeta{
 		ObjectTypes: map[schema.Type]uint16{
 			schema.PDVCookieType:   1,
 			schema.PDVLocationType: 1,
@@ -159,18 +145,12 @@ func TestService_SavePDV(t *testing.T) {
 		Reward: 6,
 	}
 
-	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath, contentType string, isPublicRead bool) (string, error) {
-		require.Equal(t, getMetaFilePath(testOwner, expectedID), filepath)
-
-		var m PDVMeta
-		require.NoError(t, json.NewDecoder(r).Decode(&m))
-
-		require.Equal(t, expectedMeta, m)
-
-		return "", nil
-	})
-
-	b.EXPECT().DistributeReward(testOwnerSdkAddr, expectedID, expectedMeta.Reward).Return(nil)
+	p.EXPECT().Produce(ctx, gomock.Eq(&producer.PDVMessage{
+		ID:      expectedID,
+		Address: testOwner,
+		Meta:    expectedMeta,
+		Data:    testEncryptedData,
+	}))
 
 	id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Equal(t, expectedID, id)
@@ -195,12 +175,12 @@ func TestService_SavePDV_Profile(t *testing.T) {
 	tt := []struct {
 		name  string
 		exist bool
-		meta  PDVMeta
+		meta  *entities.PDVMeta
 	}{
 		{
 			name:  "exist",
 			exist: true,
-			meta: PDVMeta{
+			meta: &entities.PDVMeta{
 				ObjectTypes: map[schema.Type]uint16{
 					schema.PDVProfileType: 1,
 				},
@@ -210,7 +190,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 		{
 			name:  "not_exist",
 			exist: false,
-			meta: PDVMeta{
+			meta: &entities.PDVMeta{
 				ObjectTypes: map[schema.Type]uint16{
 					schema.PDVProfileType: 1,
 				},
@@ -229,30 +209,9 @@ func TestService_SavePDV_Profile(t *testing.T) {
 			fs := storagemock.NewMockFileStorage(ctrl)
 			is := storagemock.NewMockIndexStorage(ctrl)
 			cr := cryptomock.NewMockCrypto(ctrl)
-			b := blockchainmock.NewMockBlockchain(ctrl)
+			p := producermock.NewMockProducer(ctrl)
 
-			s := New(cr, fs, is, b, rewardsMap)
-
-			expectedID := uint64(time.Now().Unix())
-
-			cr.EXPECT().Encrypt(gomock.Any()).DoAndReturn(func(r io.Reader) (io.Reader, int64, error) {
-				data, err := ioutil.ReadAll(r)
-				require.NoError(t, err)
-				require.NotEmpty(t, data)
-
-				return bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil
-			})
-
-			fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath, contentType string, isPublicRead bool) (string, error) {
-				require.Equal(t, getPDVFilePath(testOwner, expectedID), filepath)
-
-				data, err := ioutil.ReadAll(r)
-				require.NoError(t, err)
-				require.Equal(t, testEncryptedData, data)
-				require.EqualValues(t, len(data), size)
-
-				return "", nil
-			})
+			s := New(cr, fs, is, p, rewardsMap)
 
 			is.EXPECT().GetProfile(ctx, testOwner).DoAndReturn(func(_ context.Context, _ string) (*storage.Profile, error) {
 				if tc.exist {
@@ -273,20 +232,16 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				Birthday:  pdv[0].(*schema.V1Profile).Birthday.Time,
 			})).Return(nil)
 
-			fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).DoAndReturn(func(_ context.Context, r io.Reader, size int64, filepath, contentType string, isPublicRead bool) (string, error) {
-				require.Equal(t, getMetaFilePath(testOwner, expectedID), filepath)
+			expectedID := uint64(time.Now().Unix())
 
-				var m PDVMeta
-				require.NoError(t, json.NewDecoder(r).Decode(&m))
+			cr.EXPECT().Encrypt(gomock.Any()).Return(testEncryptedData, nil)
 
-				require.Equal(t, tc.meta, m)
-
-				return "", nil
-			})
-
-			if tc.meta.Reward > 0 {
-				b.EXPECT().DistributeReward(testOwnerSdkAddr, expectedID, tc.meta.Reward).Return(nil)
-			}
+			p.EXPECT().Produce(ctx, &producer.PDVMessage{
+				ID:      expectedID,
+				Address: testOwner,
+				Meta:    tc.meta,
+				Data:    testEncryptedData,
+			}).Return(nil)
 
 			id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 			require.Equal(t, expectedID, id)
@@ -303,53 +258,31 @@ func TestService_SavePDV_EncryptError(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
-	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, int64(0), errTest)
-
-	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
-	require.Error(t, err)
-	assert.True(t, errors.Is(err, errTest))
-}
-
-func TestService_SavePDV_StorageError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	fs := storagemock.NewMockFileStorage(ctrl)
-	is := storagemock.NewMockIndexStorage(ctrl)
-	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
-
-	s := New(cr, fs, is, b, rewardsMap)
-
-	cr.EXPECT().Encrypt(gomock.Any()).Return(bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil)
-
-	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return("", errTest)
+	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, errTest)
 
 	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }
 
-func TestService_SavePDV_BlockchainError(t *testing.T) {
+func TestService_SavePDV_ProducerError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
-	cr.EXPECT().Encrypt(gomock.Any()).Return(bytes.NewReader(testEncryptedData), int64(len(testEncryptedData)), nil)
-	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return("", nil)
-	fs.EXPECT().Write(ctx, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return("", nil)
+	cr.EXPECT().Encrypt(gomock.Any()).Return(testEncryptedData, nil)
 
-	b.EXPECT().DistributeReward(testOwnerSdkAddr, gomock.Any(), gomock.Any()).Return(errTest)
+	p.EXPECT().Produce(gomock.Any(), gomock.Any()).Return(errTest)
 
 	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
 	require.Error(t, err)
@@ -363,9 +296,9 @@ func TestService_ReceivePDV(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
 
@@ -389,9 +322,9 @@ func TestService_ReceivePDV_StorageError(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(nil, errTest)
 
@@ -408,9 +341,9 @@ func TestService_ReceivePDV_StorageError_NotFound(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(nil, storage.ErrNotFound)
 
@@ -427,9 +360,9 @@ func TestService_ReceivePDV_DecryptError(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
 
@@ -448,22 +381,22 @@ func TestService_GetPDVMeta(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
-	r := ioutil.NopCloser(bytes.NewBufferString(`{"object_types":{"cookie": 1, "location": 2}, "reward": 10}`))
-	fs.EXPECT().Read(ctx, getMetaFilePath(testOwner, testID)).Return(r, nil)
-
-	meta, err := s.GetPDVMeta(ctx, testOwner, testID)
-	require.NoError(t, err)
-	require.Equal(t, PDVMeta{
+	exp := &entities.PDVMeta{
 		ObjectTypes: map[schema.Type]uint16{
 			schema.PDVCookieType:   1,
 			schema.PDVLocationType: 2,
 		},
 		Reward: 10,
-	}, meta)
+	}
+	is.EXPECT().GetPDVMeta(gomock.Any(), testOwner, testID).Return(exp, nil)
+
+	act, err := s.GetPDVMeta(ctx, testOwner, testID)
+	require.NoError(t, err)
+	require.Equal(t, exp, act)
 }
 
 func TestService_GetPDVMeta_StorageError(t *testing.T) {
@@ -473,11 +406,11 @@ func TestService_GetPDVMeta_StorageError(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
-	fs.EXPECT().Read(ctx, getMetaFilePath(testOwner, testID)).Return(nil, errTest)
+	is.EXPECT().GetPDVMeta(gomock.Any(), testOwner, testID).Return(nil, errTest)
 
 	_, err := s.GetPDVMeta(ctx, testOwner, testID)
 	assert.Error(t, err)
@@ -491,23 +424,19 @@ func TestService_GetPDVMeta_NotFound(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
-	fs.EXPECT().Read(ctx, getMetaFilePath(testOwner, testID)).Return(nil, storage.ErrNotFound)
+	is.EXPECT().GetPDVMeta(gomock.Any(), testOwner, testID).Return(nil, storage.ErrNotFound)
 
 	_, err := s.GetPDVMeta(ctx, testOwner, testID)
-	require.EqualError(t, err, ErrNotFound.Error())
+	require.ErrorIs(t, err, ErrNotFound)
 }
 
 func TestService_getFilePath(t *testing.T) {
 	// we want to sort it for list on s3 side
 	require.Equal(t, "test/pdv/fffffffffffffffe", getPDVFilePath("test", 1))
-}
-
-func TestService_getMetaFilePath(t *testing.T) {
-	require.Equal(t, "test/meta/fffffffffffffffe", getMetaFilePath("test", 1))
 }
 
 func TestService_ListPDV(t *testing.T) {
@@ -517,13 +446,11 @@ func TestService_ListPDV(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
-	res := []string{"fffffffffffffffe", "fffffffffffffffd", "fffffffffffffffc"}
-
-	fs.EXPECT().List(ctx, "owner/meta", uint64(5), uint16(10)).Return(res, nil)
+	is.EXPECT().ListPDV(gomock.Any(), "owner", uint64(5), uint16(10)).Return([]uint64{1, 2, 3}, nil)
 
 	l, err := s.ListPDV(ctx, "owner", 5, 10)
 	require.NoError(t, err)
@@ -537,9 +464,9 @@ func TestService_GetProfiles(t *testing.T) {
 	fs := storagemock.NewMockFileStorage(ctrl)
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
-	b := blockchainmock.NewMockBlockchain(ctrl)
+	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, b, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap)
 
 	is.EXPECT().GetProfiles(ctx, []string{"1", "2"}).Return([]*storage.Profile{
 		{
@@ -568,7 +495,7 @@ func TestService_GetProfiles(t *testing.T) {
 
 	pp, err := s.GetProfiles(ctx, []string{"1", "2"})
 	require.NoError(t, err)
-	assert.Equal(t, []*Profile{
+	assert.Equal(t, []*entities.Profile{
 		{
 			Address:   "1",
 			FirstName: "2",

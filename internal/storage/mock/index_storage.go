@@ -6,6 +6,7 @@ package mock
 
 import (
 	context "context"
+	entities "github.com/Decentr-net/cerberus/internal/entities"
 	storage "github.com/Decentr-net/cerberus/internal/storage"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -133,4 +134,48 @@ func (m *MockIndexStorage) DeleteProfile(ctx context.Context, addr string) error
 func (mr *MockIndexStorageMockRecorder) DeleteProfile(ctx, addr interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProfile", reflect.TypeOf((*MockIndexStorage)(nil).DeleteProfile), ctx, addr)
+}
+
+// ListPDV mocks base method
+func (m *MockIndexStorage) ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPDV", ctx, owner, from, limit)
+	ret0, _ := ret[0].([]uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPDV indicates an expected call of ListPDV
+func (mr *MockIndexStorageMockRecorder) ListPDV(ctx, owner, from, limit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPDV", reflect.TypeOf((*MockIndexStorage)(nil).ListPDV), ctx, owner, from, limit)
+}
+
+// GetPDVMeta mocks base method
+func (m *MockIndexStorage) GetPDVMeta(ctx context.Context, address string, id uint64) (*entities.PDVMeta, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPDVMeta", ctx, address, id)
+	ret0, _ := ret[0].(*entities.PDVMeta)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPDVMeta indicates an expected call of GetPDVMeta
+func (mr *MockIndexStorageMockRecorder) GetPDVMeta(ctx, address, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVMeta", reflect.TypeOf((*MockIndexStorage)(nil).GetPDVMeta), ctx, address, id)
+}
+
+// SetPDVMeta mocks base method
+func (m_2 *MockIndexStorage) SetPDVMeta(ctx context.Context, address string, id uint64, tx string, m *entities.PDVMeta) error {
+	m_2.ctrl.T.Helper()
+	ret := m_2.ctrl.Call(m_2, "SetPDVMeta", ctx, address, id, tx, m)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetPDVMeta indicates an expected call of SetPDVMeta
+func (mr *MockIndexStorageMockRecorder) SetPDVMeta(ctx, address, id, tx, m interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPDVMeta", reflect.TypeOf((*MockIndexStorage)(nil).SetPDVMeta), ctx, address, id, tx, m)
 }

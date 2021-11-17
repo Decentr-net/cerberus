@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"io/ioutil"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,16 +19,11 @@ var key = [32]byte{
 func TestCrypto_Encrypt(t *testing.T) {
 	c := NewCrypto(key)
 
-	src := strings.NewReader("example")
+	src := []byte("example")
 
-	dst, n, err := c.Encrypt(src)
-	require.NoError(t, err)
-	assert.NotNil(t, dst)
-
-	act, err := ioutil.ReadAll(dst)
+	act, err := c.Encrypt(src)
 	require.NoError(t, err)
 	assert.NotNil(t, act)
-	require.EqualValues(t, n, len(act))
 }
 
 func TestCrypto_Decrypt(t *testing.T) {
@@ -57,11 +51,11 @@ func TestCrypto_Encrypt_Decrypt(t *testing.T) {
 
 	c := NewCrypto(key)
 
-	enc, _, err := c.Encrypt(bytes.NewReader(exp))
+	enc, err := c.Encrypt(exp)
 	require.NoError(t, err)
 	require.NotNil(t, enc)
 
-	dec, err := c.Decrypt(enc)
+	dec, err := c.Decrypt(bytes.NewReader(enc))
 	require.NoError(t, err)
 	require.NotNil(t, dec)
 

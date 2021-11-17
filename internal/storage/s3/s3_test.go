@@ -154,46 +154,42 @@ func TestS3_Write_Read(t *testing.T) {
 	assert.NoError(t, rc.Close())
 }
 
-func TestS3_List(t *testing.T) {
-	s, err := NewStorage(c, bucket)
-	require.NoError(t, err)
-
-	text := []byte("cerberus")
-
-	for i := 0; i < 1010; i++ {
-		filename := fmt.Sprintf("owner/pdv/%016x", i)
-		_, err = s.Write(ctx, bytes.NewReader(text), 8, filename, "image/jpeg", false)
-		require.NoError(t, err)
-	}
-
-	l, err := s.List(ctx, "owner/pdv", 5, 1000)
-	require.NoError(t, err)
-	require.Len(t, l, 1000)
-
-	for i := 0; i < 1000; i++ {
-		expected := fmt.Sprintf("%016x", i+5)
-		require.EqualValues(t, expected, l[i])
-	}
-}
-
 func TestS3_DeleteData(t *testing.T) {
 	s, err := NewStorage(c, bucket)
 	require.NoError(t, err)
 
 	text := []byte("cerberus")
 
-	for i := 0; i < 1010; i++ {
+	for i := 0; i < 1000; i++ {
 		filename := fmt.Sprintf("owner/pdv/%016x", i)
 		_, err := s.Write(ctx, bytes.NewReader(text), 8, filename, "image/jpeg", true)
 		require.NoError(t, err)
 	}
 
-	l, err := s.List(ctx, "owner/pdv", 5, 1000)
+	l, err := list(ctx, "owner/pdv")
 	require.NoError(t, err)
 	require.Len(t, l, 1000)
 
 	require.NoError(t, s.DeleteData(ctx, "owner"))
-	l, err = s.List(ctx, "owner/pdv", 5, 1000)
+	l, err = list(ctx, "owner/pdv")
 	require.NoError(t, err)
 	require.Empty(t, l)
+}
+
+// List returns objects by prefix with paging.
+func list(ctx context.Context, prefix string) ([]string, error) {
+	ch := c.ListObjects(ctx, bucket, minio.ListObjectsOptions{
+		Prefix:    fmt.Sprintf("%s/", prefix),
+		Recursive: true,
+	})
+
+	out := make([]string, 0)
+	for v := range ch {
+		if v.Err != nil {
+			return nil, v.Err
+		}
+		out = append(out, v.Key[len(prefix)+1:])
+	}
+
+	return out, nil
 }

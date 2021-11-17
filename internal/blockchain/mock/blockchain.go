@@ -5,7 +5,7 @@
 package mock
 
 import (
-	types "github.com/cosmos/cosmos-sdk/types"
+	blockchain "github.com/Decentr-net/cerberus/internal/blockchain"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,16 +33,17 @@ func (m *MockBlockchain) EXPECT() *MockBlockchainMockRecorder {
 	return m.recorder
 }
 
-// DistributeReward mocks base method
-func (m *MockBlockchain) DistributeReward(receiver types.AccAddress, id, reward uint64) error {
+// DistributeRewards mocks base method
+func (m *MockBlockchain) DistributeRewards(rewards []blockchain.Reward) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DistributeReward", receiver, id, reward)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "DistributeRewards", rewards)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// DistributeReward indicates an expected call of DistributeReward
-func (mr *MockBlockchainMockRecorder) DistributeReward(receiver, id, reward interface{}) *gomock.Call {
+// DistributeRewards indicates an expected call of DistributeRewards
+func (mr *MockBlockchainMockRecorder) DistributeRewards(rewards interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DistributeReward", reflect.TypeOf((*MockBlockchain)(nil).DistributeReward), receiver, id, reward)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DistributeRewards", reflect.TypeOf((*MockBlockchain)(nil).DistributeRewards), rewards)
 }
