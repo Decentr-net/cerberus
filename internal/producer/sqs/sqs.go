@@ -36,7 +36,7 @@ func (i impl) Produce(ctx context.Context, m *producer.PDVMessage) error {
 
 	if _, err := i.sqs.SendMessageWithContext(ctx, &sqs.SendMessageInput{
 		MessageBody: aws.String(string(body)),
-		QueueUrl:    &i.queueURL,
+		QueueUrl:    aws.String(i.queueURL),
 	}); err != nil {
 		return fmt.Errorf("failed to send sqs message: %w", err)
 	}

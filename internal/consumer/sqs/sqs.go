@@ -10,6 +10,7 @@ import (
 	"math"
 	"sync"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/sirupsen/logrus"
 
@@ -63,8 +64,7 @@ func New(fs storage.FileStorage,
 func (i *impl) Run(ctx context.Context) error {
 	var maxNumberOfMessages *int64
 	if i.bulkSize > 0 {
-		v := int64(i.bulkSize)
-		maxNumberOfMessages = &v
+		maxNumberOfMessages = aws.Int64(int64(i.bulkSize))
 	}
 
 	for {
@@ -74,11 +74,11 @@ func (i *impl) Run(ctx context.Context) error {
 		default:
 		}
 
-		out, err := i.sqs.ReceiveMessage(&sqs.ReceiveMessageInput{
+		out, err := i.sqs.ReceiveMessageWithContext(ctx, &sqs.ReceiveMessageInput{
 			MaxNumberOfMessages: maxNumberOfMessages,
-			QueueUrl:            &i.queueURL,
-			VisibilityTimeout:   &visibilityTimeout,
-			WaitTimeSeconds:     &waitTimeSeconds,
+			QueueUrl:            aws.String(i.queueURL),
+			VisibilityTimeout:   aws.Int64(visibilityTimeout),
+			WaitTimeSeconds:     aws.Int64(waitTimeSeconds),
 		})
 		if err != nil {
 			log.WithError(err).Error("failed to receive messages")
@@ -91,6 +91,7 @@ func (i *impl) Run(ctx context.Context) error {
 }
 
 func (i *impl) processMessages(msgs []*sqs.Message) error {
+	// Background context is used to gracefully shutdown processor
 	ctx := context.Background()
 
 	var (

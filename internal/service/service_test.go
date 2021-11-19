@@ -159,7 +159,6 @@ func TestService_SavePDV(t *testing.T) {
 }
 
 func TestService_SavePDV_Profile(t *testing.T) {
-	// nolint:govet
 	pdv := v1.PDV{
 		&v1.Profile{
 			FirstName: "first",

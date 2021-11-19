@@ -122,7 +122,7 @@ issues:
 
     - linters:
         - govet
-      text: "declaration of \"err\" shadows declaration"
+      text: "declaration of \".+\" shadows declaration"
 
     - linters:
         - lll
