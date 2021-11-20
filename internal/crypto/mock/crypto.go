@@ -34,13 +34,12 @@ func (m *MockCrypto) EXPECT() *MockCryptoMockRecorder {
 }
 
 // Encrypt mocks base method
-func (m *MockCrypto) Encrypt(arg0 io.Reader) (io.Reader, int64, error) {
+func (m *MockCrypto) Encrypt(arg0 []byte) ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Encrypt", arg0)
-	ret0, _ := ret[0].(io.Reader)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Encrypt indicates an expected call of Encrypt

@@ -18,7 +18,6 @@ var ErrNotFound = errors.New("not found")
 type FileStorage interface {
 	health.Pinger
 
-	List(ctx context.Context, prefix string, from uint64, limit uint16) ([]string, error)
 	Read(ctx context.Context, path string) (io.ReadCloser, error)
 	Write(ctx context.Context, data io.Reader, size int64, path string, contentType string, isPublicRead bool) (string, error)
 

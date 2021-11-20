@@ -109,27 +109,27 @@ func (b *Broadcaster) From() sdk.AccAddress {
 }
 
 // BroadcastMsg broadcasts alone message.
-func (b *Broadcaster) BroadcastMsg(msg sdk.Msg, memo string) error {
+func (b *Broadcaster) BroadcastMsg(msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
 	return b.Broadcast([]sdk.Msg{msg}, memo)
 }
 
 // Broadcast broadcasts messages.
-func (b *Broadcaster) Broadcast(msgs []sdk.Msg, memo string) error {
-	err := b.broadcast(msgs, memo)
+func (b *Broadcaster) Broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
+	out, err := b.broadcast(msgs, memo)
 
 	if errors.Is(err, errInvalidSequence) {
 		if err := b.refreshSequence(); err != nil {
-			return fmt.Errorf("failed to refresh sequence: %w", err)
+			return nil, fmt.Errorf("failed to refresh sequence: %w", err)
 		}
 
-		err = b.broadcast(msgs, memo)
+		out, err = b.broadcast(msgs, memo)
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to broadcast: %w", err)
+		return nil, fmt.Errorf("failed to broadcast: %w", err)
 	}
 
-	return nil
+	return out, nil
 }
 
 // PingContext pings node with context.
@@ -160,7 +160,7 @@ func (b *Broadcaster) Ping() error {
 	return nil
 }
 
-func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) error {
+func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
 	txBldr := auth.NewTxBuilder(b.enc, b.num, b.seq, b.gas, b.gasAdj, false,
 		b.chainID, memo, b.fees, nil).WithKeybase(b.ctx.Keybase)
 
@@ -169,38 +169,38 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) error {
 
 	txBldr, err := utils.PrepareTxBuilder(txBldr, b.ctx)
 	if err != nil {
-		return fmt.Errorf("failed to prepare builder: %w", err)
+		return nil, fmt.Errorf("failed to prepare builder: %w", err)
 	}
 
 	if txBldr, err = utils.EnrichWithGas(txBldr, b.ctx, msgs); err != nil {
-		return fmt.Errorf("failed to calculate gas: %w", err)
+		return nil, fmt.Errorf("failed to calculate gas: %w", err)
 	}
 
 	txBytes, err := txBldr.BuildAndSign(b.ctx.GetFromName(), b.genesisKeyPass, msgs)
 	if err != nil {
-		return fmt.Errorf("failed to build and sign tx: %w", err)
+		return nil, fmt.Errorf("failed to build and sign tx: %w", err)
 	}
 
 	resp, err := b.ctx.BroadcastTx(txBytes)
 	if err != nil {
-		return fmt.Errorf("failed to broadcast tx: %w", err)
+		return nil, fmt.Errorf("failed to broadcast tx: %w", err)
 	}
 
 	if resp.Code != 0 {
 		if sdkerrors.ErrTxInMempoolCache.ABCICode() == resp.Code {
-			return ErrTxInMempoolCache
+			return nil, ErrTxInMempoolCache
 		}
 
 		if sdkerrors.ErrUnauthorized.ABCICode() == resp.Code {
-			return errInvalidSequence
+			return nil, errInvalidSequence
 		}
 
-		return fmt.Errorf("failed to broadcast tx: %s", resp.String())
+		return nil, fmt.Errorf("failed to broadcast tx: %s", resp.String())
 	}
 
 	b.seq++
 
-	return nil
+	return &resp, nil
 }
 
 func (b *Broadcaster) refreshSequence() error {

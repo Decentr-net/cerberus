@@ -4,6 +4,8 @@ V := @
 OUT_DIR := ./build
 CERBERUS_OUT := $(OUT_DIR)/cerberus
 CERBERUS_MAIN_PKG := ./cmd/cerberus
+PROCESSOR_OUT := $(OUT_DIR)/processor
+PROCESSOR_MAIN_PKG := ./cmd/processor
 SYNC_OUT := $(OUT_DIR)/sync
 SYNC_MAIN_PKG := ./cmd/sync
 
@@ -32,6 +34,8 @@ default: build
 build:
 	@echo BUILDING $(CERBERUS_OUT)
 	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(CERBERUS_OUT) $(CERBERUS_MAIN_PKG)
+	@echo BUILDING $(PROCESSOR_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(PROCESSOR_OUT) $(PROCESSOR_MAIN_PKG)
 	@echo BUILDING $(SYNC_OUT)
 	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(SYNC_OUT) $(SYNC_MAIN_PKG)
 	@echo DONE
@@ -40,10 +44,13 @@ build:
 linux: export GOOS := linux
 linux: export GOARCH := amd64
 linux: LINUX_CERBERUS_OUT := $(CERBERUS_OUT)-$(GOOS)-$(GOARCH)
+linux: LINUX_PROCESSOR_OUT := $(PROCESSOR_OUT)-$(GOOS)-$(GOARCH)
 linux: LINUX_SYNC_OUT := $(SYNC_OUT)-$(GOOS)-$(GOARCH)
 linux:
 	@echo BUILDING $(LINUX_CERBERUS_OUT)
 	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_CERBERUS_OUT) $(CERBERUS_MAIN_PKG)
+	@echo BUILDING $(LINUX_PROCESSOR_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_PROCESSOR_OUT) $(PROCESSOR_MAIN_PKG)
 	@echo BUILDING $(LINUX_SYNC_OUT)
 	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_SYNC_OUT) $(SYNC_MAIN_PKG)
 	@echo DONE

@@ -6,6 +6,7 @@ package mock
 
 import (
 	context "context"
+	entities "github.com/Decentr-net/cerberus/internal/entities"
 	schema "github.com/Decentr-net/cerberus/internal/schema"
 	service "github.com/Decentr-net/cerberus/internal/service"
 	types "github.com/cosmos/cosmos-sdk/types"
@@ -54,11 +55,11 @@ func (mr *MockServiceMockRecorder) SaveImage(ctx, r, owner interface{}) *gomock.
 }
 
 // SavePDV mocks base method
-func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, owner types.AccAddress) (uint64, service.PDVMeta, error) {
+func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, owner types.AccAddress) (uint64, *entities.PDVMeta, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SavePDV", ctx, p, owner)
 	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(service.PDVMeta)
+	ret1, _ := ret[1].(*entities.PDVMeta)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -100,10 +101,10 @@ func (mr *MockServiceMockRecorder) ReceivePDV(ctx, owner, id interface{}) *gomoc
 }
 
 // GetPDVMeta mocks base method
-func (m *MockService) GetPDVMeta(ctx context.Context, owner string, id uint64) (service.PDVMeta, error) {
+func (m *MockService) GetPDVMeta(ctx context.Context, owner string, id uint64) (*entities.PDVMeta, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPDVMeta", ctx, owner, id)
-	ret0, _ := ret[0].(service.PDVMeta)
+	ret0, _ := ret[0].(*entities.PDVMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -115,10 +116,10 @@ func (mr *MockServiceMockRecorder) GetPDVMeta(ctx, owner, id interface{}) *gomoc
 }
 
 // GetProfiles mocks base method
-func (m *MockService) GetProfiles(ctx context.Context, owner []string) ([]*service.Profile, error) {
+func (m *MockService) GetProfiles(ctx context.Context, owner []string) ([]*entities.Profile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProfiles", ctx, owner)
-	ret0, _ := ret[0].([]*service.Profile)
+	ret0, _ := ret[0].([]*entities.Profile)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

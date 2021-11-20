@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"time"
+
+	"github.com/Decentr-net/cerberus/internal/entities"
 )
 
 //go:generate mockgen -destination=./mock/index_storage.go -package=mock -source=index_storage.go
@@ -17,6 +19,11 @@ type IndexStorage interface {
 	GetProfiles(ctx context.Context, addr []string) ([]*Profile, error)
 	SetProfile(ctx context.Context, p *SetProfileParams) error
 	DeleteProfile(ctx context.Context, addr string) error
+
+	ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error)
+
+	GetPDVMeta(ctx context.Context, address string, id uint64) (*entities.PDVMeta, error)
+	SetPDVMeta(ctx context.Context, address string, id uint64, tx string, m *entities.PDVMeta) error
 }
 
 // Profile ...

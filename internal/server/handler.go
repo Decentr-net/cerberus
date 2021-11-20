@@ -14,10 +14,12 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	"github.com/Decentr-net/cerberus/internal/schema"
-	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/go-api"
 	logging "github.com/Decentr-net/logrus/context"
+
+	"github.com/Decentr-net/cerberus/internal/entities"
+	"github.com/Decentr-net/cerberus/internal/schema"
+	"github.com/Decentr-net/cerberus/internal/service"
 )
 
 // SavePDVResponse ...
@@ -388,10 +390,10 @@ func (s *server) getPDVMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var m service.PDVMeta
+	var m *entities.PDVMeta
 	if v, ok := s.pdvMetaCache.Get(getCacheKey(owner, id)); ok {
 		logging.GetLogger(r.Context()).WithField("key", getCacheKey(owner, id)).Debug("meta found in cache")
-		m = v.(service.PDVMeta) // nolint
+		m = v.(*entities.PDVMeta) // nolint
 	} else {
 		logging.GetLogger(r.Context()).WithField("key", getCacheKey(owner, id)).Debug("meta wasn't found in cache")
 		var err error
@@ -496,7 +498,7 @@ func (s *server) getProfilesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // getRewardsConfigHandler returns rewards config.
-func (s *server) getRewardsConfigHandler(w http.ResponseWriter, r *http.Request) {
+func (s *server) getRewardsConfigHandler(w http.ResponseWriter, _ *http.Request) {
 	// swagger:operation GET /configs/rewards Configs GetRewardsConfig
 	//
 	// Get rewards config

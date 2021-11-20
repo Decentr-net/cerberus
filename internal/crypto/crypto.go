@@ -8,7 +8,7 @@ import "io"
 // Crypto provide Reader and Writer wrappers.
 type Crypto interface {
 	// Encrypt returns reader with encrypted src data and size of encrypted data.
-	Encrypt(io.Reader) (io.Reader, int64, error)
+	Encrypt([]byte) ([]byte, error)
 	// Decrypt returns reader with decrypted src data.
 	Decrypt(io.Reader) (io.Reader, error)
 }

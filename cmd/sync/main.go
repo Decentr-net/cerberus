@@ -33,7 +33,6 @@ import (
 	"github.com/Decentr-net/cerberus/internal/storage/s3"
 )
 
-// nolint:lll,gochecknoglobals
 var opts = struct {
 	S3Endpoint        string `long:"s3.endpoint" env:"S3_ENDPOINT" default:"localhost:9000" description:"s3 endpoint'"`
 	S3Region          string `long:"s3.region" env:"S3_REGION" default:"" description:"s3 region"`

@@ -15,6 +15,8 @@ import (
 	"github.com/Decentr-net/cerberus/internal/storage"
 )
 
+var _ storage.FileStorage = &s3{}
+
 type s3 struct {
 	c *minio.Client
 	b string
@@ -81,32 +83,6 @@ func (s s3) Write(ctx context.Context, r io.Reader, size int64, path string, con
 		return "", err
 	}
 	return fmt.Sprintf("https://%s.s3.amazonaws.com/%s", i.Bucket, i.Key), nil
-}
-
-// List returns objects by prefix with paging.
-func (s s3) List(ctx context.Context, prefix string, from uint64, limit uint16) ([]string, error) {
-	to := from + uint64(limit)
-
-	ch := s.c.ListObjects(ctx, s.b, minio.ListObjectsOptions{
-		Prefix:    fmt.Sprintf("%s/", prefix),
-		Recursive: true,
-	})
-
-	i := uint64(0)
-
-	out := make([]string, 0)
-	for v := range ch {
-		i++
-		if i > to {
-			return out, nil
-		}
-		if i <= from {
-			continue
-		}
-		out = append(out, v.Key[len(prefix)+1:])
-	}
-
-	return out, nil
 }
 
 // DeleteData ...
