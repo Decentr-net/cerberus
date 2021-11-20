@@ -159,7 +159,7 @@ func (i *impl) processMessages(msgs []*sqs.Message) error {
 }
 
 func (i *impl) processPDV(ctx context.Context, s storage.IndexStorage, pdv *producer.PDVMessage) (reward bool, deleteMsg bool) {
-	log = log.WithFields(logrus.Fields{
+	log := log.WithFields(logrus.Fields{
 		"id":   pdv.ID,
 		"meta": pdv.Meta,
 	})
