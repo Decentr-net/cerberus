@@ -33,7 +33,7 @@ func mustGetBroadcaster() *broadcaster.Broadcaster {
 		KeyringBackend:     opts.BlockchainKeyringBackend,
 		KeyringPromptInput: opts.BlockchainKeyringPromptInput,
 		NodeURI:            opts.BlockchainNode,
-		BroadcastMode:      cliflags.BroadcastSync,
+		BroadcastMode:      cliflags.BroadcastAsync,
 		From:               opts.BlockchainFrom,
 		ChainID:            opts.BlockchainChainID,
 		GenesisKeyPass:     keys.DefaultKeyPass,

@@ -223,7 +223,8 @@ func (s pg) SetPDVMeta(ctx context.Context, address string, id uint64, tx string
 	}
 
 	if _, err := s.ext.ExecContext(ctx, `
-		INSERT INTO pdv(owner, id, tx, meta) VALUES($1, $2, $3, $4)
+		INSERT INTO pdv(owner, id, tx, meta) VALUES($1, $2, $3, $4) ON CONFLICT (owner, id) DO UPDATE
+			SET tx = EXCLUDED.tx, meta = EXCLUDED.meta
 	`, address, id, tx, b); err != nil {
 		return fmt.Errorf("failed to insert: %w", err)
 	}
