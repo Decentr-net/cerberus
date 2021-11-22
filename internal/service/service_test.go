@@ -158,6 +158,56 @@ func TestService_SavePDV(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestService_SavePDV_Blacklist(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	fs := storagemock.NewMockFileStorage(ctrl)
+	is := storagemock.NewMockIndexStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	p := producermock.NewMockProducer(ctrl)
+
+	s := New(cr, fs, is, p, rewardsMap)
+
+	expectedID := uint64(time.Now().Unix())
+
+	cr.EXPECT().Encrypt(gomock.Any()).Return(testEncryptedData, nil)
+
+	expectedMeta := &entities.PDVMeta{
+		ObjectTypes: map[schema.Type]uint16{
+			schema.PDVCookieType: 1,
+		},
+		Reward: 0,
+	}
+
+	p.EXPECT().Produce(ctx, gomock.Eq(&producer.PDVMessage{
+		ID:      expectedID,
+		Address: testOwner,
+		Meta:    expectedMeta,
+		Data:    testEncryptedData,
+	}))
+
+	id, meta, err := s.SavePDV(ctx, v1.PDV{
+		&v1.Cookie{
+			Source: schema.Source{
+				Host: "youtube.com",
+				Path: "/",
+			},
+			Name:           "my cookie",
+			Value:          "some value",
+			Domain:         "*",
+			HostOnly:       true,
+			Path:           "*",
+			Secure:         true,
+			SameSite:       "None",
+			ExpirationDate: 1861920000,
+		},
+	}, testOwnerSdkAddr)
+	require.Equal(t, expectedID, id)
+	require.Equal(t, expectedMeta, meta)
+	require.NoError(t, err)
+}
+
 func TestService_SavePDV_Profile(t *testing.T) {
 	pdv := v1.PDV{
 		&v1.Profile{

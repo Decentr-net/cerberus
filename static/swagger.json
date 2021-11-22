@@ -16,6 +16,30 @@
   },
   "basePath": "/v1",
   "paths": {
+    "/configs/blacklist": {
+      "get": {
+        "description": "Returns blacklist.",
+        "tags": [
+          "Configs"
+        ],
+        "summary": "Get blacklist",
+        "operationId": "GetBlacklistConfig",
+        "responses": {
+          "200": {
+            "description": "blacklist",
+            "schema": {
+              "$ref": "#/definitions/Blacklist"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/configs/rewards": {
       "get": {
         "description": "Returns rewards config.",
@@ -408,6 +432,20 @@
         }
       },
       "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/v1"
+    },
+    "Blacklist": {
+      "type": "object",
+      "title": "Blacklist contains attributes of worthless pdv.",
+      "properties": {
+        "cookieSource": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "CookieSource"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/service"
     },
     "Cookie": {
       "type": "object",

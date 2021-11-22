@@ -145,13 +145,13 @@ check-swagger-version: ACTUAL_SWAGGER_VERSION := $(shell $(SWAGGER_NAME) version
 check-swagger-version: WANT_SWAGGER_VERSION := $(SWAGGER_VERSION)
 check-swagger-version:
 	$(V) [ -z $(ACTUAL_SWAGGER_VERSION) ] && \
-	 echo 'Swagger is not installed, run `make swagger-install`' && \
+	 echo 'Swagger is not installed, run `make install-swagger`' && \
 	 exit 1 || true
 
 	$(V)if [ $(ACTUAL_SWAGGER_VERSION) != $(WANT_SWAGGER_VERSION) ] ; then \
 		echo $(SWAGGER_NAME) is version $(ACTUAL_SWAGGER_VERSION), want $(WANT_SWAGGER_VERSION) ; \
 		echo 'Make sure $$GOBIN has precedence in $$PATH and' \
-		'run `make swagger-install` to install the correct version' ; \
+		'run `make install-swagger` to install the correct version' ; \
         exit 1 ; \
 	fi
 
