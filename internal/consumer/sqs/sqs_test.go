@@ -4,7 +4,6 @@ package sqs
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -108,7 +107,7 @@ func TestImpl_ProcessMessage(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	b := blockchainmock.NewMockBlockchain(ctrl)
 
-	i := New(fs, is, b, c, queueURL, 10)
+	i := New(fs, is, b, c, queueURL)
 	p := sqsproducer.New(c, queueURL)
 
 	addr1, addr2 := "addr1", "addr2"
@@ -123,7 +122,7 @@ func TestImpl_ProcessMessage(t *testing.T) {
 			},
 			Reward: 1,
 		},
-		Data: json.RawMessage(`{"id": 1}`),
+		Data: []byte(`{"id": 1}`),
 	}))
 	require.NoError(t, p.Produce(ctx, &producer.PDVMessage{
 		ID:      2,
@@ -134,7 +133,7 @@ func TestImpl_ProcessMessage(t *testing.T) {
 			},
 			Reward: 2,
 		},
-		Data: json.RawMessage(`{"id": 2}`),
+		Data: []byte(`{"id": 2}`),
 	}))
 
 	is.EXPECT().InTx(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, f func(s storage.IndexStorage) error) error {
@@ -146,14 +145,14 @@ func TestImpl_ProcessMessage(t *testing.T) {
 	fs.EXPECT().Write(
 		gomock.Any(),
 		gomock.Any(),
-		int64(8),
+		int64(9),
 		"addr2/pdv/fffffffffffffffd",
 		"binary/octet-stream",
 		false,
 	).DoAndReturn(func(_ context.Context, data io.Reader, _ int64, _, _ string, _ bool) (string, error) {
 		b, err := io.ReadAll(data)
 		require.NoError(t, err)
-		require.Equal(t, `{"id":2}`, string(b))
+		require.Equal(t, `{"id": 2}`, string(b))
 		return "2", nil
 	})
 	b.EXPECT().DistributeRewards([]blockchain.Reward{{

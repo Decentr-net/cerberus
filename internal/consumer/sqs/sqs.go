@@ -24,12 +24,13 @@ var _ consumer.Consumer = &impl{}
 
 var log = logrus.WithField("package", "sqs")
 
-// nolint:gochecknoglobals
-var (
+const (
 	// how long the message is locked from other consumers in seconds
-	visibilityTimeout int64 = 10
+	visibilityTimeout int64 = 600
 	// how long consumer will wait for the next messages in seconds
-	waitTimeSeconds int64 = 60
+	waitTimeSeconds int64 = 20
+	// size of bulk
+	maxNumberOfMessages int64 = 10
 )
 
 type impl struct {
@@ -39,7 +40,6 @@ type impl struct {
 
 	sqs      *sqs.SQS
 	queueURL string
-	bulkSize uint
 }
 
 // New return new instance of impl.
@@ -48,7 +48,6 @@ func New(fs storage.FileStorage,
 	b blockchain.Blockchain,
 	sqs *sqs.SQS,
 	queueURL string,
-	bulkSize uint,
 ) *impl { // nolint:golint
 	return &impl{
 		fs:       fs,
@@ -56,17 +55,11 @@ func New(fs storage.FileStorage,
 		b:        b,
 		sqs:      sqs,
 		queueURL: queueURL,
-		bulkSize: bulkSize,
 	}
 }
 
 // Run consumes messages from SQS, saves PDV to S3 and distributes rewards.
 func (i *impl) Run(ctx context.Context) error {
-	var maxNumberOfMessages *int64
-	if i.bulkSize > 0 {
-		maxNumberOfMessages = aws.Int64(int64(i.bulkSize))
-	}
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -75,14 +68,21 @@ func (i *impl) Run(ctx context.Context) error {
 		}
 
 		out, err := i.sqs.ReceiveMessageWithContext(ctx, &sqs.ReceiveMessageInput{
-			MaxNumberOfMessages: maxNumberOfMessages,
+			MaxNumberOfMessages: aws.Int64(maxNumberOfMessages),
 			QueueUrl:            aws.String(i.queueURL),
 			VisibilityTimeout:   aws.Int64(visibilityTimeout),
 			WaitTimeSeconds:     aws.Int64(waitTimeSeconds),
 		})
 		if err != nil {
 			log.WithError(err).Error("failed to receive messages")
+			continue
 		}
+
+		if len(out.Messages) == 0 {
+			continue
+		}
+
+		log.WithField("msgs", len(out.Messages)).Info("start processing messages")
 
 		if err := i.processMessages(out.Messages); err != nil {
 			log.WithError(err).Error("failed to process messages")
@@ -124,22 +124,25 @@ func (i *impl) processMessages(msgs []*sqs.Message) error {
 			mu.Unlock()
 		}, msgs)
 
-		rr := make([]blockchain.Reward, 0, len(toReward))
-		for _, v := range toReward { // nolint:gocritic
-			rr = append(rr, blockchain.Reward{
-				Receiver: v.Address,
-				ID:       v.ID,
-				Reward:   v.Meta.Reward,
-			})
-		}
-		tx, err := i.b.DistributeRewards(rr)
-		if err != nil {
-			return fmt.Errorf("failed to broadcast MsgDistributeRewards: %w", err)
-		}
+		if len(toReward) > 0 {
+			rr := make([]blockchain.Reward, 0, len(toReward))
+			for _, v := range toReward { // nolint:gocritic
+				rr = append(rr, blockchain.Reward{
+					Receiver: v.Address,
+					ID:       v.ID,
+					Reward:   v.Meta.Reward,
+				})
+			}
 
-		for _, v := range toReward { // nolint:gocritic
-			if err := i.is.SetPDVMeta(ctx, v.Address, v.ID, tx, v.Meta); err != nil {
-				return fmt.Errorf("failed to set meta in pg: %w", err)
+			tx, err := i.b.DistributeRewards(rr)
+			if err != nil {
+				return fmt.Errorf("failed to broadcast MsgDistributeRewards: %w", err)
+			}
+
+			for _, v := range toReward { // nolint:gocritic
+				if err := i.is.SetPDVMeta(ctx, v.Address, v.ID, tx, v.Meta); err != nil {
+					return fmt.Errorf("failed to set meta in pg: %w", err)
+				}
 			}
 		}
 
@@ -148,11 +151,13 @@ func (i *impl) processMessages(msgs []*sqs.Message) error {
 		return fmt.Errorf("failed to process messages bulk: %w", err)
 	}
 
-	if _, err := i.sqs.DeleteMessageBatch(&sqs.DeleteMessageBatchInput{
-		Entries:  toDelete,
-		QueueUrl: &i.queueURL,
-	}); err != nil {
-		return fmt.Errorf("failed to delete messages from sqs: %w", err)
+	if len(toDelete) > 0 {
+		if _, err := i.sqs.DeleteMessageBatch(&sqs.DeleteMessageBatchInput{
+			Entries:  toDelete,
+			QueueUrl: &i.queueURL,
+		}); err != nil {
+			return fmt.Errorf("failed to delete messages from sqs: %w", err)
+		}
 	}
 
 	return nil

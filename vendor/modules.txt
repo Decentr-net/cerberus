@@ -9,7 +9,7 @@ github.com/ChainSafe/go-schnorrkel
 ## explicit
 github.com/Decentr-net/ariadne
 github.com/Decentr-net/ariadne/mock
-# github.com/Decentr-net/decentr v1.4.5
+# github.com/Decentr-net/decentr v1.4.7
 ## explicit
 github.com/Decentr-net/decentr/app
 github.com/Decentr-net/decentr/app/ante
@@ -34,7 +34,7 @@ github.com/Decentr-net/decentr/x/utils
 ## explicit
 github.com/Decentr-net/go-api
 github.com/Decentr-net/go-api/test
-# github.com/Decentr-net/go-broadcaster v0.0.5
+# github.com/Decentr-net/go-broadcaster v0.0.6
 ## explicit
 github.com/Decentr-net/go-broadcaster
 # github.com/Decentr-net/logrus v0.7.2

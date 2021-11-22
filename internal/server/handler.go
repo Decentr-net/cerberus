@@ -91,6 +91,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /pdv PDV Save
 	//
 	// Encrypts and saves PDV
+	// The method is allowed only for Decentr browser.
 	//
 	// ---
 	// security:
@@ -139,7 +140,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 
 	var p schema.PDVWrapper
 	if err := json.Unmarshal(data, &p); err != nil {
-		logging.GetLogger(r.Context()).WithField("body", string(data)).Debug("failed to decode pdv")
+		logging.GetLogger(r.Context()).WithError(err).Debug("failed to decode pdv")
 		api.WriteError(w, http.StatusBadRequest, fmt.Sprintf("request is invalid: %s", err.Error()))
 		return
 	}

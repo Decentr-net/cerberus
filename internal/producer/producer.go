@@ -3,7 +3,6 @@ package producer
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/Decentr-net/cerberus/internal/entities"
 )
@@ -15,7 +14,7 @@ type PDVMessage struct {
 	ID      uint64
 	Address string
 	Meta    *entities.PDVMeta
-	Data    json.RawMessage
+	Data    []byte
 }
 
 // Producer ...
