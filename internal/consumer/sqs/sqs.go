@@ -27,7 +27,7 @@ var log = logrus.WithField("package", "sqs")
 // nolint:gochecknoglobals
 var (
 	// how long the message is locked from other consumers in seconds
-	visibilityTimeout int64 = 10
+	visibilityTimeout int64 = 600
 	// how long consumer will wait for the next messages in seconds
 	waitTimeSeconds int64 = 60
 )
