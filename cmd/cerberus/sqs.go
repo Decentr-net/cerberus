@@ -16,7 +16,6 @@ type SQSOpts struct {
 	SQSAccessKeyID    string `long:"sqs.access-key-id" env:"SQS_ACCESS_KEY_ID" description:"access key id for SQS"`
 	SQSecretAccessKey string `long:"sqs.secret-access-key" env:"SQS_SECRET_ACCESS_KEY" description:"secret access key for SQS"`
 	SQSQueue          string `long:"sqs.queue" env:"SQS_QUEUE" default:"testnet" description:"SQS queue name"`
-	SQSBulkSize       uint   `long:"sqs.bulk-size" env:"SQS_BULK_SIZE" default:"50" description:"SQS bulk size"`
 }
 
 func mustGetProducer() producer.Producer {

@@ -24,12 +24,13 @@ var _ consumer.Consumer = &impl{}
 
 var log = logrus.WithField("package", "sqs")
 
-// nolint:gochecknoglobals
-var (
+const (
 	// how long the message is locked from other consumers in seconds
 	visibilityTimeout int64 = 600
 	// how long consumer will wait for the next messages in seconds
-	waitTimeSeconds int64 = 60
+	waitTimeSeconds int64 = 20
+	// size of bulk
+	maxNumberOfMessages int64 = 10
 )
 
 type impl struct {
@@ -39,7 +40,6 @@ type impl struct {
 
 	sqs      *sqs.SQS
 	queueURL string
-	bulkSize uint
 }
 
 // New return new instance of impl.
@@ -48,7 +48,6 @@ func New(fs storage.FileStorage,
 	b blockchain.Blockchain,
 	sqs *sqs.SQS,
 	queueURL string,
-	bulkSize uint,
 ) *impl { // nolint:golint
 	return &impl{
 		fs:       fs,
@@ -56,17 +55,11 @@ func New(fs storage.FileStorage,
 		b:        b,
 		sqs:      sqs,
 		queueURL: queueURL,
-		bulkSize: bulkSize,
 	}
 }
 
 // Run consumes messages from SQS, saves PDV to S3 and distributes rewards.
 func (i *impl) Run(ctx context.Context) error {
-	var maxNumberOfMessages *int64
-	if i.bulkSize > 0 {
-		maxNumberOfMessages = aws.Int64(int64(i.bulkSize))
-	}
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -75,7 +68,7 @@ func (i *impl) Run(ctx context.Context) error {
 		}
 
 		out, err := i.sqs.ReceiveMessageWithContext(ctx, &sqs.ReceiveMessageInput{
-			MaxNumberOfMessages: maxNumberOfMessages,
+			MaxNumberOfMessages: aws.Int64(maxNumberOfMessages),
 			QueueUrl:            aws.String(i.queueURL),
 			VisibilityTimeout:   aws.Int64(visibilityTimeout),
 			WaitTimeSeconds:     aws.Int64(waitTimeSeconds),

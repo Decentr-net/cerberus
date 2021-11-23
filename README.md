@@ -28,7 +28,6 @@ cerberusd provides http API to pdv storing functionality. It receives and valida
 | sqs.access-key-id | SQS_ACCESS_KEY_ID | | access key id for SQS
 | sqs.secret-access-key | SQS_SECRET_ACCESS_KEY | | secret access key for SQS
 | sqs.queue | SQS_QUEUE | testnet | SQS queue name
-| sqs.bulk-size | SQS_BULK_SIZE | 50 | SQS bulk size
 | save-pdv-throttle-period    | SAVE_PDV_THROTTLE_PERIOD    | 10m  | how often the user can send PDV to save
 | reward-map-config | REWARD_MAP_CONFIG | configs/rewards.yml | path to yaml [config](configs/rewards.yml) with pdv rewards
 | min-pdv-count | MIN_PDV_COUNT | 100 | minimal count of pdv to save
@@ -61,7 +60,6 @@ processord receives PDVs from SQS, rewards users and stores data into FileStorag
 | sqs.access-key-id | SQS_ACCESS_KEY_ID | | access key id for SQS
 | sqs.secret-access-key | SQS_SECRET_ACCESS_KEY | | secret access key for SQS
 | sqs.queue | SQS_QUEUE | testnet | SQS queue name
-| sqs.bulk-size | SQS_BULK_SIZE | 50 | SQS bulk size
 | blockchain.node   | BLOCKCHAIN_NODE    | http://zeus.testnet.decentr.xyz:26657  | decentr node address
 | blockchain.from   | BLOCKCHAIN_FROM    |  | decentr account name to send stakes
 | blockchain.tx_memo   | BLOCKCHAIN_TX_MEMO    | | decentr tx's memo

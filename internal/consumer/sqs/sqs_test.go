@@ -107,7 +107,7 @@ func TestImpl_ProcessMessage(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	b := blockchainmock.NewMockBlockchain(ctrl)
 
-	i := New(fs, is, b, c, queueURL, 10)
+	i := New(fs, is, b, c, queueURL)
 	p := sqsproducer.New(c, queueURL)
 
 	addr1, addr2 := "addr1", "addr2"
