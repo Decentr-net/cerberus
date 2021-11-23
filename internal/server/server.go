@@ -49,7 +49,7 @@ import (
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	_ "github.com/Decentr-net/cerberus/internal/blockchain"
+	_ "github.com/Decentr-net/cerberus/internal/blockchain"     // set address prefix for addresses validation
 	_ "github.com/Decentr-net/cerberus/internal/server/swagger" // import models to be generated into swagger.json
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/internal/throttler"
