@@ -132,6 +132,7 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 	r.Post("/v1/images", srv.saveImageHandler)
 
 	r.Get("/v1/configs/rewards", srv.getRewardsConfigHandler)
+	r.Get("/v1/configs/blacklist", srv.getBlacklistHandler)
 }
 
 func isOwnerValid(s string) bool {

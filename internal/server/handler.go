@@ -519,6 +519,28 @@ func (s *server) getRewardsConfigHandler(w http.ResponseWriter, _ *http.Request)
 	api.WriteOK(w, http.StatusOK, s.s.GetRewardsMap())
 }
 
+// getBlacklistHandler returns blacklist.
+func (s *server) getBlacklistHandler(w http.ResponseWriter, _ *http.Request) {
+	// swagger:operation GET /configs/blacklist Configs GetBlacklistConfig
+	//
+	// Get blacklist
+	//
+	// Returns blacklist.
+	//
+	// ---
+	// responses:
+	//   '200':
+	//     description: blacklist
+	//     schema:
+	//       "$ref": "#/definitions/Blacklist"
+	//   '500':
+	//     description: internal server error
+	//     schema:
+	//       "$ref": "#/definitions/Error"
+
+	api.WriteOK(w, http.StatusOK, s.s.GetBlacklist())
+}
+
 func getAddressFromPubKey(k string) (sdk.AccAddress, error) {
 	var pk secp256k1.PubKeySecp256k1
 	b, err := hex.DecodeString(k)

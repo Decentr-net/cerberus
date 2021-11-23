@@ -143,3 +143,17 @@ func (mr *MockServiceMockRecorder) GetRewardsMap() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardsMap", reflect.TypeOf((*MockService)(nil).GetRewardsMap))
 }
+
+// GetBlacklist mocks base method
+func (m *MockService) GetBlacklist() service.Blacklist {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlacklist")
+	ret0, _ := ret[0].(service.Blacklist)
+	return ret0
+}
+
+// GetBlacklist indicates an expected call of GetBlacklist
+func (mr *MockServiceMockRecorder) GetBlacklist() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlacklist", reflect.TypeOf((*MockService)(nil).GetBlacklist))
+}

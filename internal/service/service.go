@@ -17,6 +17,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/disintegration/imaging"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 
 	logging "github.com/Decentr-net/logrus/context"
 
@@ -38,6 +39,12 @@ var (
 // RewardMap contains dictionary with PDV types and rewards for them.
 type RewardMap map[schema.Type]uint64
 
+// Blacklist contains attributes of worthless pdv.
+// swagger:model Blacklist
+type Blacklist struct {
+	CookieSource []string `json:"cookieSource"`
+}
+
 // Service interface provides service's logic's methods.
 type Service interface {
 	// SaveImage sends Image to storage.
@@ -56,6 +63,9 @@ type Service interface {
 
 	// GetRewardsMap ...
 	GetRewardsMap() RewardMap
+
+	// GetBlacklist ...
+	GetBlacklist() Blacklist
 }
 
 // service is Service interface implementation.
@@ -256,6 +266,12 @@ func (s *service) GetRewardsMap() RewardMap {
 	return s.rewardMap
 }
 
+func (s *service) GetBlacklist() Blacklist {
+	return Blacklist{
+		CookieSource: []string{"youtube.com"},
+	}
+}
+
 func (s *service) calculateMeta(ctx context.Context, owner sdk.AccAddress, p schema.PDV) (*entities.PDVMeta, error) {
 	t := make(map[schema.Type]uint16)
 	var reward uint64
@@ -269,6 +285,13 @@ func (s *service) calculateMeta(ctx context.Context, owner sdk.AccAddress, p sch
 				continue // we want reward user only for initial profile
 			} else if err != storage.ErrNotFound {
 				return nil, fmt.Errorf("failed to check profile: %w", err)
+			}
+		case schema.PDVCookieType:
+			cookie, ok := d.(*schema.V1Cookie)
+			if !ok {
+				log.WithField("cookie", p).Error("failed to cast cookie to V1Cookie")
+			} else if s.isCookieBlacklisted(cookie) {
+				continue
 			}
 		default:
 		}
@@ -294,6 +317,15 @@ func (s *service) processPDV(ctx context.Context, owner sdk.AccAddress, p schema
 	}
 
 	return nil
+}
+
+func (s *service) isCookieBlacklisted(cookie *schema.V1Cookie) bool {
+	for _, v := range s.GetBlacklist().CookieSource {
+		if strings.EqualFold(v, cookie.Source.Host) {
+			return true
+		}
+	}
+	return false
 }
 
 func getSetProfileParams(owner sdk.AccAddress, p schema.V1Profile) *storage.SetProfileParams { // nolint:gocritic
