@@ -9,7 +9,7 @@ github.com/ChainSafe/go-schnorrkel
 ## explicit
 github.com/Decentr-net/ariadne
 github.com/Decentr-net/ariadne/mock
-# github.com/Decentr-net/decentr v1.4.5
+# github.com/Decentr-net/decentr v1.4.7
 ## explicit
 github.com/Decentr-net/decentr/app
 github.com/Decentr-net/decentr/app/ante

@@ -78,6 +78,12 @@ func (i *impl) Run(ctx context.Context) error {
 			continue
 		}
 
+		if len(out.Messages) == 0 {
+			continue
+		}
+
+		log.WithField("msgs", len(out.Messages)).Info("start processing messages")
+
 		if err := i.processMessages(out.Messages); err != nil {
 			log.WithError(err).Error("failed to process messages")
 		}
