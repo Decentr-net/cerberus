@@ -111,5 +111,5 @@ func TestImpl_Produce(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, m.Messages, 1)
-	require.Equal(t, `{"ID":1,"Address":"1","Meta":{"object_types":{"cookie":1},"reward":1},"Data":{}}`, *m.Messages[0].Body)
+	require.Equal(t, `{"ID":1,"Address":"1","Meta":{"object_types":{"cookie":1},"reward":1},"Data":"e30="}`, *m.Messages[0].Body)
 }
