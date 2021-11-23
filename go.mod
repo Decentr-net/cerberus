@@ -6,7 +6,7 @@ require (
 	github.com/Decentr-net/ariadne v1.0.1
 	github.com/Decentr-net/decentr v1.4.5
 	github.com/Decentr-net/go-api v0.0.5
-	github.com/Decentr-net/go-broadcaster v0.0.5
+	github.com/Decentr-net/go-broadcaster v0.0.7
 	github.com/Decentr-net/logrus v0.7.2
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/aws/aws-sdk-go v1.27.0

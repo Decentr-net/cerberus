@@ -108,6 +108,21 @@ func (b *Broadcaster) From() sdk.AccAddress {
 	return b.ctx.FromAddress
 }
 
+// GetHeight returns current height.
+func (b *Broadcaster) GetHeight() (uint64, error) {
+	c, err := b.ctx.GetNode()
+	if err != nil {
+		return 0, fmt.Errorf("failed get node: %w", err)
+	}
+
+	i, err := c.ABCIInfo()
+	if err != nil {
+		return 0, fmt.Errorf("failed to fetch ABCIInfo: %w", err)
+	}
+
+	return uint64(i.Response.LastBlockHeight), nil
+}
+
 // BroadcastMsg broadcasts alone message.
 func (b *Broadcaster) BroadcastMsg(msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
 	return b.Broadcast([]sdk.Msg{msg}, memo)
@@ -118,7 +133,7 @@ func (b *Broadcaster) Broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, e
 	out, err := b.broadcast(msgs, memo)
 
 	if errors.Is(err, errInvalidSequence) {
-		if err := b.refreshSequence(); err != nil {
+		if err = b.refreshSequence(); err != nil {
 			return nil, fmt.Errorf("failed to refresh sequence: %w", err)
 		}
 
