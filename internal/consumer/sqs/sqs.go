@@ -75,6 +75,7 @@ func (i *impl) Run(ctx context.Context) error {
 		})
 		if err != nil {
 			log.WithError(err).Error("failed to receive messages")
+			continue
 		}
 
 		if err := i.processMessages(out.Messages); err != nil {
@@ -141,11 +142,13 @@ func (i *impl) processMessages(msgs []*sqs.Message) error {
 		return fmt.Errorf("failed to process messages bulk: %w", err)
 	}
 
-	if _, err := i.sqs.DeleteMessageBatch(&sqs.DeleteMessageBatchInput{
-		Entries:  toDelete,
-		QueueUrl: &i.queueURL,
-	}); err != nil {
-		return fmt.Errorf("failed to delete messages from sqs: %w", err)
+	if len(toDelete) > 0 {
+		if _, err := i.sqs.DeleteMessageBatch(&sqs.DeleteMessageBatchInput{
+			Entries:  toDelete,
+			QueueUrl: &i.queueURL,
+		}); err != nil {
+			return fmt.Errorf("failed to delete messages from sqs: %w", err)
+		}
 	}
 
 	return nil
