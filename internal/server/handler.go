@@ -139,13 +139,13 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 
 	var p schema.PDVWrapper
 	if err := json.Unmarshal(data, &p); err != nil {
-		logging.GetLogger(r.Context()).WithField("body", string(data)).Debug("failed to decode pdv")
+		logging.GetLogger(r.Context()).WithField("body", string(data)).Error("failed to decode pdv")
 		api.WriteError(w, http.StatusBadRequest, fmt.Sprintf("request is invalid: %s", err.Error()))
 		return
 	}
 
 	if !p.Validate() {
-		logging.GetLogger(r.Context()).WithField("body", string(data)).Debug("failed to validate pdv")
+		logging.GetLogger(r.Context()).WithField("body", string(data)).Error("failed to validate pdv")
 		api.WriteError(w, http.StatusBadRequest, "pdv data is invalid")
 		return
 	}

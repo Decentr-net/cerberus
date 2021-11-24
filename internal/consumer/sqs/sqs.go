@@ -124,22 +124,25 @@ func (i *impl) processMessages(msgs []*sqs.Message) error {
 			mu.Unlock()
 		}, msgs)
 
-		rr := make([]blockchain.Reward, 0, len(toReward))
-		for _, v := range toReward { // nolint:gocritic
-			rr = append(rr, blockchain.Reward{
-				Receiver: v.Address,
-				ID:       v.ID,
-				Reward:   v.Meta.Reward,
-			})
-		}
-		tx, err := i.b.DistributeRewards(rr)
-		if err != nil {
-			return fmt.Errorf("failed to broadcast MsgDistributeRewards: %w", err)
-		}
+		if len(toReward) > 0 {
+			rr := make([]blockchain.Reward, 0, len(toReward))
+			for _, v := range toReward { // nolint:gocritic
+				rr = append(rr, blockchain.Reward{
+					Receiver: v.Address,
+					ID:       v.ID,
+					Reward:   v.Meta.Reward,
+				})
+			}
 
-		for _, v := range toReward { // nolint:gocritic
-			if err := i.is.SetPDVMeta(ctx, v.Address, v.ID, tx, v.Meta); err != nil {
-				return fmt.Errorf("failed to set meta in pg: %w", err)
+			tx, err := i.b.DistributeRewards(rr)
+			if err != nil {
+				return fmt.Errorf("failed to broadcast MsgDistributeRewards: %w", err)
+			}
+
+			for _, v := range toReward { // nolint:gocritic
+				if err := i.is.SetPDVMeta(ctx, v.Address, v.ID, tx, v.Meta); err != nil {
+					return fmt.Errorf("failed to set meta in pg: %w", err)
+				}
 			}
 		}
 

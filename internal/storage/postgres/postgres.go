@@ -193,6 +193,10 @@ func (s pg) ListPDV(ctx context.Context, owner string, from uint64, limit uint16
 		return nil, fmt.Errorf("failed to select: %w", err)
 	}
 
+	if len(out) == 0 {
+		out = []uint64{}
+	}
+
 	return out, nil
 }
 
