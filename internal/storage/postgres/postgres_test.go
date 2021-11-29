@@ -309,13 +309,13 @@ func TestPg_ListPDV(t *testing.T) {
 
 	ids, err := s.ListPDV(ctx, "1", 0, 3)
 	require.NoError(t, err)
-	require.Equal(t, []uint64{1, 2, 3}, ids)
+	require.Equal(t, []uint64{10, 9, 8}, ids)
 
-	ids, err = s.ListPDV(ctx, "1", 8, 3)
+	ids, err = s.ListPDV(ctx, "1", 3, 3)
 	require.NoError(t, err)
-	require.Equal(t, []uint64{9, 10}, ids)
+	require.Equal(t, []uint64{2, 1}, ids)
 
-	ids, err = s.ListPDV(ctx, "2", 8, 3)
+	ids, err = s.ListPDV(ctx, "2", 3, 3)
 	require.NoError(t, err)
 	require.Empty(t, ids)
 }

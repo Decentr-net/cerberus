@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -183,11 +184,15 @@ func (s pg) DeleteProfile(ctx context.Context, addr string) error {
 }
 
 func (s pg) ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error) {
+	if from == 0 {
+		from = math.MaxInt64
+	}
+
 	var out []uint64
 	if err := sqlx.SelectContext(ctx, s.ext, &out, `
 		SELECT id FROM pdv
-		WHERE owner = $1 AND id > $2
-		ORDER BY id
+		WHERE owner = $1 AND id < $2
+		ORDER BY id DESC
 		LIMIT $3
 	`, owner, from, limit); err != nil {
 		return nil, fmt.Errorf("failed to select: %w", err)
