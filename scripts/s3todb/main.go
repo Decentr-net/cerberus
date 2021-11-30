@@ -4,14 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 
-	"github.com/golang-migrate/migrate/v4"
-	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jessevdk/go-flags"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -25,7 +23,6 @@ type DBOpts struct {
 	Postgres                   string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
 	PostgresMaxOpenConnections int    `long:"postgres.max_open_connections" env:"POSTGRES_MAX_OPEN_CONNECTIONS" default:"0" description:"postgres maximal open connections count, 0 means unlimited"`
 	PostgresMaxIdleConnections int    `long:"postgres.max_idle_connections" env:"POSTGRES_MAX_IDLE_CONNECTIONS" default:"5" description:"postgres maximal idle connections count"`
-	PostgresMigrations         string `long:"postgres.migrations" env:"POSTGRES_MIGRATIONS" default:"migrations/postgres" description:"postgres migrations directory"`
 }
 
 type S3opts struct {
@@ -61,13 +58,29 @@ func main() {
 		logrus.WithError(err).Fatal("failed to connect to S3 storage")
 	}
 
+	var total uint64
+	for f := range s3client.ListObjects(context.Background(), opts.S3Bucket, minio.ListObjectsOptions{
+		Recursive: true,
+	}) {
+		if p, _ := parseFilepath(f.Key); p.Type == "meta" {
+			total++
+		}
+	}
+	l := logrus.WithField("total", total)
+
+	var processed uint
+	l.Info("start processing")
 	iterateMeta(context.Background(), s3client, opts.S3Bucket, func(owner string, id uint64, meta *entities.PDVMeta) error {
 		if err := is.SetPDVMeta(context.Background(), owner, id, "", meta); err != nil {
 			return fmt.Errorf("failed to save meta: %w", err)
 		}
 
+		processed++
+		l.WithField("processed", processed).Infof("%s/%d moved to db", owner, id)
+
 		return nil
 	})
+	l.Info("done")
 
 	return
 }
@@ -79,12 +92,17 @@ func parseFilepath(f string) (res struct {
 }, err error) {
 	s := strings.Split(f, "/")
 	if len(s) != 3 {
-		err = errors.New("not a cerberus file")
+		res.Type = "unknown"
 		return
 	}
 
 	res.Address = s[0]
 	res.Type = s[1]
+
+	if res.Type != "meta" && res.Type != "pdv" {
+		res.Type = "unknown"
+		return
+	}
 
 	res.ID, err = getIDFromFilename(s[2])
 
@@ -96,44 +114,53 @@ func iterateMeta(ctx context.Context, c *minio.Client, bucket string, f func(str
 		Recursive: true,
 	})
 
-	for v := range ch {
-		log := logrus.WithField("filepath", v.Key)
-		if v.Err != nil {
-			log.WithError(v.Err).Error("failed to get object key")
-			continue
-		}
+	wg := sync.WaitGroup{}
+	for i := 0; i < 16; i++ {
+		wg.Add(1)
 
-		d, err := parseFilepath(v.Key)
-		if err != nil {
-			log.WithError(err).Error("failed to parse filepath")
-		}
+		go func() {
+			defer wg.Done()
+			for v := range ch {
+				log := logrus.WithField("filepath", v.Key)
+				if v.Err != nil {
+					log.WithError(v.Err).Error("failed to get object key")
+					continue
+				}
 
-		if d.Type != "meta" {
-			log.Info("not a meta")
-			continue
-		}
+				d, err := parseFilepath(v.Key)
+				if err != nil {
+					log.WithError(err).Error("failed to parse filepath")
+				}
 
-		obj, err := c.GetObject(ctx, bucket, v.Key, minio.GetObjectOptions{})
-		if err != nil {
-			log.WithError(err).Error("failed to get object")
-			continue
-		}
+				if d.Type != "meta" {
+					continue
+				}
 
-		var m entities.PDVMeta
-		if err := json.NewDecoder(obj).Decode(&m); err != nil {
-			log.WithError(err).Error("failed to decode meta")
-			continue
-		}
+				obj, err := c.GetObject(ctx, bucket, v.Key, minio.GetObjectOptions{})
+				if err != nil {
+					log.WithError(err).Error("failed to get object")
+					continue
+				}
 
-		if err := f(d.Address, d.ID, &m); err != nil {
-			log.WithError(err).Error("failed to save meta")
-			continue
-		}
+				var m entities.PDVMeta
+				if err := json.NewDecoder(obj).Decode(&m); err != nil {
+					log.WithError(err).Error("failed to decode meta")
+					continue
+				}
 
-		if err := c.RemoveObject(ctx, bucket, v.Key, minio.RemoveObjectOptions{}); err != nil {
-			log.WithError(err).Error("failed to remove meta")
-		}
+				if err := f(d.Address, d.ID, &m); err != nil {
+					log.WithError(err).Error("failed to save meta")
+					continue
+				}
+
+				if err := c.RemoveObject(ctx, bucket, v.Key, minio.RemoveObjectOptions{}); err != nil {
+					log.WithError(err).Error("failed to remove meta")
+				}
+			}
+		}()
 	}
+
+	wg.Wait()
 }
 
 func getIDFromFilename(s string) (uint64, error) {
@@ -154,34 +181,6 @@ func mustGetDB() *sql.DB {
 
 	if err := db.PingContext(context.Background()); err != nil {
 		logrus.WithError(err).Fatal("failed to ping postgres")
-	}
-
-	driver, err := migratep.WithInstance(db, &migratep.Config{})
-	if err != nil {
-		logrus.WithError(err).Fatal("failed to create database migrate driver")
-	}
-
-	migrator, err := migrate.NewWithDatabaseInstance(fmt.Sprintf("file://%s", opts.PostgresMigrations), "postgres", driver)
-	if err != nil {
-		logrus.WithError(err).Fatal("failed to create migrator")
-	}
-
-	switch v, d, err := migrator.Version(); err {
-	case nil:
-		logrus.Infof("database version %d with dirty state %t", v, d)
-	case migrate.ErrNilVersion:
-		logrus.Info("database version: nil")
-	default:
-		logrus.WithError(err).Fatal("failed to get version")
-	}
-
-	switch err := migrator.Up(); err {
-	case nil:
-		logrus.Info("database was migrated")
-	case migrate.ErrNoChange:
-		logrus.Info("database is up-to-date")
-	default:
-		logrus.WithError(err).Fatal("failed to migrate db")
 	}
 
 	return db
