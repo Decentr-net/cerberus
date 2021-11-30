@@ -20,7 +20,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jmoiron/sqlx v1.3.3
-	github.com/lib/pq v1.10.1
+	github.com/lib/pq v1.10.4
 	github.com/minio/minio-go/v7 v7.0.5
 	github.com/minio/sio v0.2.0
 	github.com/opencontainers/image-spec v1.0.2 // indirect
