@@ -151,6 +151,20 @@ func (mr *MockIndexStorageMockRecorder) ListPDV(ctx, owner, from, limit interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPDV", reflect.TypeOf((*MockIndexStorage)(nil).ListPDV), ctx, owner, from, limit)
 }
 
+// DeletePDV mocks base method
+func (m *MockIndexStorage) DeletePDV(ctx context.Context, owner string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePDV", ctx, owner)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePDV indicates an expected call of DeletePDV
+func (mr *MockIndexStorageMockRecorder) DeletePDV(ctx, owner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePDV", reflect.TypeOf((*MockIndexStorage)(nil).DeletePDV), ctx, owner)
+}
+
 // GetPDVMeta mocks base method
 func (m *MockIndexStorage) GetPDVMeta(ctx context.Context, address string, id uint64) (*entities.PDVMeta, error) {
 	m.ctrl.T.Helper()

@@ -21,6 +21,7 @@ type IndexStorage interface {
 	DeleteProfile(ctx context.Context, addr string) error
 
 	ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error)
+	DeletePDV(ctx context.Context, owner string) error
 
 	GetPDVMeta(ctx context.Context, address string, id uint64) (*entities.PDVMeta, error)
 	SetPDVMeta(ctx context.Context, address string, id uint64, tx string, m *entities.PDVMeta) error

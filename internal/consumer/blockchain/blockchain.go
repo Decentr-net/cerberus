@@ -101,6 +101,10 @@ func processMsgResetAccount(ctx context.Context, is storage.IndexStorage, fs sto
 		return fmt.Errorf("failed to delete profile: %w", err)
 	}
 
+	if err := is.DeletePDV(ctx, msg.AccountOwner.String()); err != nil {
+		return fmt.Errorf("failed to delete index: %w", err)
+	}
+
 	go func() {
 		if err := fs.DeleteData(ctx, msg.AccountOwner.String()); err != nil {
 			logrus.WithError(err).WithField("account", msg.AccountOwner).Error("failed to delete data")

@@ -241,6 +241,13 @@ func (s pg) SetPDVMeta(ctx context.Context, address string, id uint64, tx string
 	return nil
 }
 
+func (s pg) DeletePDV(ctx context.Context, address string) error {
+	if _, err := s.ext.ExecContext(ctx, `DELETE FROM pdv WHERE owner = $1`, address); err != nil {
+		return fmt.Errorf("failed to delete: %w", err)
+	}
+	return nil
+}
+
 func stringsUnique(s []string) []string {
 	m := make(map[string]struct{}, len(s))
 	out := make([]string, 0, len(s))

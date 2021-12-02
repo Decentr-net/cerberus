@@ -320,6 +320,25 @@ func TestPg_ListPDV(t *testing.T) {
 	require.Empty(t, ids)
 }
 
+func TestPg_DeletePDV(t *testing.T) {
+	t.Cleanup(cleanup)
+
+	for i := 1; i <= 10; i++ {
+		require.NoError(t, s.SetPDVMeta(ctx, "1", uint64(i), "tx", &entities.PDVMeta{
+			ObjectTypes: map[schema.Type]uint16{
+				"cookie": 1,
+			},
+			Reward: 1,
+		}))
+	}
+
+	require.NoError(t, s.DeletePDV(ctx, "1"))
+
+	ids, err := s.ListPDV(ctx, "1", 0, 10)
+	require.NoError(t, err)
+	require.Empty(t, ids)
+}
+
 func date(d string) time.Time {
 	t, err := time.Parse("2006-01-02", d)
 	if err != nil {

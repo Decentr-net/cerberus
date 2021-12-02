@@ -72,6 +72,7 @@ func TestBlockchain_processBlockFunc(t *testing.T) {
 			},
 			expect: func(fs *storagemock.MockFileStorage, is *storagemock.MockIndexStorage) {
 				fs.EXPECT().DeleteData(gomock.Any(), owner2.String()).Return(nil)
+				is.EXPECT().DeletePDV(gomock.Any(), owner2.String()).Return(nil)
 				is.EXPECT().DeleteProfile(gomock.Any(), owner2.String()).Return(nil)
 			},
 		},
