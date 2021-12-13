@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Decentr-net/cerberus/internal/refine"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/disintegration/imaging"
 	"github.com/google/uuid"
@@ -290,7 +292,14 @@ func (s *service) calculateMeta(ctx context.Context, owner sdk.AccAddress, p sch
 			cookie, ok := d.(*schema.V1Cookie)
 			if !ok {
 				log.WithField("cookie", p).Error("failed to cast cookie to V1Cookie")
-			} else if s.isCookieBlacklisted(cookie) {
+			} else if s.isCookieBlacklisted(cookie) || !refine.Cookie(cookie) {
+				continue
+			}
+		case schema.PDVSearchHistoryType:
+			sh, ok := d.(*schema.V1SearchHistory)
+			if !ok {
+				log.WithField("search history", p).Error("failed to cast search history to V1SearchHistory")
+			} else if !refine.SearchHistory(sh) {
 				continue
 			}
 		default:
