@@ -111,7 +111,7 @@ func (i *impl) processMessages(msgs []*sqs.Message) error {
 
 			savePDV, deleteMsg := i.processPDV(ctx, s, &pdv)
 			mu.Lock()
-			if savePDV && pdv.Meta.Reward > 0 {
+			if savePDV && pdv.Meta.Reward.IsPositive() {
 				toReward = append(toReward, pdv)
 			}
 

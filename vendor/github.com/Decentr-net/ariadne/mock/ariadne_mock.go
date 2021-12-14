@@ -54,16 +54,16 @@ func (mr *MockFetcherMockRecorder) FetchBlocks(ctx, from, handleFunc interface{}
 }
 
 // FetchBlock mocks base method
-func (m *MockFetcher) FetchBlock(height uint64) (*ariadne.Block, error) {
+func (m *MockFetcher) FetchBlock(ctx context.Context, height uint64) (*ariadne.Block, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchBlock", height)
+	ret := m.ctrl.Call(m, "FetchBlock", ctx, height)
 	ret0, _ := ret[0].(*ariadne.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FetchBlock indicates an expected call of FetchBlock
-func (mr *MockFetcherMockRecorder) FetchBlock(height interface{}) *gomock.Call {
+func (mr *MockFetcherMockRecorder) FetchBlock(ctx, height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchBlock", reflect.TypeOf((*MockFetcher)(nil).FetchBlock), height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchBlock", reflect.TypeOf((*MockFetcher)(nil).FetchBlock), ctx, height)
 }

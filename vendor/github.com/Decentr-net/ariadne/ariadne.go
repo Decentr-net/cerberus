@@ -5,15 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	"github.com/tendermint/spm/cosmoscmd"
+	tt "github.com/tendermint/tendermint/proto/tendermint/types"
+	"google.golang.org/grpc"
+
+	"github.com/Decentr-net/decentr/app"
 )
 
 // ErrTooHighBlockRequested returned when blockchain's height is less than requested.
@@ -35,31 +35,29 @@ type Fetcher interface {
 	FetchBlocks(ctx context.Context, from uint64, handleFunc func(b Block) error, opts ...FetchBlocksOption) error
 	// FetchBlock fetches block from blockchain.
 	// If height is zero then the highest block will be requested.
-	FetchBlock(height uint64) (*Block, error)
+	FetchBlock(ctx context.Context, height uint64) (*Block, error)
 }
 
 type fetcher struct {
-	c rpcclient.Client
-	d sdk.TxDecoder
+	c       tmservice.ServiceClient
+	d       sdk.TxDecoder
+	timeout time.Duration
 }
 
 // New returns new instance of fetcher.
-func New(node string, cdc *codec.Codec, timeout time.Duration) (Fetcher, error) {
-	httpClient, err := jsonrpcclient.DefaultHTTPClient(node)
-	if err != nil {
-		return nil, err
-	}
-	httpClient.Timeout = timeout
+func New(ctx context.Context, node string, timeout time.Duration) (Fetcher, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
-	client, err := rpchttp.NewWithClient(node, "/websocket", httpClient)
-
+	conn, err := grpc.DialContext(ctx, node, grpc.WithInsecure())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create grpc conn: %w", err)
 	}
 
 	return fetcher{
-		c: client,
-		d: types.DefaultTxDecoder(cdc),
+		c:       tmservice.NewServiceClient(conn),
+		d:       cosmoscmd.MakeEncodingConfig(app.ModuleBasics).TxConfig.TxDecoder(),
+		timeout: timeout,
 	}, nil
 }
 
@@ -86,7 +84,7 @@ func (f fetcher) FetchBlocks(ctx context.Context, from uint64, handleFunc func(b
 			return ctx.Err()
 		default:
 			if b == nil {
-				if b, err = f.FetchBlock(height); err != nil {
+				if b, err = f.FetchBlock(ctx, height); err != nil {
 					if errors.Is(err, ErrTooHighBlockRequested) {
 						time.Sleep(cfg.retryLastBlockInterval)
 						continue
@@ -114,23 +112,27 @@ func (f fetcher) FetchBlocks(ctx context.Context, from uint64, handleFunc func(b
 
 // FetchBlock fetches block from blockchain.
 // If height is zero then the highest block will be requested.
-func (f fetcher) FetchBlock(height uint64) (*Block, error) {
-	var h *int64
-	if height > 0 {
-		h = new(int64)
-		*h = int64(height)
-	}
+func (f fetcher) FetchBlock(ctx context.Context, height uint64) (*Block, error) {
+	ctx, cancel := context.WithTimeout(ctx, f.timeout)
+	defer cancel()
 
-	res, err := f.c.Block(h)
-	if err != nil {
-		if strings.Contains(err.Error(), "must be less than or equal") {
-			return nil, ErrTooHighBlockRequested
+	var block *tt.Block
+	if height == 0 {
+		res, err := f.c.GetLatestBlock(ctx, &tmservice.GetLatestBlockRequest{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get latest block: %w", err)
 		}
-		return nil, err
+		block = res.Block
+	} else {
+		res, err := f.c.GetBlockByHeight(ctx, &tmservice.GetBlockByHeightRequest{Height: int64(height)})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get block: %w", err)
+		}
+		block = res.Block
 	}
 
-	txs := make([]sdk.Tx, len(res.Block.Txs))
-	for i, v := range res.Block.Txs {
+	txs := make([]sdk.Tx, len(block.Data.Txs))
+	for i, v := range block.Data.Txs {
 		tx, err := f.d(v)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode tx: %w", err)
@@ -139,8 +141,8 @@ func (f fetcher) FetchBlock(height uint64) (*Block, error) {
 	}
 
 	return &Block{
-		Height: uint64(res.Block.Height),
-		Time:   res.Block.Time,
+		Height: uint64(block.Header.Height),
+		Time:   block.Header.Time,
 		Txs:    txs,
 	}, nil
 }

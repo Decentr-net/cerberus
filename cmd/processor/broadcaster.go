@@ -2,11 +2,9 @@ package main
 
 import (
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Decentr-net/decentr/app"
 	"github.com/Decentr-net/go-broadcaster"
 )
 
@@ -23,20 +21,19 @@ type BlockchainOpts struct {
 }
 
 func mustGetBroadcaster() *broadcaster.Broadcaster {
-	fee, err := sdk.ParseCoin(opts.BlockchainFee)
+	fee, err := sdk.ParseCoinNormalized(opts.BlockchainFee)
 	if err != nil {
 		logrus.WithError(err).Error("failed to parse fee")
 	}
 
-	b, err := broadcaster.New(app.MakeCodec(), broadcaster.Config{
-		CLIHome:            opts.BlockchainClientHome,
+	b, err := broadcaster.New(broadcaster.Config{
+		KeyringRootDir:     opts.BlockchainClientHome,
 		KeyringBackend:     opts.BlockchainKeyringBackend,
 		KeyringPromptInput: opts.BlockchainKeyringPromptInput,
 		NodeURI:            opts.BlockchainNode,
 		BroadcastMode:      cliflags.BroadcastSync,
 		From:               opts.BlockchainFrom,
 		ChainID:            opts.BlockchainChainID,
-		GenesisKeyPass:     keys.DefaultKeyPass,
 		Gas:                opts.BlockchainGas,
 		GasAdjust:          1.2,
 		Fees:               sdk.Coins{fee},

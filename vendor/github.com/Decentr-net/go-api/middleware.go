@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -20,7 +21,8 @@ func RecovererMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rvr := recover(); rvr != nil {
-				logging.GetLogger(r.Context()).Info("service recovered from panic")
+				logging.GetLogger(r.Context()).Infof(
+					"service recovered from panic stack=%s", string(debug.Stack()))
 
 				WriteInternalError(r.Context(), w, spew.Sdump(rvr))
 			}

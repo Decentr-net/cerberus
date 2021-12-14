@@ -4,6 +4,8 @@ package entities
 import (
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/Decentr-net/cerberus/internal/schema"
 )
 
@@ -11,7 +13,7 @@ import (
 type PDVMeta struct {
 	// ObjectTypes represents how much certain meta data meta contains.
 	ObjectTypes map[schema.Type]uint16 `json:"object_types"`
-	Reward      uint64                 `json:"reward"`
+	Reward      sdk.Dec                `json:"reward"`
 }
 
 // Profile ...

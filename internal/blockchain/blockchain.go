@@ -6,16 +6,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/Decentr-net/decentr/app"
-	operations "github.com/Decentr-net/decentr/x/operations/types"
+	"github.com/Decentr-net/decentr/config"
+	operationstypes "github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/Decentr-net/go-broadcaster"
 )
 
 // nolint: gochecknoinits
 func init() {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
-	config.Seal()
+	config.SetAddressPrefixes()
 }
 
 var _ Blockchain = &blockchain{}
@@ -26,7 +24,7 @@ var _ Blockchain = &blockchain{}
 type Reward struct {
 	Receiver string
 	ID       uint64
-	Reward   uint64
+	Reward   sdk.Dec
 }
 
 // Blockchain is interface for interacting with the blockchain.
@@ -46,7 +44,7 @@ func New(b *broadcaster.Broadcaster) *blockchain { // nolint:golint
 }
 
 func (b blockchain) DistributeRewards(rewards []Reward) (string, error) {
-	rr := make([]operations.Reward, len(rewards))
+	rr := make([]operationstypes.Reward, len(rewards))
 
 	for i, v := range rewards { // nolint:gocritic
 		owner, err := sdk.AccAddressFromBech32(v.Receiver)
@@ -54,19 +52,18 @@ func (b blockchain) DistributeRewards(rewards []Reward) (string, error) {
 			return "", fmt.Errorf("invalid receiver: %w", err)
 		}
 
-		rr[i] = operations.Reward{
+		rr[i] = operationstypes.Reward{
 			Receiver: owner,
-			ID:       v.ID,
-			Reward:   v.Reward,
+			Reward:   sdk.DecProto{Dec: v.Reward},
 		}
 	}
 
-	msg := operations.NewMsgDistributeRewards(b.b.From(), rr)
+	msg := operationstypes.NewMsgDistributeRewards(b.b.From(), rr)
 	if err := msg.ValidateBasic(); err != nil {
 		return "", err
 	}
 
-	resp, err := b.b.BroadcastMsg(msg, "")
+	resp, err := b.b.BroadcastMsg(&msg, "")
 	if err != nil {
 		return "", fmt.Errorf("failed to broadcast MsgDistributeRewards: %w", err)
 	}

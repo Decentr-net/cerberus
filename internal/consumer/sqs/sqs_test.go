@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -120,7 +121,7 @@ func TestImpl_ProcessMessage(t *testing.T) {
 			ObjectTypes: map[schema.Type]uint16{
 				schema.PDVCookieType: 1,
 			},
-			Reward: 1,
+			Reward: sdk.NewDecWithPrec(1, 6),
 		},
 		Data: []byte(`{"id": 1}`),
 	}))
@@ -131,7 +132,7 @@ func TestImpl_ProcessMessage(t *testing.T) {
 			ObjectTypes: map[schema.Type]uint16{
 				schema.PDVCookieType: 2,
 			},
-			Reward: 2,
+			Reward: sdk.NewDecWithPrec(2, 6),
 		},
 		Data: []byte(`{"id": 2}`),
 	}))
@@ -158,13 +159,13 @@ func TestImpl_ProcessMessage(t *testing.T) {
 	b.EXPECT().DistributeRewards([]blockchain.Reward{{
 		Receiver: addr2,
 		ID:       2,
-		Reward:   2,
+		Reward:   sdk.NewDecWithPrec(2, 6),
 	}}).Return("tx", nil)
 	is.EXPECT().SetPDVMeta(gomock.Any(), addr2, uint64(2), "tx", &entities.PDVMeta{
 		ObjectTypes: map[schema.Type]uint16{
 			schema.PDVCookieType: 2,
 		},
-		Reward: 2,
+		Reward: sdk.NewDecWithPrec(2, 6),
 	})
 
 	require.ErrorIs(t, i.Run(ctx), context.Canceled)

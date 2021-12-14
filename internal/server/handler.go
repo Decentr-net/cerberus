@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,14 +9,11 @@ import (
 	"strconv"
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
-	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	"github.com/Decentr-net/go-api"
 	logging "github.com/Decentr-net/logrus/context"
 
-	"github.com/Decentr-net/cerberus/internal/entities"
 	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/service"
 )
@@ -63,7 +59,7 @@ func (s *server) saveImageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	owner, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
+	owner, err := api.GetAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
 	if err != nil {
 		api.WriteError(w, http.StatusBadRequest, fmt.Sprintf("failed to decode owner address: %s", err.Error()))
 		return
@@ -91,7 +87,6 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /pdv PDV Save
 	//
 	// Encrypts and saves PDV
-	// The method is allowed only for Decentr browser.
 	//
 	// ---
 	// security:
@@ -140,7 +135,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 
 	var p schema.PDVWrapper
 	if err := json.Unmarshal(data, &p); err != nil {
-		logging.GetLogger(r.Context()).WithError(err).Debug("failed to decode pdv")
+		logging.GetLogger(r.Context()).WithField("body", string(data)).Debug("failed to decode pdv")
 		api.WriteError(w, http.StatusBadRequest, fmt.Sprintf("request is invalid: %s", err.Error()))
 		return
 	}
@@ -158,7 +153,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	owner, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
+	owner, err := api.GetAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
 	if err != nil {
 		api.WriteError(w, http.StatusBadRequest, fmt.Sprintf("failed to decode owner address: %s", err.Error()))
 		return
@@ -170,13 +165,12 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, meta, err := s.s.SavePDV(r.Context(), p, owner)
+	id, _, err := s.s.SavePDV(r.Context(), p, owner)
 	if err != nil {
 		api.WriteInternalErrorf(r.Context(), w, "failed to save pdv: %s", err.Error())
 		return
 	}
 
-	s.pdvMetaCache.Add(getCacheKey(owner.String(), id), meta)
 	s.savePDVThrottler.Reset(owner.String())
 
 	api.WriteOK(w, http.StatusCreated, SavePDVResponse{ID: id})
@@ -321,7 +315,7 @@ func (s *server) getPDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	owner, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
+	owner, err := api.GetAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
 	if err != nil {
 		api.WriteError(w, http.StatusBadRequest, "failed to generate address")
 		return
@@ -391,23 +385,14 @@ func (s *server) getPDVMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var m *entities.PDVMeta
-	if v, ok := s.pdvMetaCache.Get(getCacheKey(owner, id)); ok {
-		logging.GetLogger(r.Context()).WithField("key", getCacheKey(owner, id)).Debug("meta found in cache")
-		m = v.(*entities.PDVMeta) // nolint
-	} else {
-		logging.GetLogger(r.Context()).WithField("key", getCacheKey(owner, id)).Debug("meta wasn't found in cache")
-		var err error
-		m, err = s.s.GetPDVMeta(r.Context(), owner, id)
-		if err != nil {
-			if errors.Is(err, service.ErrNotFound) {
-				api.WriteErrorf(w, http.StatusNotFound, fmt.Sprintf("PDV '%d' not found", id))
-				return
-			}
-			api.WriteInternalErrorf(r.Context(), w, "failed to get meta: %s", err.Error())
+	m, err := s.s.GetPDVMeta(r.Context(), owner, id)
+	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			api.WriteErrorf(w, http.StatusNotFound, fmt.Sprintf("PDV '%d' not found", id))
 			return
 		}
-		s.pdvMetaCache.Add(getCacheKey(owner, id), m)
+		api.WriteInternalErrorf(r.Context(), w, "failed to get meta: %s", err.Error())
+		return
 	}
 
 	api.WriteOK(w, http.StatusOK, m)
@@ -453,7 +438,7 @@ func (s *server) getProfilesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		owner, err := getAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
+		owner, err := api.GetAddressFromPubKey(r.Header.Get(api.PublicKeyHeader))
 		if err != nil {
 			api.WriteError(w, http.StatusBadRequest, fmt.Sprintf("failed to decode owner address: %s", err.Error()))
 			return
@@ -540,26 +525,4 @@ func (s *server) getBlacklistHandler(w http.ResponseWriter, _ *http.Request) {
 	//       "$ref": "#/definitions/Error"
 
 	api.WriteOK(w, http.StatusOK, s.s.GetBlacklist())
-}
-
-func getAddressFromPubKey(k string) (sdk.AccAddress, error) {
-	var pk secp256k1.PubKeySecp256k1
-	b, err := hex.DecodeString(k)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := cdc.UnmarshalBinaryBare(api.GetAminoSecp256k1PubKey(b), &pk); err != nil {
-		return nil, err
-	}
-
-	addr, err := sdk.AccAddressFromHex(pk.Address().String())
-	if err != nil {
-		panic(err)
-	}
-	return addr, err
-}
-
-func getCacheKey(owner string, id uint64) string {
-	return fmt.Sprintf("%s-%d", owner, id)
 }
