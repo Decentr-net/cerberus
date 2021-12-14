@@ -107,7 +107,7 @@
             "signature": []
           }
         ],
-        "description": "Encrypts and saves PDV\nThe method is allowed only for Decentr browser.",
+        "description": "Encrypts and saves PDV",
         "consumes": [
           "application/json"
         ],

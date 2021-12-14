@@ -178,7 +178,7 @@ func (s Source) Validate() bool {
 
 // IsValidGender checks if s is a valid gender.
 func IsValidGender(s Gender) bool {
-	return s == GenderMale || s == GenderFemale
+	return s == "" || s == GenderMale || s == GenderFemale
 }
 
 // IsValidAvatar checks if avatar url is valid.

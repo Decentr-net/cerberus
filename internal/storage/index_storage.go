@@ -36,7 +36,7 @@ type Profile struct {
 	Bio       string
 	Avatar    string
 	Gender    string
-	Birthday  time.Time
+	Birthday  *time.Time
 	UpdatedAt *time.Time
 	CreatedAt time.Time
 }
@@ -50,5 +50,5 @@ type SetProfileParams struct {
 	Bio       string
 	Avatar    string
 	Gender    string
-	Birthday  time.Time
+	Birthday  *time.Time
 }

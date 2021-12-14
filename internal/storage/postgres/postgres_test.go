@@ -1,4 +1,5 @@
-//+build integration
+//go:build integration
+// +build integration
 
 package postgres
 
@@ -162,7 +163,11 @@ func TestPg_SetProfile(t *testing.T) {
 		assert.Equal(t, expected.Bio, p.Bio)
 		assert.Equal(t, expected.Avatar, p.Avatar)
 		assert.Equal(t, expected.Gender, p.Gender)
-		assert.Equal(t, expected.Birthday.UTC(), p.Birthday.UTC())
+		if expected.Birthday != nil {
+			assert.Equal(t, expected.Birthday.UTC(), p.Birthday.UTC())
+		} else {
+			assert.Nil(t, p.Birthday)
+		}
 	}
 
 	expected := storage.SetProfileParams{
@@ -192,6 +197,24 @@ func TestPg_SetProfile(t *testing.T) {
 		Avatar:    "avatar2",
 		Gender:    "male2",
 		Birthday:  date("2008-01-02"),
+	}
+	require.NoError(t, s.SetProfile(ctx, &expected))
+	p, err = s.GetProfile(ctx, expected.Address)
+	require.NoError(t, err)
+	require.NotNil(t, p)
+	compare(expected, p)
+	assert.NotNil(t, p.UpdatedAt)
+	assert.False(t, p.CreatedAt.IsZero())
+
+	expected = storage.SetProfileParams{
+		Address:   "address",
+		FirstName: "",
+		LastName:  "",
+		Emails:    []string{},
+		Bio:       "",
+		Avatar:    "",
+		Gender:    "",
+		Birthday:  nil,
 	}
 	require.NoError(t, s.SetProfile(ctx, &expected))
 	p, err = s.GetProfile(ctx, expected.Address)
@@ -340,10 +363,10 @@ func TestPg_DeletePDV(t *testing.T) {
 	require.Empty(t, ids)
 }
 
-func date(d string) time.Time {
+func date(d string) *time.Time {
 	t, err := time.Parse("2006-01-02", d)
 	if err != nil {
 		panic(err)
 	}
-	return t
+	return &t
 }

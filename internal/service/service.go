@@ -338,7 +338,7 @@ func (s *service) isCookieBlacklisted(cookie *schema.V1Cookie) bool {
 }
 
 func getSetProfileParams(owner sdk.AccAddress, p schema.V1Profile) *storage.SetProfileParams { // nolint:gocritic
-	return &storage.SetProfileParams{
+	params := storage.SetProfileParams{
 		Address:   owner.String(),
 		FirstName: p.FirstName,
 		LastName:  p.LastName,
@@ -346,8 +346,13 @@ func getSetProfileParams(owner sdk.AccAddress, p schema.V1Profile) *storage.SetP
 		Bio:       p.Bio,
 		Avatar:    p.Avatar,
 		Gender:    string(p.Gender),
-		Birthday:  p.Birthday.Time,
 	}
+
+	if p.Birthday != nil {
+		params.Birthday = &p.Birthday.Time
+	}
+
+	return &params
 }
 
 func getPDVOwnerPrefix(owner string) string {

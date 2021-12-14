@@ -1,0 +1,2 @@
+ALTER TABLE profile
+    ALTER COLUMN birthday SET NOT NULL;

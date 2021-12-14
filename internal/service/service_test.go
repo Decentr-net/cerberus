@@ -278,7 +278,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				Bio:       "bio",
 				Avatar:    "avatar",
 				Gender:    "male",
-				Birthday:  pdv[0].(*schema.V1Profile).Birthday.Time,
+				Birthday:  &pdv[0].(*schema.V1Profile).Birthday.Time,
 			})).Return(nil)
 
 			expectedID := uint64(time.Now().Unix())
@@ -526,7 +526,7 @@ func TestService_GetProfiles(t *testing.T) {
 			Bio:       "4",
 			Avatar:    "5",
 			Gender:    "6",
-			Birthday:  time.Unix(1, 0),
+			Birthday:  toTimePrt(time.Unix(1, 0)),
 			CreatedAt: time.Unix(2, 0),
 		},
 		{
@@ -537,7 +537,7 @@ func TestService_GetProfiles(t *testing.T) {
 			Bio:       "5",
 			Avatar:    "6",
 			Gender:    "7",
-			Birthday:  time.Unix(2, 0),
+			Birthday:  toTimePrt(time.Unix(2, 0)),
 			CreatedAt: time.Unix(3, 0),
 		},
 	}, nil)
@@ -553,7 +553,7 @@ func TestService_GetProfiles(t *testing.T) {
 			Bio:       "4",
 			Avatar:    "5",
 			Gender:    "6",
-			Birthday:  time.Unix(1, 0),
+			Birthday:  toTimePrt(time.Unix(1, 0)),
 			CreatedAt: time.Unix(2, 0),
 		},
 		{
@@ -564,7 +564,7 @@ func TestService_GetProfiles(t *testing.T) {
 			Bio:       "5",
 			Avatar:    "6",
 			Gender:    "7",
-			Birthday:  time.Unix(2, 0),
+			Birthday:  toTimePrt(time.Unix(2, 0)),
 			CreatedAt: time.Unix(3, 0),
 		},
 	}, pp)
@@ -580,12 +580,16 @@ func TestService_GetRewardsMap(t *testing.T) {
 	require.EqualValues(t, rm, s.GetRewardsMap())
 }
 
-func mustDate(s string) types.Date {
+func mustDate(s string) *types.Date {
 	var d types.Date
 
 	if err := d.UnmarshalJSON([]byte(s)); err != nil {
 		panic(err)
 	}
 
-	return d
+	return &d
+}
+
+func toTimePrt(t time.Time) *time.Time {
+	return &t
 }

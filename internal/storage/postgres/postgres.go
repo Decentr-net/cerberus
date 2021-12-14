@@ -35,7 +35,7 @@ type profileDTO struct {
 	Bio       string         `db:"bio"`
 	Avatar    string         `db:"avatar"`
 	Gender    string         `db:"gender"`
-	Birthday  time.Time      `db:"birthday"`
+	Birthday  pq.NullTime    `db:"birthday"`
 	UpdatedAt pq.NullTime    `db:"updated_at"`
 	CreatedAt time.Time      `db:"created_at"`
 }
@@ -151,7 +151,13 @@ func (s pg) SetProfile(ctx context.Context, p *storage.SetProfileParams) error {
 		Bio:       p.Bio,
 		Avatar:    p.Avatar,
 		Gender:    p.Gender,
-		Birthday:  p.Birthday,
+	}
+
+	if p.Birthday != nil {
+		profile.Birthday = pq.NullTime{
+			Time:  *p.Birthday,
+			Valid: true,
+		}
 	}
 
 	if _, err := sqlx.NamedExecContext(ctx, s.ext,
@@ -271,8 +277,11 @@ func toStorageProfile(p *profileDTO) *storage.Profile {
 		Bio:       p.Bio,
 		Avatar:    p.Avatar,
 		Gender:    p.Gender,
-		Birthday:  p.Birthday,
 		CreatedAt: p.CreatedAt,
+	}
+
+	if p.Birthday.Valid {
+		out.Birthday = &p.Birthday.Time
 	}
 
 	if p.UpdatedAt.Valid {
