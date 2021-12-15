@@ -101,29 +101,29 @@ func (i *impl) processMessages(msgs []*sqs.Message) error {
 		mu sync.Mutex
 	)
 
+	parallel(8, func(m *sqs.Message) {
+		var pdv producer.PDVMessage
+		if err := json.Unmarshal([]byte(*m.Body), &pdv); err != nil {
+			log.WithError(err).Error("failed to unmarshal message")
+			return
+		}
+
+		savePDV, deleteMsg := i.storePDV(ctx, i.is, &pdv)
+		mu.Lock()
+		if savePDV && pdv.Meta.Reward.IsPositive() {
+			toReward = append(toReward, pdv)
+		}
+
+		if deleteMsg {
+			toDelete = append(toDelete, &sqs.DeleteMessageBatchRequestEntry{
+				Id:            m.MessageId,
+				ReceiptHandle: m.ReceiptHandle,
+			})
+		}
+		mu.Unlock()
+	}, msgs)
+
 	if err := i.is.InTx(ctx, func(s storage.IndexStorage) error {
-		parallel(8, func(m *sqs.Message) {
-			var pdv producer.PDVMessage
-			if err := json.Unmarshal([]byte(*m.Body), &pdv); err != nil {
-				log.WithError(err).Error("failed to unmarshal message")
-				return
-			}
-
-			savePDV, deleteMsg := i.processPDV(ctx, s, &pdv)
-			mu.Lock()
-			if savePDV && pdv.Meta.Reward.IsPositive() {
-				toReward = append(toReward, pdv)
-			}
-
-			if deleteMsg {
-				toDelete = append(toDelete, &sqs.DeleteMessageBatchRequestEntry{
-					Id:            m.MessageId,
-					ReceiptHandle: m.ReceiptHandle,
-				})
-			}
-			mu.Unlock()
-		}, msgs)
-
 		if len(toReward) > 0 {
 			rr := make([]blockchain.Reward, 0, len(toReward))
 			for _, v := range toReward { // nolint:gocritic
@@ -163,7 +163,7 @@ func (i *impl) processMessages(msgs []*sqs.Message) error {
 	return nil
 }
 
-func (i *impl) processPDV(ctx context.Context, s storage.IndexStorage, pdv *producer.PDVMessage) (reward bool, deleteMsg bool) {
+func (i *impl) storePDV(ctx context.Context, s storage.IndexStorage, pdv *producer.PDVMessage) (reward bool, deleteMsg bool) {
 	log := log.WithFields(logrus.Fields{
 		"id":   pdv.ID,
 		"meta": pdv.Meta,
