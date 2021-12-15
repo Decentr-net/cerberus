@@ -1,5 +1,5 @@
 ARG ALPINE_VERSION=3.10
-ARG GOLANG_VERSION=1.15.5
+ARG GOLANG_VERSION=1.16.9
 
 FROM golang:${GOLANG_VERSION}
 WORKDIR /go/src/github.com/Decentr-net/cerberus/
