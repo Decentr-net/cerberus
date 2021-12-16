@@ -85,7 +85,7 @@ type Profile struct {
 	Bio       string   `json:"bio"`
 	Gender    string   `json:"gender"`
 	Avatar    string   `json:"avatar"`
-	Birthday  string   `json:"birthday"`
+	Birthday  string   `json:"birthday,omitempty"`
 	CreatedAt int64    `json:"createdAt"`
 }
 

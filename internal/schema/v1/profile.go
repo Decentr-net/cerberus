@@ -22,7 +22,7 @@ type Profile struct {
 	Bio       string       `json:"bio"`
 	Gender    types.Gender `json:"gender"`
 	Avatar    string       `json:"avatar"`
-	Birthday  types.Date   `json:"birthday"`
+	Birthday  *types.Date  `json:"birthday"`
 }
 
 // Type ...

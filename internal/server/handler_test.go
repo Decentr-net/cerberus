@@ -457,46 +457,46 @@ func TestServer_GetPDVMeta(t *testing.T) {
 			rdata: `{"object_types":{"cookie": 1}, "reward": "2.000000000000000000"}`,
 			rlog:  "",
 		},
-		//{
-		//	name:  "doesn't exists",
-		//	owner: testOwner,
-		//	id:    "1",
-		//	f: func(_ context.Context, owner string, id uint64) (*entities.PDVMeta, error) {
-		//		return nil, service.ErrNotFound
-		//	},
-		//	rcode: http.StatusNotFound,
-		//	rdata: fmt.Sprintf(`{"error":"PDV '%s' not found"}`, "1"),
-		//	rlog:  "",
-		//},
-		//{
-		//	name:  "invalid request",
-		//	owner: "inv",
-		//	id:    "1",
-		//	f:     nil,
-		//	rcode: http.StatusBadRequest,
-		//	rdata: `{"error":"invalid address"}`,
-		//	rlog:  "",
-		//},
-		//{
-		//	name:  "invalid request #2",
-		//	owner: testOwner,
-		//	id:    "1s",
-		//	f:     nil,
-		//	rcode: http.StatusBadRequest,
-		//	rdata: `{"error":"invalid id"}`,
-		//	rlog:  "",
-		//},
-		//{
-		//	name:  "internal error",
-		//	owner: testOwner,
-		//	id:    "1",
-		//	f: func(_ context.Context, owner string, id uint64) (*entities.PDVMeta, error) {
-		//		return nil, errors.New("test error")
-		//	},
-		//	rcode: http.StatusInternalServerError,
-		//	rdata: `{"error":"internal error"}`,
-		//	rlog:  "test error",
-		//},
+		{
+			name:  "doesn't exists",
+			owner: testOwner,
+			id:    "1",
+			f: func(_ context.Context, owner string, id uint64) (*entities.PDVMeta, error) {
+				return nil, service.ErrNotFound
+			},
+			rcode: http.StatusNotFound,
+			rdata: fmt.Sprintf(`{"error":"PDV '%s' not found"}`, "1"),
+			rlog:  "",
+		},
+		{
+			name:  "invalid request",
+			owner: "inv",
+			id:    "1",
+			f:     nil,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid address"}`,
+			rlog:  "",
+		},
+		{
+			name:  "invalid request #2",
+			owner: testOwner,
+			id:    "1s",
+			f:     nil,
+			rcode: http.StatusBadRequest,
+			rdata: `{"error":"invalid id"}`,
+			rlog:  "",
+		},
+		{
+			name:  "internal error",
+			owner: testOwner,
+			id:    "1",
+			f: func(_ context.Context, owner string, id uint64) (*entities.PDVMeta, error) {
+				return nil, errors.New("test error")
+			},
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error":"internal error"}`,
+			rlog:  "test error",
+		},
 	}
 
 	for i := range tt {
@@ -562,7 +562,7 @@ func TestServer_GetProfiles(t *testing.T) {
 						Bio:       "4",
 						Avatar:    "5",
 						Gender:    "6",
-						Birthday:  time.Unix(1, 0),
+						Birthday:  toTimePrt(time.Unix(1, 0)),
 						CreatedAt: time.Unix(200000, 0),
 					},
 					{
@@ -573,15 +573,27 @@ func TestServer_GetProfiles(t *testing.T) {
 						Bio:       "24",
 						Avatar:    "25",
 						Gender:    "26",
-						Birthday:  time.Unix(222210, 0),
+						Birthday:  toTimePrt(time.Unix(222210, 0)),
 						CreatedAt: time.Unix(2200000, 0),
+					},
+					{
+						Address:   "decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz",
+						FirstName: "222",
+						LastName:  "233",
+						Emails:    []string{"email"},
+						Bio:       "243",
+						Avatar:    "253",
+						Gender:    "263",
+						Birthday:  nil,
+						CreatedAt: time.Unix(2300000, 0),
 					},
 				}, nil
 			},
 			rcode: http.StatusOK,
 			rdata: `[
 	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","emails":["email"],"bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":200000},
-	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":2200000}
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":2200000},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"222","lastName":"233","bio":"243","avatar":"253","gender":"263","createdAt":2300000}
 		]`,
 		},
 		{
@@ -599,7 +611,7 @@ func TestServer_GetProfiles(t *testing.T) {
 						Bio:       "4",
 						Avatar:    "5",
 						Gender:    "6",
-						Birthday:  time.Unix(1, 0),
+						Birthday:  toTimePrt(time.Unix(1, 0)),
 						CreatedAt: time.Unix(200000, 0),
 					},
 					{
@@ -610,7 +622,7 @@ func TestServer_GetProfiles(t *testing.T) {
 						Bio:       "24",
 						Avatar:    "25",
 						Gender:    "26",
-						Birthday:  time.Unix(222210, 0),
+						Birthday:  toTimePrt(time.Unix(222210, 0)),
 						CreatedAt: time.Unix(2200000, 0),
 					},
 				}, nil
@@ -722,7 +734,7 @@ func Test_savePDVHander_Amount(t *testing.T) {
 		            "lastName": "Dorian",
 		            "emails": ["dev@decentr.xyz"],
 		            "bio": "Just cool guy",
-		            "gender": "male",
+		            "gender": "",
 		            "avatar": "http://john.dorian/avatar.png",
 		            "birthday": "1993-01-20"
 		        }
@@ -813,4 +825,8 @@ func Test_savePDVHander_Amount(t *testing.T) {
 			}
 		})
 	}
+}
+
+func toTimePrt(t time.Time) *time.Time {
+	return &t
 }

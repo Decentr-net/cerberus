@@ -39,12 +39,12 @@ func TestPDV_Validate_invalid(t *testing.T) {
 	}.Validate())
 }
 
-func mustDate(s string) types.Date {
+func mustDate(s string) *types.Date {
 	var d types.Date
 
 	if err := d.UnmarshalJSON([]byte(s)); err != nil {
 		panic(err)
 	}
 
-	return d
+	return &d
 }
