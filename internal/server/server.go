@@ -4,7 +4,7 @@
 //
 //     Schemes: https
 //     BasePath: /v1
-//     Version: 1.2.1
+//     Version: 1.5.2
 //
 //     Produces:
 //     - application/json
