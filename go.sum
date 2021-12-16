@@ -89,8 +89,8 @@ github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3
 github.com/DataDog/zstd v1.4.1/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
 github.com/DataDog/zstd v1.4.5 h1:EndNeuB0l9syBZhut0wns3gV1hL8zX8LIu6ZiVHWLIQ=
 github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
-github.com/Decentr-net/ariadne v1.1.0 h1:++rU28EwPtyJ+Ne1qAtvrzMOddLyIJvCppF95ONEY8o=
-github.com/Decentr-net/ariadne v1.1.0/go.mod h1:nHIdoOWUKqM3jh2To+NmNcvTLW1FK5Lj3gpSRAAPdfM=
+github.com/Decentr-net/ariadne v1.1.1 h1:dd5ViQzLcFEuQJKchSgSH1SQvQUwtM4ScHQGO9VqNRw=
+github.com/Decentr-net/ariadne v1.1.1/go.mod h1:nHIdoOWUKqM3jh2To+NmNcvTLW1FK5Lj3gpSRAAPdfM=
 github.com/Decentr-net/decentr v1.5.0 h1:Cz2FE2VPGq1+BhrBDQB2/VZTgmowcGiDwSXsJUJtuII=
 github.com/Decentr-net/decentr v1.5.0/go.mod h1:lDTMpDxM1VYIyZVwv78qqxfv9lpFUphL3JhuyUKOJy0=
 github.com/Decentr-net/go-api v0.1.0 h1:aF2T6pd0N3TX0KgNe5EmEgqnQBHSGnAQonYmwP5nd74=

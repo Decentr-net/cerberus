@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -12,6 +13,7 @@ import (
 	"github.com/tendermint/spm/cosmoscmd"
 	tt "github.com/tendermint/tendermint/proto/tendermint/types"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 
 	"github.com/Decentr-net/decentr/app"
 )
@@ -126,6 +128,11 @@ func (f fetcher) FetchBlock(ctx context.Context, height uint64) (*Block, error) 
 	} else {
 		res, err := f.c.GetBlockByHeight(ctx, &tmservice.GetBlockByHeightRequest{Height: int64(height)})
 		if err != nil {
+			if err, ok := status.FromError(err); ok {
+				if strings.Contains(err.Message(), "requested block height is bigger then the chain length") {
+					return nil, ErrTooHighBlockRequested
+				}
+			}
 			return nil, fmt.Errorf("failed to get block: %w", err)
 		}
 		block = res.Block

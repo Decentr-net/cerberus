@@ -3,7 +3,7 @@ module github.com/Decentr-net/cerberus
 go 1.16
 
 require (
-	github.com/Decentr-net/ariadne v1.1.0
+	github.com/Decentr-net/ariadne v1.1.1
 	github.com/Decentr-net/decentr v1.5.0
 	github.com/Decentr-net/go-api v0.1.0
 	github.com/Decentr-net/go-broadcaster v0.1.0
@@ -30,7 +30,6 @@ require (
 	github.com/testcontainers/testcontainers-go v0.11.1
 	golang.org/x/net v0.0.0-20210903162142-ad29c8ab022f
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	gopkg.in/yaml.v2 v2.4.0
 )
 
 replace (
