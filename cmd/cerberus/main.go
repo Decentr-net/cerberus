@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -12,15 +13,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Decentr-net/logrus/sentry"
 	"github.com/go-chi/chi"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jessevdk/go-flags"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-	"gopkg.in/yaml.v2"
-
-	"github.com/Decentr-net/logrus/sentry"
 
 	"github.com/Decentr-net/cerberus/internal/crypto/sio"
 	"github.com/Decentr-net/cerberus/internal/health"
@@ -138,7 +137,7 @@ func newServiceOrDie(fs storage.FileStorage, is storage.IndexStorage, p producer
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to read reward map config")
 	}
-	if err := yaml.Unmarshal(b, rewardMap); err != nil {
+	if err := json.Unmarshal(b, &rewardMap); err != nil {
 		logrus.WithError(err).Fatal("failed to unmarshal reward map config")
 	}
 	return service.New(sio.NewCrypto(mustExtractEncryptKey()), fs, is, p, rewardMap)
