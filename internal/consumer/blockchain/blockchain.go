@@ -94,16 +94,16 @@ func (b blockchain) processBlockFunc(ctx context.Context) func(block ariadne.Blo
 }
 
 func processMsgResetAccount(ctx context.Context, is storage.IndexStorage, fs storage.FileStorage, msg *operationstypes.MsgResetAccount) error {
-	if err := is.DeleteProfile(ctx, msg.Address.String()); err != nil {
+	if err := is.DeleteProfile(ctx, msg.Address); err != nil {
 		return fmt.Errorf("failed to delete profile: %w", err)
 	}
 
-	if err := is.DeletePDV(ctx, msg.Address.String()); err != nil {
+	if err := is.DeletePDV(ctx, msg.Address); err != nil {
 		return fmt.Errorf("failed to delete index: %w", err)
 	}
 
 	go func() {
-		if err := fs.DeleteData(ctx, msg.Address.String()); err != nil {
+		if err := fs.DeleteData(ctx, msg.Address); err != nil {
 			logrus.WithError(err).WithField("account", msg.Address).Error("failed to delete data")
 		}
 	}()

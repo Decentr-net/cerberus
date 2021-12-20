@@ -53,7 +53,7 @@ func (b blockchain) DistributeRewards(rewards []Reward) (string, error) {
 		}
 
 		rr[i] = operationstypes.Reward{
-			Receiver: owner,
+			Receiver: owner.String(),
 			Reward:   sdk.DecProto{Dec: v.Reward},
 		}
 	}

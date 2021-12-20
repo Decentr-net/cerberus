@@ -7,8 +7,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
-	"github.com/Decentr-net/decentr/x/token/types"
 	"github.com/cosmos/cosmos-sdk/client"
+
+	"github.com/Decentr-net/decentr/x/token/types"
 )
 
 func GetQueryCmd(_ string) *cobra.Command {
@@ -22,7 +23,6 @@ func GetQueryCmd(_ string) *cobra.Command {
 
 	cmd.AddCommand(
 		NewBalanceCmd(),
-		NewPoolCmd(),
 	)
 
 	return cmd
@@ -39,41 +39,13 @@ func NewBalanceCmd() *cobra.Command {
 				return err
 			}
 
-			address, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid address: %w", err)
+			if _, err := sdk.AccAddressFromBech32(args[0]); err != nil {
+				return fmt.Errorf("invalid owner")
 			}
-			queryClient := types.NewQueryClient(clientCtx)
 
-			out, err := queryClient.Balance(cmd.Context(), &types.BalanceRequest{
-				Address: address,
+			out, err := types.NewQueryClient(clientCtx).Balance(cmd.Context(), &types.BalanceRequest{
+				Address: args[0],
 			})
-			if err != nil {
-				return err
-			}
-			return clientCtx.PrintProto(out)
-		},
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-
-	return cmd
-}
-
-func NewPoolCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "pool",
-		Short: "Query pool balance",
-		Args:  cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			queryClient := types.NewQueryClient(clientCtx)
-
-			out, err := queryClient.Pool(cmd.Context(), &types.PoolRequest{})
 			if err != nil {
 				return err
 			}

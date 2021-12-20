@@ -3,9 +3,10 @@ package types
 import (
 	"fmt"
 
-	"github.com/Decentr-net/decentr/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+
+	"github.com/Decentr-net/decentr/config"
 )
 
 const (
@@ -13,7 +14,7 @@ const (
 )
 
 var (
-	DefaultSupervisors = []sdk.AccAddress(nil)
+	DefaultSupervisors = []string(nil)
 	DefaultMinGasPrice = sdk.NewDecCoinFromDec(config.DefaultBondDenom, sdk.MustNewDecFromStr("0.025"))
 )
 
@@ -67,13 +68,17 @@ func validateMinGasPrice(i interface{}) error {
 }
 
 func validateSupervisors(i interface{}) error {
-	s, ok := i.([]sdk.AccAddress)
+	s, ok := i.([]string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
 	for i, v := range s {
-		if err := sdk.VerifyAddressFormat(v); err != nil {
+		addr, err := sdk.AccAddressFromBech32(v)
+		if err != nil {
+			return fmt.Errorf("invalid supervisor %d", i+1)
+		}
+		if err := sdk.VerifyAddressFormat(addr); err != nil {
 			return fmt.Errorf("invalid supervisor %d", i+1)
 		}
 	}
@@ -81,16 +86,15 @@ func validateSupervisors(i interface{}) error {
 	return nil
 }
 
-func NewFixedGasParams(resetAccount, distributeReward, banAccount sdk.Gas) FixedGasParams {
+func NewFixedGasParams(resetAccount, distributeReward sdk.Gas) FixedGasParams {
 	return FixedGasParams{
 		ResetAccount:      resetAccount,
 		DistributeRewards: distributeReward,
-		BanAccount:        banAccount,
 	}
 }
 
 func DefaultFixedGasParams() FixedGasParams {
-	return NewFixedGasParams(0, 0, 0)
+	return NewFixedGasParams(0, 0)
 }
 
 func validateFixedGasParams(i interface{}) error {

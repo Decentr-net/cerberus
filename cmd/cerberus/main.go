@@ -13,13 +13,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Decentr-net/logrus/sentry"
 	"github.com/go-chi/chi"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jessevdk/go-flags"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/Decentr-net/logrus/sentry"
 
 	"github.com/Decentr-net/cerberus/internal/crypto/sio"
 	"github.com/Decentr-net/cerberus/internal/health"

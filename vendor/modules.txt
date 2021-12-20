@@ -13,10 +13,11 @@ github.com/DataDog/zstd
 ## explicit
 github.com/Decentr-net/ariadne
 github.com/Decentr-net/ariadne/mock
-# github.com/Decentr-net/decentr v1.5.0
+# github.com/Decentr-net/decentr v1.5.5
 ## explicit
 github.com/Decentr-net/decentr/app
 github.com/Decentr-net/decentr/app/ante
+github.com/Decentr-net/decentr/app/params
 github.com/Decentr-net/decentr/config
 github.com/Decentr-net/decentr/docs
 github.com/Decentr-net/decentr/x/community
@@ -955,7 +956,7 @@ google.golang.org/genproto/googleapis/api/annotations
 google.golang.org/genproto/googleapis/api/httpbody
 google.golang.org/genproto/googleapis/rpc/status
 google.golang.org/genproto/protobuf/field_mask
-# google.golang.org/grpc v1.40.0 => google.golang.org/grpc v1.33.2
+# google.golang.org/grpc v1.42.0 => google.golang.org/grpc v1.33.2
 google.golang.org/grpc
 google.golang.org/grpc/attributes
 google.golang.org/grpc/backoff

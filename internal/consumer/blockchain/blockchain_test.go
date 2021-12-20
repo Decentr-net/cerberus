@@ -68,8 +68,8 @@ func TestBlockchain_processBlockFunc(t *testing.T) {
 		{
 			name: "delete_account",
 			msg: &operationstypes.MsgResetAccount{
-				Owner:   owner,
-				Address: owner2,
+				Owner:   owner.String(),
+				Address: owner2.String(),
 			},
 			expect: func(fs *storagemock.MockFileStorage, is *storagemock.MockIndexStorage) {
 				fs.EXPECT().DeleteData(gomock.Any(), owner2.String()).Return(nil)
