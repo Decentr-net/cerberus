@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,14 +9,15 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
-
-	"github.com/Decentr-net/go-api"
-	logging "github.com/Decentr-net/logrus/context"
 
 	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/service"
+	"github.com/Decentr-net/go-api"
+	logging "github.com/Decentr-net/logrus/context"
 )
 
 // SavePDVResponse ...
@@ -29,6 +31,21 @@ type SavePDVResponse struct {
 type SaveImageResponse struct {
 	HD    string `json:"hd"`
 	Thumb string `json:"thumb"`
+}
+
+// PDVRewardsPool ...
+// swagger:model PDVRewardsPool
+type PDVRewardsPool struct {
+	Size                 sdk.Dec   `json:"size"`
+	TotalDelta           sdk.Dec   `json:"total_delta"`
+	NextDistributionDate time.Time `json:"next_distribution_date"`
+}
+
+// PDVRewardDelta ...
+// swagger:model PDVRewardDelta
+type PDVRewardDelta struct {
+	Delta sdk.Dec        `json:"delta"`
+	Pool  PDVRewardsPool `json:"pool"`
 }
 
 // saveImageHandler resizes and saves the given message into storage.
@@ -469,6 +486,7 @@ func (s *server) getProfilesHandler(w http.ResponseWriter, r *http.Request) {
 			Bio:       v.Bio,
 			Gender:    v.Gender,
 			Avatar:    v.Avatar,
+			Banned:    v.Banned,
 			CreatedAt: v.CreatedAt.Unix(),
 		}
 
@@ -528,4 +546,103 @@ func (s *server) getBlacklistHandler(w http.ResponseWriter, _ *http.Request) {
 	//       "$ref": "#/definitions/Error"
 
 	api.WriteOK(w, http.StatusOK, s.s.GetBlacklist())
+}
+
+func (s *server) getPDVRewardsPool(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /v1/pdv-rewards/pool PDVRewards PDVRewardsPool
+	//
+	// Get PDV rewards pool
+	//
+	// Returns rewards pool.
+	//
+	// ---
+	// produces:
+	// - application/json
+	// responses:
+	//   '200':
+	//     description: pool
+	//     schema:
+	//       "$ref": "#/definitions/PDVRewardsPool"
+	//   '500':
+	//     description: internal server error
+	//     schema:
+	//       "$ref": "#/definitions/Error"
+	pool, err := s.preparePDVRewardsPool(r.Context())
+	if err != nil {
+		api.WriteInternalError(r.Context(), w, err.Error())
+		return
+	}
+
+	api.WriteOK(w, http.StatusOK, pool)
+}
+
+func (s *server) getPDVRewardsDelta(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /v1/pdv-rewards/{owner}/delta PDVRewards PDVRewardDelta
+	//
+	// Get PDV reward delta of the given account
+	//
+	// Returns PDV reward delta with reward pool
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: owner
+	//   description: account address
+	//   in: path
+	//   required: true
+	//   type: string
+	// responses:
+	//   '200':
+	//     description: pool
+	//     schema:
+	//       "$ref": "#/definitions/PDVRewardDelta"
+	//   '404':
+	//     description: PDV doesn't exist
+	//     schema:
+	//       "$ref": "#/definitions/Error"
+	//   '500':
+	//     description: internal server error
+	//     schema:
+	//       "$ref": "#/definitions/Error"
+	owner := chi.URLParam(r, "owner")
+	if !isOwnerValid(owner) {
+		api.WriteError(w, http.StatusBadRequest, "invalid owner")
+		return
+	}
+
+	delta, err := s.s.GetPDVDelta(r.Context(), owner)
+	if err != nil {
+		api.WriteInternalError(r.Context(), w, fmt.Sprintf("failed to get PDV delta: %s", err.Error()))
+		return
+	}
+
+	pool, err := s.preparePDVRewardsPool(r.Context())
+	if err != nil {
+		api.WriteInternalError(r.Context(), w, err.Error())
+		return
+	}
+
+	api.WriteOK(w, http.StatusOK, PDVRewardDelta{
+		Delta: delta,
+		Pool:  *pool,
+	})
+}
+
+func (s *server) preparePDVRewardsPool(ctx context.Context) (*PDVRewardsPool, error) {
+	total, err := s.s.GetPDVTotalDelta(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get PDV delta total: %w", err)
+	}
+
+	date, err := s.s.GetPDVRewardsNextDistributionDate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get next distribution date: %w", err)
+	}
+
+	return &PDVRewardsPool{
+		Size:                 s.pdvRewardsPoolSize,
+		TotalDelta:           total,
+		NextDistributionDate: date,
+	}, nil
 }

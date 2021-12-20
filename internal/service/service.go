@@ -11,23 +11,22 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
+	"strconv"
 	"strings"
 	"time"
-
-	"github.com/Decentr-net/cerberus/internal/refine"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/disintegration/imaging"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 
-	logging "github.com/Decentr-net/logrus/context"
-
 	"github.com/Decentr-net/cerberus/internal/crypto"
 	"github.com/Decentr-net/cerberus/internal/entities"
 	"github.com/Decentr-net/cerberus/internal/producer"
+	"github.com/Decentr-net/cerberus/internal/refine"
 	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/storage"
+	logging "github.com/Decentr-net/logrus/context"
 )
 
 //go:generate mockgen -destination=./mock/service.go -package=mock -source=service.go
@@ -68,6 +67,15 @@ type Service interface {
 
 	// GetBlacklist ...
 	GetBlacklist() Blacklist
+
+	// GetPDVDelta ...
+	GetPDVDelta(ctx context.Context, owner string) (sdk.Dec, error)
+
+	// GetPDVTotalDelta ...
+	GetPDVTotalDelta(ctx context.Context) (sdk.Dec, error)
+
+	// GetPDVRewardsNextDistributionDate ...
+	GetPDVRewardsNextDistributionDate(ctx context.Context) (time.Time, error)
 }
 
 // service is Service interface implementation.
@@ -78,6 +86,8 @@ type service struct {
 	p  producer.Producer
 
 	rewardMap RewardMap
+
+	pdvRewardsInterval time.Duration
 }
 
 // New returns new instance of service.
@@ -87,6 +97,7 @@ func New(
 	is storage.IndexStorage,
 	p producer.Producer,
 	rewardMap RewardMap,
+	pdvRewardsInterval time.Duration,
 ) Service {
 	return &service{
 		c:  c,
@@ -94,7 +105,8 @@ func New(
 		is: is,
 		p:  p,
 
-		rewardMap: rewardMap,
+		rewardMap:          rewardMap,
+		pdvRewardsInterval: pdvRewardsInterval,
 	}
 }
 
@@ -246,6 +258,47 @@ func (s *service) GetPDVMeta(ctx context.Context, owner string, id uint64) (*ent
 	}
 
 	return meta, nil
+}
+
+func (s *service) GetPDVDelta(ctx context.Context, owner string) (sdk.Dec, error) {
+	total, err := s.is.GetPDVDelta(ctx, owner)
+	if err != nil {
+		return sdk.ZeroDec(), fmt.Errorf("failed to get pdv delta: %w", err)
+	}
+
+	dec, err := float64ToDecimal(total)
+	if err != nil {
+		return sdk.ZeroDec(), fmt.Errorf("failed to convert to sdk.Dec: %w", err)
+	}
+
+	return dec, nil
+}
+
+func (s *service) GetPDVTotalDelta(ctx context.Context) (sdk.Dec, error) {
+	total, err := s.is.GetPDVTotalDelta(ctx)
+	if err != nil {
+		return sdk.ZeroDec(), fmt.Errorf("failed to get pdv delta total: %w", err)
+	}
+
+	dec, err := float64ToDecimal(total)
+	if err != nil {
+		return sdk.ZeroDec(), fmt.Errorf("failed to convert to sdk.Dec: %w", err)
+	}
+
+	return dec, nil
+}
+
+func (s *service) GetPDVRewardsNextDistributionDate(ctx context.Context) (time.Time, error) {
+	date, err := s.is.GetPDVRewardsDistributedDate(ctx)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to get pdv rewards distributed date: %w", err)
+	}
+
+	return date.Add(s.pdvRewardsInterval), nil
+}
+
+func float64ToDecimal(f float64) (sdk.Dec, error) {
+	return sdk.NewDecFromStr(strconv.FormatFloat(f, 'f', 6, 32))
 }
 
 // GetProfiles ...

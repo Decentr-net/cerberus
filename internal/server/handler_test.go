@@ -562,6 +562,7 @@ func TestServer_GetProfiles(t *testing.T) {
 						Bio:       "4",
 						Avatar:    "5",
 						Gender:    "6",
+						Banned:    false,
 						Birthday:  toTimePrt(time.Unix(1, 0)),
 						CreatedAt: time.Unix(200000, 0),
 					},
@@ -573,6 +574,7 @@ func TestServer_GetProfiles(t *testing.T) {
 						Bio:       "24",
 						Avatar:    "25",
 						Gender:    "26",
+						Banned:    false,
 						Birthday:  toTimePrt(time.Unix(222210, 0)),
 						CreatedAt: time.Unix(2200000, 0),
 					},
@@ -584,6 +586,7 @@ func TestServer_GetProfiles(t *testing.T) {
 						Bio:       "243",
 						Avatar:    "253",
 						Gender:    "263",
+						Banned:    true,
 						Birthday:  nil,
 						CreatedAt: time.Unix(2300000, 0),
 					},
@@ -591,9 +594,9 @@ func TestServer_GetProfiles(t *testing.T) {
 			},
 			rcode: http.StatusOK,
 			rdata: `[
-	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","emails":["email"],"bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":200000},
-	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":2200000},
-	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"222","lastName":"233","bio":"243","avatar":"253","gender":"263","createdAt":2300000}
+	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","emails":["email"],"bio":"4","avatar":"5","gender":"6","banned":false, "birthday":"1970-01-01","createdAt":200000},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26", "banned":false, "birthday":"1970-01-03","createdAt":2200000},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"222","lastName":"233","bio":"243","avatar":"253","gender":"263", "banned":true, "createdAt":2300000}
 		]`,
 		},
 		{
@@ -629,8 +632,8 @@ func TestServer_GetProfiles(t *testing.T) {
 			},
 			rcode: http.StatusOK,
 			rdata: `[
-	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":200000},
-	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":2200000}
+	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":200000, "banned": false},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":2200000, "banned": false}
 		]`,
 		},
 		{

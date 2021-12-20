@@ -10,6 +10,7 @@ import (
 	storage "github.com/Decentr-net/cerberus/internal/storage"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+	time "time"
 )
 
 // MockIndexStorage is a mock of IndexStorage interface
@@ -192,4 +193,49 @@ func (m_2 *MockIndexStorage) SetPDVMeta(ctx context.Context, address string, id 
 func (mr *MockIndexStorageMockRecorder) SetPDVMeta(ctx, address, id, tx, m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPDVMeta", reflect.TypeOf((*MockIndexStorage)(nil).SetPDVMeta), ctx, address, id, tx, m)
+}
+
+// GetPDVDelta mocks base method
+func (m *MockIndexStorage) GetPDVDelta(ctx context.Context, address string) (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPDVDelta", ctx, address)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPDVDelta indicates an expected call of GetPDVDelta
+func (mr *MockIndexStorageMockRecorder) GetPDVDelta(ctx, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVDelta", reflect.TypeOf((*MockIndexStorage)(nil).GetPDVDelta), ctx, address)
+}
+
+// GetPDVTotalDelta mocks base method
+func (m *MockIndexStorage) GetPDVTotalDelta(ctx context.Context) (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPDVTotalDelta", ctx)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPDVTotalDelta indicates an expected call of GetPDVTotalDelta
+func (mr *MockIndexStorageMockRecorder) GetPDVTotalDelta(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVTotalDelta", reflect.TypeOf((*MockIndexStorage)(nil).GetPDVTotalDelta), ctx)
+}
+
+// GetPDVRewardsDistributedDate mocks base method
+func (m *MockIndexStorage) GetPDVRewardsDistributedDate(ctx context.Context) (time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPDVRewardsDistributedDate", ctx)
+	ret0, _ := ret[0].(time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPDVRewardsDistributedDate indicates an expected call of GetPDVRewardsDistributedDate
+func (mr *MockIndexStorageMockRecorder) GetPDVRewardsDistributedDate(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVRewardsDistributedDate", reflect.TypeOf((*MockIndexStorage)(nil).GetPDVRewardsDistributedDate), ctx)
 }

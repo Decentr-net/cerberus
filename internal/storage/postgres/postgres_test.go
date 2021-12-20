@@ -262,6 +262,7 @@ func TestPg_GetProfiles(t *testing.T) {
 		assert.Equal(t, p.Bio, v.Bio)
 		assert.Equal(t, p.Avatar, v.Avatar)
 		assert.Equal(t, p.Gender, v.Gender)
+		assert.Equal(t, false, v.Banned)
 		assert.Equal(t, p.Birthday.UTC(), v.Birthday.UTC())
 	}
 }
@@ -317,6 +318,22 @@ func TestPg_GetPDVMeta(t *testing.T) {
 	act, err := s.GetPDVMeta(ctx, "1", 1)
 	require.ErrorIs(t, err, storage.ErrNotFound)
 	require.Nil(t, act)
+}
+
+func TestPg_GetPDVDeltaTotal(t *testing.T) {
+	t.Cleanup(cleanup)
+
+	total, err := s.GetPDVTotalDelta(ctx)
+	require.NoError(t, err)
+	require.Zero(t, total)
+}
+
+func TestPg_GetPDVDelta(t *testing.T) {
+	t.Cleanup(cleanup)
+
+	total, err := s.GetPDVDelta(ctx, "")
+	require.NoError(t, err)
+	require.Zero(t, total)
 }
 
 func TestPg_ListPDV(t *testing.T) {

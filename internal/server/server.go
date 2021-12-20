@@ -73,6 +73,8 @@ type server struct {
 
 	minPDVCount uint16
 	maxPDVCount uint16
+
+	pdvRewardsPoolSize sdk.Dec
 }
 
 // Profile ...
@@ -85,13 +87,14 @@ type Profile struct {
 	Bio       string   `json:"bio"`
 	Gender    string   `json:"gender"`
 	Avatar    string   `json:"avatar"`
+	Banned    bool     `json:"banned"`
 	Birthday  string   `json:"birthday,omitempty"`
 	CreatedAt int64    `json:"createdAt"`
 }
 
 // SetupRouter setups handlers to chi router.
 func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBodySize int64,
-	spt throttler.Throttler, minPDVCount, maxPDVCount uint16) {
+	spt throttler.Throttler, minPDVCount, maxPDVCount uint16, pdvRewardsPoolSize sdk.Dec) {
 	r.Use(
 		api.FileServerMiddleware("/docs", "static"),
 		api.LoggerMiddleware,
@@ -109,6 +112,8 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 
 		minPDVCount: minPDVCount,
 		maxPDVCount: maxPDVCount,
+
+		pdvRewardsPoolSize: pdvRewardsPoolSize,
 	}
 
 	r.Post("/v1/pdv", srv.savePDVHandler)
@@ -121,6 +126,9 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 
 	r.Get("/v1/configs/rewards", srv.getRewardsConfigHandler)
 	r.Get("/v1/configs/blacklist", srv.getBlacklistHandler)
+
+	r.Get("/v1/pdv-rewards/pool", srv.getPDVRewardsPool)
+	r.Get("/v1/pdv-rewards/{owner}/delta", srv.getPDVRewardsDelta)
 }
 
 func isOwnerValid(s string) bool {

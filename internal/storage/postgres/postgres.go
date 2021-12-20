@@ -99,7 +99,7 @@ func (s pg) GetProfile(ctx context.Context, addr string) (*storage.Profile, erro
 	var p profileDTO
 	if err := sqlx.GetContext(ctx, s.ext, &p, `
 		SELECT
-			address, first_name, last_name, emails, bio, avatar, gender, birthday, updated_at, created_at
+			address, first_name, last_name, emails, bio, avatar, gender, birthday, banned, updated_at, created_at
 		FROM profile
 		WHERE address = $1
 	`, addr); err != nil {
@@ -118,7 +118,7 @@ func (s pg) GetProfiles(ctx context.Context, addr []string) ([]*storage.Profile,
 
 	query, args, err := sqlx.In(`
 			SELECT
-				address, first_name, last_name, emails, bio, avatar, gender, birthday, updated_at, created_at
+				address, first_name, last_name, emails, bio, avatar, gender, birthday, banned, updated_at, created_at
 			FROM profile
 			WHERE address IN (?)
 			ORDER BY address
@@ -162,8 +162,8 @@ func (s pg) SetProfile(ctx context.Context, p *storage.SetProfileParams) error {
 
 	if _, err := sqlx.NamedExecContext(ctx, s.ext,
 		`
-			INSERT INTO profile(address, first_name, last_name, emails, bio, avatar, gender, birthday)
-			VALUES(:address, :first_name, :last_name, :emails, :bio, :avatar, :gender, :birthday)
+			INSERT INTO profile(address, first_name, last_name, emails, bio, avatar, gender, birthday, banned)
+			VALUES(:address, :first_name, :last_name, :emails, :bio, :avatar, :gender, :birthday, FALSE)
 			ON CONFLICT(address) DO UPDATE SET
 				first_name=excluded.first_name,
 				last_name=excluded.last_name,
@@ -237,10 +237,12 @@ func (s pg) SetPDVMeta(ctx context.Context, address string, id uint64, tx string
 		return fmt.Errorf("failed to marshal meta: %w", err)
 	}
 
+	reward, _ := m.Reward.Float64()
+
 	if _, err := s.ext.ExecContext(ctx, `
-		INSERT INTO pdv(owner, id, tx, meta) VALUES($1, $2, $3, $4) ON CONFLICT (owner, id) DO UPDATE
-			SET tx = EXCLUDED.tx, meta = EXCLUDED.meta
-	`, address, id, tx, b); err != nil {
+		INSERT INTO pdv(owner, id, tx, meta, reward) VALUES($1, $2, $3, $4, $5) ON CONFLICT (owner, id) DO UPDATE
+			SET tx = EXCLUDED.tx, meta = EXCLUDED.meta, reward = EXCLUDED.reward
+	`, address, id, tx, b, reward); err != nil {
 		return fmt.Errorf("failed to insert: %w", err)
 	}
 
@@ -252,6 +254,39 @@ func (s pg) DeletePDV(ctx context.Context, address string) error {
 		return fmt.Errorf("failed to delete: %w", err)
 	}
 	return nil
+}
+
+func (s pg) GetPDVDelta(ctx context.Context, address string) (float64, error) {
+	var delta float64
+	err := sqlx.GetContext(ctx, s.ext, &delta, `
+		SELECT COALESCE(SUM(reward), 0) FROM pdv
+        WHERE
+              owner NOT IN (SELECT address FROM profile WHERE banned) AND
+              created_at > (SELECT date FROM pdv_rewards_distributed_date) AND 
+              owner = $1
+              
+    `, address)
+	return delta, err
+}
+
+func (s pg) GetPDVTotalDelta(ctx context.Context) (float64, error) {
+	var total float64
+	err := sqlx.GetContext(ctx, s.ext, &total, `
+		SELECT COALESCE(SUM(reward), 0) FROM pdv
+        WHERE
+              owner NOT IN (SELECT address FROM profile WHERE banned) AND
+              created_at > (SELECT date FROM pdv_rewards_distributed_date)
+    `)
+	return total, err
+}
+
+func (s pg) GetPDVRewardsDistributedDate(ctx context.Context) (time.Time, error) {
+	var t time.Time
+	if err := sqlx.GetContext(ctx, s.ext, &t, `SELECT date FROM pdv_rewards_distributed_date`); err != nil {
+		return time.Time{}, fmt.Errorf("failed to query: %w", err)
+	}
+
+	return t, nil
 }
 
 func stringsUnique(s []string) []string {

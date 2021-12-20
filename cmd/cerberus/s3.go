@@ -9,7 +9,7 @@ import (
 	"github.com/Decentr-net/cerberus/internal/storage/s3"
 )
 
-type S3opts struct {
+type S3Opts struct {
 	S3Endpoint        string `long:"s3.endpoint" env:"S3_ENDPOINT" default:"localhost:9000" description:"s3 endpoint"`
 	S3Region          string `long:"s3.region" env:"S3_REGION" default:"" description:"s3 region"`
 	S3AccessKeyID     string `long:"s3.access-key-id" env:"S3_ACCESS_KEY_ID" description:"access key id for S3 storage"`
