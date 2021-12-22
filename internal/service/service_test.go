@@ -209,6 +209,16 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestFloat64ToDecimal(t *testing.T) {
+	d, err := float64ToDecimal(0.5)
+	require.NoError(t, err)
+	require.Equal(t, "0.500000000000000000", d.String())
+
+	d, err = float64ToDecimal(201.53)
+	require.NoError(t, err)
+	require.Equal(t, "201.530000000000000000", d.String())
+}
+
 func TestService_SavePDV_Profile(t *testing.T) {
 	pdv := v1.PDV{
 		&v1.Profile{

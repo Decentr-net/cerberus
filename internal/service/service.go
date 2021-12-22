@@ -298,7 +298,7 @@ func (s *service) GetPDVRewardsNextDistributionDate(ctx context.Context) (time.T
 }
 
 func float64ToDecimal(f float64) (sdk.Dec, error) {
-	return sdk.NewDecFromStr(strconv.FormatFloat(f, 'f', 6, 32))
+	return sdk.NewDecFromStr(strconv.FormatFloat(f, 'f', 6, 64))
 }
 
 // GetProfiles ...
