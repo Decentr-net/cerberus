@@ -29,6 +29,7 @@ type IndexStorage interface {
 	GetPDVDelta(ctx context.Context, address string) (float64, error)
 	GetPDVTotalDelta(ctx context.Context) (float64, error)
 	GetPDVRewardsDistributedDate(ctx context.Context) (time.Time, error)
+	SetPDVRewardsDistributedDate(ctx context.Context, date time.Time) error
 }
 
 // Profile ...

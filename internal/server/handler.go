@@ -50,7 +50,7 @@ type PDVRewardDelta struct {
 
 // saveImageHandler resizes and saves the given message into storage.
 func (s *server) saveImageHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /images Image Save
+	// swagger:operation POST /v1/images Image Save
 	//
 	// Resizes (1920x1080, 480x270) and saves images
 	// ---
@@ -101,7 +101,7 @@ func (s *server) saveImageHandler(w http.ResponseWriter, r *http.Request) {
 
 // savePDVHandler encrypts and puts PDV data into storage.
 func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /pdv PDV Save
+	// swagger:operation POST /v1/pdv PDV Save
 	//
 	// Encrypts and saves PDV
 	//
@@ -195,7 +195,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 
 // listPDVHandler lists pdv from storage.
 func (s *server) listPDVHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /pdv/{owner} PDV List
+	// swagger:operation GET /v1/pdv/{owner} PDV List
 	//
 	// Lists PDV
 	//
@@ -278,7 +278,7 @@ func (s *server) listPDVHandler(w http.ResponseWriter, r *http.Request) {
 
 // getPDVHandler gets pdv from storage and decrypts it.
 func (s *server) getPDVHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /pdv/{owner}/{id} PDV Get
+	// swagger:operation GET /v1/pdv/{owner}/{id} PDV Get
 	//
 	// Returns plain PDV
 	//
@@ -358,7 +358,7 @@ func (s *server) getPDVHandler(w http.ResponseWriter, r *http.Request) {
 
 // getPDVMetaHandler returns PDVs meta by address.
 func (s *server) getPDVMetaHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /pdv/{owner}/{id}/meta PDV GetMeta
+	// swagger:operation GET /v1/pdv/{owner}/{id}/meta PDV GetMeta
 	//
 	// Get meta
 	//
@@ -417,7 +417,7 @@ func (s *server) getPDVMetaHandler(w http.ResponseWriter, r *http.Request) {
 
 // getProfilesHandler returns profiles.
 func (s *server) getProfilesHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /profiles Profile GetProfiles
+	// swagger:operation GET /v1/profiles Profile GetProfiles
 	//
 	// Get profiles
 	//
@@ -506,7 +506,7 @@ func (s *server) getProfilesHandler(w http.ResponseWriter, r *http.Request) {
 
 // getRewardsConfigHandler returns rewards config.
 func (s *server) getRewardsConfigHandler(w http.ResponseWriter, _ *http.Request) {
-	// swagger:operation GET /configs/rewards Configs GetRewardsConfig
+	// swagger:operation GET /v1/configs/rewards Configs GetRewardsConfig
 	//
 	// Get rewards config
 	//
@@ -528,7 +528,7 @@ func (s *server) getRewardsConfigHandler(w http.ResponseWriter, _ *http.Request)
 
 // getBlacklistHandler returns blacklist.
 func (s *server) getBlacklistHandler(w http.ResponseWriter, _ *http.Request) {
-	// swagger:operation GET /configs/blacklist Configs GetBlacklistConfig
+	// swagger:operation GET /v1/configs/blacklist Configs GetBlacklistConfig
 	//
 	// Get blacklist
 	//
@@ -576,8 +576,8 @@ func (s *server) getPDVRewardsPool(w http.ResponseWriter, r *http.Request) {
 	api.WriteOK(w, http.StatusOK, pool)
 }
 
-func (s *server) getPDVRewardsDelta(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /v1/pdv-rewards/{owner}/delta PDVRewards PDVRewardDelta
+func (s *server) getAccountPDVDelta(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /v1/accounts/{owner}/pdv-delta PDVRewards PDVRewardDelta
 	//
 	// Get PDV reward delta of the given account
 	//

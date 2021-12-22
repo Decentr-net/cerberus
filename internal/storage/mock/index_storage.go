@@ -239,3 +239,17 @@ func (mr *MockIndexStorageMockRecorder) GetPDVRewardsDistributedDate(ctx interfa
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVRewardsDistributedDate", reflect.TypeOf((*MockIndexStorage)(nil).GetPDVRewardsDistributedDate), ctx)
 }
+
+// SetPDVRewardsDistributedDate mocks base method
+func (m *MockIndexStorage) SetPDVRewardsDistributedDate(ctx context.Context, date time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetPDVRewardsDistributedDate", ctx, date)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetPDVRewardsDistributedDate indicates an expected call of SetPDVRewardsDistributedDate
+func (mr *MockIndexStorageMockRecorder) SetPDVRewardsDistributedDate(ctx, date interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPDVRewardsDistributedDate", reflect.TypeOf((*MockIndexStorage)(nil).SetPDVRewardsDistributedDate), ctx, date)
+}

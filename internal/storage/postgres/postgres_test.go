@@ -320,12 +320,51 @@ func TestPg_GetPDVMeta(t *testing.T) {
 	require.Nil(t, act)
 }
 
+func TestPg_GetSetPDVRewardsDistributedDate(t *testing.T) {
+	t.Cleanup(cleanup)
+
+	date := time.Now().UTC()
+
+	require.NoError(t, s.SetPDVRewardsDistributedDate(ctx, date))
+
+	savedDate, err := s.GetPDVRewardsDistributedDate(ctx)
+	require.NoError(t, err)
+
+	require.Equal(t, date.Unix(), savedDate.Unix())
+}
+
 func TestPg_GetPDVDeltaTotal(t *testing.T) {
 	t.Cleanup(cleanup)
 
-	total, err := s.GetPDVTotalDelta(ctx)
-	require.NoError(t, err)
-	require.Zero(t, total)
+	t.Run("zero", func(t *testing.T) {
+		total, err := s.GetPDVTotalDelta(ctx)
+		require.NoError(t, err)
+		require.Zero(t, total)
+	})
+
+	t.Run("3 different accounts", func(t *testing.T) {
+		require.NoError(t, s.SetPDVMeta(ctx, "address1", 1, "trx1", &entities.PDVMeta{
+			Reward: sdk.NewDecWithPrec(1, 6),
+		}))
+		require.NoError(t, s.SetPDVMeta(ctx, "address2", 1, "trx2", &entities.PDVMeta{
+			Reward: sdk.NewDecWithPrec(2, 6),
+		}))
+		require.NoError(t, s.SetPDVMeta(ctx, "address3", 1, "trx3", &entities.PDVMeta{
+			Reward: sdk.NewDecWithPrec(3, 6),
+		}))
+
+		total, err := s.GetPDVTotalDelta(ctx)
+		require.NoError(t, err)
+		require.Equal(t, 6e-06, total)
+
+		// update distribution date
+		require.NoError(t, s.SetPDVRewardsDistributedDate(ctx, time.Now().UTC()))
+
+		total, err = s.GetPDVTotalDelta(ctx)
+		require.NoError(t, err)
+		require.NoError(t, err)
+		require.Zero(t, total)
+	})
 }
 
 func TestPg_GetPDVDelta(t *testing.T) {
@@ -334,6 +373,29 @@ func TestPg_GetPDVDelta(t *testing.T) {
 	total, err := s.GetPDVDelta(ctx, "")
 	require.NoError(t, err)
 	require.Zero(t, total)
+
+	t.Run("2 pdvs", func(t *testing.T) {
+		const addr = "address"
+
+		require.NoError(t, s.SetPDVMeta(ctx, addr, 1, "trx1", &entities.PDVMeta{
+			Reward: sdk.NewDecWithPrec(1, 6),
+		}))
+		require.NoError(t, s.SetPDVMeta(ctx, addr, 2, "trx2", &entities.PDVMeta{
+			Reward: sdk.NewDecWithPrec(2, 6),
+		}))
+
+		delta, err := s.GetPDVDelta(ctx, addr)
+		require.NoError(t, err)
+		require.Equal(t, 3e-06, delta)
+
+		// update distribution date
+		require.NoError(t, s.SetPDVRewardsDistributedDate(ctx, time.Now().UTC()))
+
+		delta, err = s.GetPDVDelta(ctx, addr)
+		require.NoError(t, err)
+		require.NoError(t, err)
+		require.Zero(t, delta)
+	})
 }
 
 func TestPg_ListPDV(t *testing.T) {

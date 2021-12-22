@@ -289,6 +289,13 @@ func (s pg) GetPDVRewardsDistributedDate(ctx context.Context) (time.Time, error)
 	return t, nil
 }
 
+func (s pg) SetPDVRewardsDistributedDate(ctx context.Context, date time.Time) error {
+	if _, err := s.ext.ExecContext(ctx, `UPDATE pdv_rewards_distributed_date SET date = $1`, date); err != nil {
+		return fmt.Errorf("failed to update: %w", err)
+	}
+	return nil
+}
+
 func stringsUnique(s []string) []string {
 	m := make(map[string]struct{}, len(s))
 	out := make([]string, 0, len(s))

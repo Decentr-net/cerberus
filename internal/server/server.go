@@ -128,7 +128,7 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 	r.Get("/v1/configs/blacklist", srv.getBlacklistHandler)
 
 	r.Get("/v1/pdv-rewards/pool", srv.getPDVRewardsPool)
-	r.Get("/v1/pdv-rewards/{owner}/delta", srv.getPDVRewardsDelta)
+	r.Get("/v1/accounts/{owner}/pdv-delta", srv.getAccountPDVDelta)
 }
 
 func isOwnerValid(s string) bool {

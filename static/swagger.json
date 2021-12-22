@@ -16,7 +16,49 @@
   },
   "basePath": "/v1",
   "paths": {
-    "/configs/blacklist": {
+    "/v1/accounts/{owner}/pdv-delta": {
+      "get": {
+        "description": "Returns PDV reward delta with reward pool",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "PDVRewards"
+        ],
+        "summary": "Get PDV reward delta of the given account",
+        "operationId": "PDVRewardDelta",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "account address",
+            "name": "owner",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "pool",
+            "schema": {
+              "$ref": "#/definitions/PDVRewardDelta"
+            }
+          },
+          "404": {
+            "description": "PDV doesn't exist",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/v1/configs/blacklist": {
       "get": {
         "description": "Returns blacklist.",
         "tags": [
@@ -40,7 +82,7 @@
         }
       }
     },
-    "/configs/rewards": {
+    "/v1/configs/rewards": {
       "get": {
         "description": "Returns rewards config.",
         "tags": [
@@ -64,7 +106,7 @@
         }
       }
     },
-    "/images": {
+    "/v1/images": {
       "post": {
         "security": [
           {
@@ -99,7 +141,7 @@
         }
       }
     },
-    "/pdv": {
+    "/v1/pdv": {
       "post": {
         "security": [
           {
@@ -157,7 +199,34 @@
         }
       }
     },
-    "/pdv/{owner}": {
+    "/v1/pdv-rewards/pool": {
+      "get": {
+        "description": "Returns rewards pool.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "PDVRewards"
+        ],
+        "summary": "Get PDV rewards pool",
+        "operationId": "PDVRewardsPool",
+        "responses": {
+          "200": {
+            "description": "pool",
+            "schema": {
+              "$ref": "#/definitions/PDVRewardsPool"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/v1/pdv/{owner}": {
       "get": {
         "description": "Lists PDV",
         "produces": [
@@ -218,7 +287,7 @@
         }
       }
     },
-    "/pdv/{owner}/{id}": {
+    "/v1/pdv/{owner}/{id}": {
       "get": {
         "security": [
           {
@@ -277,7 +346,7 @@
         }
       }
     },
-    "/pdv/{owner}/{id}/meta": {
+    "/v1/pdv/{owner}/{id}/meta": {
       "get": {
         "description": "Returns metadata of PDV",
         "tags": [
@@ -322,7 +391,7 @@
         }
       }
     },
-    "/profiles": {
+    "/v1/profiles": {
       "get": {
         "description": "Returns profiles by addresses",
         "tags": [
@@ -353,75 +422,6 @@
               "items": {
                 "$ref": "#/definitions/APIProfile"
               }
-            }
-          },
-          "500": {
-            "description": "internal server error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        }
-      }
-    },
-    "/v1/pdv-rewards/pool": {
-      "get": {
-        "description": "Returns rewards pool.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "PDVRewards"
-        ],
-        "summary": "Get PDV rewards pool",
-        "operationId": "PDVRewardsPool",
-        "responses": {
-          "200": {
-            "description": "pool",
-            "schema": {
-              "$ref": "#/definitions/PDVRewardsPool"
-            }
-          },
-          "500": {
-            "description": "internal server error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        }
-      }
-    },
-    "/v1/pdv-rewards/{owner}/delta": {
-      "get": {
-        "description": "Returns PDV reward delta with reward pool",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "PDVRewards"
-        ],
-        "summary": "Get PDV reward delta of the given account",
-        "operationId": "PDVRewardDelta",
-        "parameters": [
-          {
-            "type": "string",
-            "description": "account address",
-            "name": "owner",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "pool",
-            "schema": {
-              "$ref": "#/definitions/PDVRewardDelta"
-            }
-          },
-          "404": {
-            "description": "PDV doesn't exist",
-            "schema": {
-              "$ref": "#/definitions/Error"
             }
           },
           "500": {
