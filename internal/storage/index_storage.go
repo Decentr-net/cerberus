@@ -25,6 +25,11 @@ type IndexStorage interface {
 
 	GetPDVMeta(ctx context.Context, address string, id uint64) (*entities.PDVMeta, error)
 	SetPDVMeta(ctx context.Context, address string, id uint64, tx string, m *entities.PDVMeta) error
+
+	GetPDVDelta(ctx context.Context, address string) (float64, error)
+	GetPDVTotalDelta(ctx context.Context) (float64, error)
+	GetPDVRewardsDistributedDate(ctx context.Context) (time.Time, error)
+	SetPDVRewardsDistributedDate(ctx context.Context, date time.Time) error
 }
 
 // Profile ...
@@ -36,6 +41,7 @@ type Profile struct {
 	Bio       string
 	Avatar    string
 	Gender    string
+	Banned    bool
 	Birthday  *time.Time
 	UpdatedAt *time.Time
 	CreatedAt time.Time

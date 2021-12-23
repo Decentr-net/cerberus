@@ -25,6 +25,7 @@ type Profile struct {
 	Bio       string
 	Avatar    string
 	Gender    string
+	Banned    bool
 	Birthday  *time.Time
 	UpdatedAt *time.Time
 	CreatedAt time.Time

@@ -13,14 +13,13 @@ import (
 	"syscall"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jessevdk/go-flags"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/Decentr-net/logrus/sentry"
 
 	"github.com/Decentr-net/cerberus/internal/crypto/sio"
 	"github.com/Decentr-net/cerberus/internal/health"
@@ -30,6 +29,7 @@ import (
 	"github.com/Decentr-net/cerberus/internal/storage"
 	"github.com/Decentr-net/cerberus/internal/storage/postgres"
 	"github.com/Decentr-net/cerberus/internal/throttler"
+	"github.com/Decentr-net/logrus/sentry"
 )
 
 var opts = struct {
@@ -47,7 +47,10 @@ var opts = struct {
 	MaxPDVCount           uint16        `long:"max-pdv-count" env:"MAX_PDV_COUNT" default:"100" description:"maximal count of pdv to save"`
 	EncryptKey            string        `long:"encrypt-key" env:"ENCRYPT_KEY" description:"encrypt key in hex which will be used for encrypting and decrypting user's data"`
 
-	S3opts
+	PDVRewardsPoolSize int64         `long:"pdv-rewards.pool-size" env:"PDV_REWARDS_POOL_SIZE" default:"100000000000" description:"PDV rewards (uDEC)"`
+	PDVRewardsInterval time.Duration `long:"pdv-rewards.interval" env:"PDV_REWARDS_INTERVAL" default:"720h" description:"how often to pay PDV rewards"`
+
+	S3Opts
 	SQSOpts
 	DBOpts
 }{}
@@ -99,7 +102,9 @@ func main() {
 	fs := mustGetFileStorage()
 
 	server.SetupRouter(newServiceOrDie(fs, is, mustGetProducer()), r,
-		opts.RequestTimeout, opts.MaxBodySize, throttler.New(opts.SavePDVThrottlePeriod), opts.MinPDVCount, opts.MaxPDVCount)
+		opts.RequestTimeout, opts.MaxBodySize, throttler.New(opts.SavePDVThrottlePeriod),
+		opts.MinPDVCount, opts.MaxPDVCount,
+		sdk.NewDec(opts.PDVRewardsPoolSize))
 	health.SetupRouter(r, fs, health.PingFunc(db.PingContext))
 
 	srv := http.Server{
@@ -141,7 +146,7 @@ func newServiceOrDie(fs storage.FileStorage, is storage.IndexStorage, p producer
 	if err := json.Unmarshal(b, &rewardMap); err != nil {
 		logrus.WithError(err).Fatal("failed to unmarshal reward map config")
 	}
-	return service.New(sio.NewCrypto(mustExtractEncryptKey()), fs, is, p, rewardMap)
+	return service.New(sio.NewCrypto(mustExtractEncryptKey()), fs, is, p, rewardMap, opts.PDVRewardsInterval)
 }
 
 func mustExtractEncryptKey() [32]byte {

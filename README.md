@@ -35,6 +35,9 @@ cerberusd provides http API to pdv storing functionality. It receives and valida
 | encrypt-key    | ENCRYPT_KEY    |   | private key for data encryption in hex
 | sentry.dsn    | SENTRY_DSN    |  | sentry dsn
 | log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
+| pdv-rewards.pool-size | PDV_REWARDS_POOL_SIZE   | 100000000000  | PDV rewards (uDEC)
+| pdv-rewards.interval  | PDV_REWARDS_INTERVAL  | 720h  | how often to pay PDV rewards
+
 
 ## processord
 

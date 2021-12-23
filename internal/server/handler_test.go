@@ -562,6 +562,7 @@ func TestServer_GetProfiles(t *testing.T) {
 						Bio:       "4",
 						Avatar:    "5",
 						Gender:    "6",
+						Banned:    false,
 						Birthday:  toTimePrt(time.Unix(1, 0)),
 						CreatedAt: time.Unix(200000, 0),
 					},
@@ -573,6 +574,7 @@ func TestServer_GetProfiles(t *testing.T) {
 						Bio:       "24",
 						Avatar:    "25",
 						Gender:    "26",
+						Banned:    false,
 						Birthday:  toTimePrt(time.Unix(222210, 0)),
 						CreatedAt: time.Unix(2200000, 0),
 					},
@@ -584,6 +586,7 @@ func TestServer_GetProfiles(t *testing.T) {
 						Bio:       "243",
 						Avatar:    "253",
 						Gender:    "263",
+						Banned:    true,
 						Birthday:  nil,
 						CreatedAt: time.Unix(2300000, 0),
 					},
@@ -591,9 +594,9 @@ func TestServer_GetProfiles(t *testing.T) {
 			},
 			rcode: http.StatusOK,
 			rdata: `[
-	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","emails":["email"],"bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":200000},
-	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":2200000},
-	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"222","lastName":"233","bio":"243","avatar":"253","gender":"263","createdAt":2300000}
+	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","emails":["email"],"bio":"4","avatar":"5","gender":"6","banned":false, "birthday":"1970-01-01","createdAt":200000},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26", "banned":false, "birthday":"1970-01-03","createdAt":2200000},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"222","lastName":"233","bio":"243","avatar":"253","gender":"263", "banned":true, "createdAt":2300000}
 		]`,
 		},
 		{
@@ -629,8 +632,8 @@ func TestServer_GetProfiles(t *testing.T) {
 			},
 			rcode: http.StatusOK,
 			rdata: `[
-	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":200000},
-	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":2200000}
+	{"address":"decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"2","lastName":"3","bio":"4","avatar":"5","gender":"6","birthday":"1970-01-01","createdAt":200000, "banned": false},
+	{"address":"decentr1u1slwz3sje8j94ccpwlslflg0506yc8y2ylmtz","firstName":"22","lastName":"23","bio":"24","avatar":"25","gender":"26","birthday":"1970-01-03","createdAt":2200000, "banned": false}
 		]`,
 		},
 		{
@@ -710,6 +713,72 @@ func Test_getRewardsConfig(t *testing.T) {
 		"cookie": "0.000001000000000000",
 		"history": "0.000002000000000000"
 	}`, w.Body.String())
+}
+
+func Test_getPDVRewardsPool(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	date := time.Date(2022, 1, 0, 1, 0, 0, 0, time.UTC)
+
+	srv := mock.NewMockService(ctrl)
+	srv.EXPECT().GetPDVTotalDelta(gomock.Any()).Return(sdk.NewDecWithPrec(3, 6), nil)
+	srv.EXPECT().GetPDVRewardsNextDistributionDate(gomock.Any()).Return(date, nil)
+
+	router := chi.NewRouter()
+
+	s := server{s: srv}
+	s.pdvRewardsPoolSize = sdk.NewDecWithPrec(15, 6)
+
+	router.Get("/", s.getPDVRewardsPool)
+
+	r := httptest.NewRequest(http.MethodGet, "http://localhost/", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, r)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, `{
+  "next_distribution_date": "2021-12-31T01:00:00Z",
+  "size": "0.000015000000000000",
+  "total_delta": "0.000003000000000000"
+}`, w.Body.String())
+}
+
+func Test_getAccountPDVDelta(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	date := time.Date(2022, 1, 0, 1, 0, 0, 0, time.UTC)
+
+	srv := mock.NewMockService(ctrl)
+	srv.EXPECT().GetPDVTotalDelta(gomock.Any()).Return(sdk.NewDecWithPrec(3, 6), nil)
+	srv.EXPECT().GetPDVRewardsNextDistributionDate(gomock.Any()).Return(date, nil)
+	srv.EXPECT().GetPDVDelta(gomock.Any(), testOwner).Return(sdk.NewDecWithPrec(1, 6), nil)
+
+	router := chi.NewRouter()
+
+	s := server{s: srv}
+	s.pdvRewardsPoolSize = sdk.NewDecWithPrec(15, 6)
+
+	router.Get("/accounts/{owner}", s.getAccountPDVDelta)
+
+	r := httptest.NewRequest(http.MethodGet, "http://localhost/accounts/"+testOwner, nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, r)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, `{
+  "delta": "0.000001000000000000",
+  "pool": {
+    "next_distribution_date": "2021-12-31T01:00:00Z",
+    "size": "0.000015000000000000",
+    "total_delta": "0.000003000000000000"
+  }
+}`, w.Body.String())
 }
 
 func Test_savePDVHander_Amount(t *testing.T) {

@@ -39,6 +39,7 @@ var (
 	testData            = []byte("data")
 	testEncryptedData   = []byte("data_encrypted")
 	errTest             = errors.New("test")
+	pdvRewardsInterval  = time.Hour
 	rewardsMap          = RewardMap{
 		schema.PDVCookieType:   sdk.NewDecWithPrec(2, 6),
 		schema.PDVLocationType: sdk.NewDecWithPrec(4, 6),
@@ -131,7 +132,7 @@ func TestService_SavePDV(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	expectedID := uint64(time.Now().Unix())
 
@@ -167,7 +168,7 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	expectedID := uint64(time.Now().Unix())
 
@@ -206,6 +207,16 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 	require.Equal(t, expectedID, id)
 	require.Equal(t, expectedMeta, meta)
 	require.NoError(t, err)
+}
+
+func TestFloat64ToDecimal(t *testing.T) {
+	d, err := float64ToDecimal(0.5)
+	require.NoError(t, err)
+	require.Equal(t, "0.500000000000000000", d.String())
+
+	d, err = float64ToDecimal(201.53)
+	require.NoError(t, err)
+	require.Equal(t, "201.530000000000000000", d.String())
 }
 
 func TestService_SavePDV_Profile(t *testing.T) {
@@ -260,7 +271,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 			cr := cryptomock.NewMockCrypto(ctrl)
 			p := producermock.NewMockProducer(ctrl)
 
-			s := New(cr, fs, is, p, rewardsMap)
+			s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 			is.EXPECT().GetProfile(ctx, testOwner).DoAndReturn(func(_ context.Context, _ string) (*storage.Profile, error) {
 				if tc.exist {
@@ -309,7 +320,7 @@ func TestService_SavePDV_EncryptError(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, errTest)
 
@@ -327,7 +338,7 @@ func TestService_SavePDV_ProducerError(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(testEncryptedData, nil)
 
@@ -347,7 +358,7 @@ func TestService_ReceivePDV(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
 
@@ -373,7 +384,7 @@ func TestService_ReceivePDV_StorageError(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(nil, errTest)
 
@@ -392,7 +403,7 @@ func TestService_ReceivePDV_StorageError_NotFound(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(nil, storage.ErrNotFound)
 
@@ -411,7 +422,7 @@ func TestService_ReceivePDV_DecryptError(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
 
@@ -432,7 +443,7 @@ func TestService_GetPDVMeta(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	exp := &entities.PDVMeta{
 		ObjectTypes: map[schema.Type]uint16{
@@ -457,7 +468,7 @@ func TestService_GetPDVMeta_StorageError(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	is.EXPECT().GetPDVMeta(gomock.Any(), testOwner, testID).Return(nil, errTest)
 
@@ -475,7 +486,7 @@ func TestService_GetPDVMeta_NotFound(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	is.EXPECT().GetPDVMeta(gomock.Any(), testOwner, testID).Return(nil, storage.ErrNotFound)
 
@@ -497,7 +508,7 @@ func TestService_ListPDV(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	is.EXPECT().ListPDV(gomock.Any(), "owner", uint64(5), uint16(10)).Return([]uint64{1, 2, 3}, nil)
 
@@ -515,7 +526,7 @@ func TestService_GetProfiles(t *testing.T) {
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap)
+	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
 
 	is.EXPECT().GetProfiles(ctx, []string{"1", "2"}).Return([]*storage.Profile{
 		{

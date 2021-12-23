@@ -13,6 +13,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	io "io"
 	reflect "reflect"
+	time "time"
 )
 
 // MockService is a mock of Service interface
@@ -156,4 +157,49 @@ func (m *MockService) GetBlacklist() service.Blacklist {
 func (mr *MockServiceMockRecorder) GetBlacklist() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlacklist", reflect.TypeOf((*MockService)(nil).GetBlacklist))
+}
+
+// GetPDVDelta mocks base method
+func (m *MockService) GetPDVDelta(ctx context.Context, owner string) (types.Dec, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPDVDelta", ctx, owner)
+	ret0, _ := ret[0].(types.Dec)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPDVDelta indicates an expected call of GetPDVDelta
+func (mr *MockServiceMockRecorder) GetPDVDelta(ctx, owner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVDelta", reflect.TypeOf((*MockService)(nil).GetPDVDelta), ctx, owner)
+}
+
+// GetPDVTotalDelta mocks base method
+func (m *MockService) GetPDVTotalDelta(ctx context.Context) (types.Dec, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPDVTotalDelta", ctx)
+	ret0, _ := ret[0].(types.Dec)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPDVTotalDelta indicates an expected call of GetPDVTotalDelta
+func (mr *MockServiceMockRecorder) GetPDVTotalDelta(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVTotalDelta", reflect.TypeOf((*MockService)(nil).GetPDVTotalDelta), ctx)
+}
+
+// GetPDVRewardsNextDistributionDate mocks base method
+func (m *MockService) GetPDVRewardsNextDistributionDate(ctx context.Context) (time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPDVRewardsNextDistributionDate", ctx)
+	ret0, _ := ret[0].(time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPDVRewardsNextDistributionDate indicates an expected call of GetPDVRewardsNextDistributionDate
+func (mr *MockServiceMockRecorder) GetPDVRewardsNextDistributionDate(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVRewardsNextDistributionDate", reflect.TypeOf((*MockService)(nil).GetPDVRewardsNextDistributionDate), ctx)
 }
