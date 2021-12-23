@@ -225,6 +225,64 @@ func (mr *MockIndexStorageMockRecorder) GetPDVTotalDelta(ctx interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVTotalDelta", reflect.TypeOf((*MockIndexStorage)(nil).GetPDVTotalDelta), ctx)
 }
 
+// GetPDVDeltaList mocks base method
+func (m *MockIndexStorage) GetPDVDeltaList(ctx context.Context) ([]*storage.PDVDelta, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPDVDeltaList", ctx)
+	ret0, _ := ret[0].([]*storage.PDVDelta)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPDVDeltaList indicates an expected call of GetPDVDeltaList
+func (mr *MockIndexStorageMockRecorder) GetPDVDeltaList(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVDeltaList", reflect.TypeOf((*MockIndexStorage)(nil).GetPDVDeltaList), ctx)
+}
+
+// CreateRewardsQueueItem mocks base method
+func (m *MockIndexStorage) CreateRewardsQueueItem(ctx context.Context, addr string, reward int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateRewardsQueueItem", ctx, addr, reward)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateRewardsQueueItem indicates an expected call of CreateRewardsQueueItem
+func (mr *MockIndexStorageMockRecorder) CreateRewardsQueueItem(ctx, addr, reward interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRewardsQueueItem", reflect.TypeOf((*MockIndexStorage)(nil).CreateRewardsQueueItem), ctx, addr, reward)
+}
+
+// GetRewardsQueueItemList mocks base method
+func (m *MockIndexStorage) GetRewardsQueueItemList(ctx context.Context) ([]*storage.RewardsQueueItem, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRewardsQueueItemList", ctx)
+	ret0, _ := ret[0].([]*storage.RewardsQueueItem)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRewardsQueueItemList indicates an expected call of GetRewardsQueueItemList
+func (mr *MockIndexStorageMockRecorder) GetRewardsQueueItemList(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardsQueueItemList", reflect.TypeOf((*MockIndexStorage)(nil).GetRewardsQueueItemList), ctx)
+}
+
+// DeleteRewardsQueueItem mocks base method
+func (m *MockIndexStorage) DeleteRewardsQueueItem(ctx context.Context, addr string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteRewardsQueueItem", ctx, addr)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRewardsQueueItem indicates an expected call of DeleteRewardsQueueItem
+func (mr *MockIndexStorageMockRecorder) DeleteRewardsQueueItem(ctx, addr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRewardsQueueItem", reflect.TypeOf((*MockIndexStorage)(nil).DeleteRewardsQueueItem), ctx, addr)
+}
+
 // GetPDVRewardsDistributedDate mocks base method
 func (m *MockIndexStorage) GetPDVRewardsDistributedDate(ctx context.Context) (time.Time, error) {
 	m.ctrl.T.Helper()

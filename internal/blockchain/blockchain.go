@@ -2,9 +2,12 @@
 package blockchain
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/avast/retry-go"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/Decentr-net/decentr/config"
 	operationstypes "github.com/Decentr-net/decentr/x/operations/types"
@@ -20,6 +23,9 @@ var _ Blockchain = &blockchain{}
 
 //go:generate mockgen -destination=./mock/blockchain.go -package=mock -source=blockchain.go
 
+// ErrInvalidAddress is returned when address is invalid. It is unexpected situation.
+var ErrInvalidAddress = errors.New("invalid address")
+
 // Reward is a copy of operations.Reward but with string receiver instead of sdk.AccAddress.
 type Reward struct {
 	Receiver string
@@ -27,9 +33,16 @@ type Reward struct {
 	Reward   sdk.Dec
 }
 
+// Stake ...
+type Stake struct {
+	Address string
+	Amount  sdk.Int
+}
+
 // Blockchain is interface for interacting with the blockchain.
 type Blockchain interface {
 	DistributeRewards(rewards []Reward) (tx string, err error)
+	SendStakes(stakes []Stake, memo string) error
 }
 
 type blockchain struct {
@@ -69,4 +82,33 @@ func (b blockchain) DistributeRewards(rewards []Reward) (string, error) {
 	}
 
 	return resp.TxHash, nil
+}
+
+// SendStakes ...
+func (b blockchain) SendStakes(stakes []Stake, memo string) error {
+	sendStakes := func() error {
+		messages := make([]sdk.Msg, len(stakes))
+		for idx, stake := range stakes {
+			to, err := sdk.AccAddressFromBech32(stake.Address)
+			if err != nil {
+				return fmt.Errorf("%w: %s", ErrInvalidAddress, stake.Address)
+			}
+
+			messages[idx] = banktypes.NewMsgSend(b.b.From(), to, sdk.Coins{sdk.Coin{
+				Denom:  config.DefaultBondDenom,
+				Amount: stake.Amount,
+			}})
+			if err := messages[idx].ValidateBasic(); err != nil {
+				return err
+			}
+		}
+
+		if _, err := b.b.Broadcast(messages, memo); err != nil {
+			return fmt.Errorf("failed to broadcast msg: %w", err)
+		}
+
+		return nil
+	}
+
+	return retry.Do(sendStakes, retry.Attempts(3))
 }

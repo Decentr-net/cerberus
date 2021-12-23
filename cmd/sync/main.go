@@ -58,8 +58,8 @@ var errTerminated = errors.New("terminated")
 
 func main() {
 	parser := flags.NewParser(&opts, flags.Default)
-	parser.ShortDescription = "Cerberus"
-	parser.LongDescription = "Cerberus"
+	parser.ShortDescription = "Sync"
+	parser.LongDescription = "Sync"
 
 	_, err := parser.Parse()
 

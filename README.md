@@ -75,6 +75,33 @@ processord receives PDVs from SQS, rewards users and stores data into FileStorag
 | sentry.dsn    | SENTRY_DSN    |  | sentry dsn
 | log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
 
+## rewardsd
+
+rewardsd send PDV rewards
+
+### Parameters
+
+| CLI param         | Environment var          | Default | Description
+|---------------|------------------|---------------|---------------------------------
+| postgres    | POSTGRES    | host=localhost port=5432 user=postgres password=root sslmode=disable  | postgres dsn
+| postgres.max_open_connections    | POSTGRES_MAX_OPEN_CONNECTIONS    | 0 | postgres maximal open connections count, 0 means unlimited
+| postgres.max_idle_connections    | POSTGRES_MAX_IDLE_CONNECTIONS    | 5 | postgres maximal idle connections count
+| postgres.migrations    | POSTGRES_MIGRATIONS    | /migrations/postgres | postgres migrations directory
+| blockchain.node   | BLOCKCHAIN_NODE    | http://zeus.testnet.decentr.xyz:26657  | decentr node address
+| blockchain.from   | BLOCKCHAIN_FROM    |  | decentr account name to send stakes
+| blockchain.tx_memo   | BLOCKCHAIN_TX_MEMO    | | decentr tx's memo
+| blockchain.chain_id   | BLOCKCHAIN_CHAIN_ID    | testnet | decentr chain id
+| blockchain.client_home   | BLOCKCHAIN_CLIENT_HOME    | ~/.decentrcli | decentrcli home directory
+| blockchain.keyring_backend   | BLOCKCHAIN_KEYRING_BACKEND    | test | decentrcli keyring backend
+| blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | decentrcli keyring prompt input
+| blockchain.gas   | BLOCKCHAIN_GAS    | 10  | gas amount
+| blockchain.fee   | BLOCKCHAIN_FEE    | 1udec  | transaction fee
+| sentry.dsn    | SENTRY_DSN    |  | sentry dsn
+| log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
+| pdv-rewards.pool-size | PDV_REWARDS_POOL_SIZE   | 100000000000  | PDV rewards (uDEC)
+| pdv-rewards.interval  | PDV_REWARDS_INTERVAL  | 720h  | how often to pay PDV rewards
+
+
 ## syncd
 
 syncd binary listens to blockchain and reacts on `operations/ResetAccount` message.

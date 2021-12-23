@@ -296,6 +296,49 @@ func (s pg) SetPDVRewardsDistributedDate(ctx context.Context, date time.Time) er
 	return nil
 }
 
+func (s pg) GetPDVDeltaList(ctx context.Context) ([]*storage.PDVDelta, error) {
+	var out []*storage.PDVDelta
+	if err := sqlx.SelectContext(ctx, s.ext, &out, `
+		SELECT owner AS address, SUM(reward) AS delta  FROM pdv
+        WHERE
+              owner NOT IN (SELECT address FROM profile WHERE banned) AND
+              created_at > (SELECT date FROM pdv_rewards_distributed_date) 
+        GROUP BY owner
+        HAVING SUM(reward) > 0
+		ORDER BY owner
+	`); err != nil {
+		return nil, fmt.Errorf("failed to select: %w", err)
+	}
+
+	return out, nil
+}
+
+func (s pg) CreateRewardsQueueItem(ctx context.Context, addr string, reward int64) error {
+	_, err := s.ext.ExecContext(ctx, `
+	INSERT INTO rewards_queue(address, reward) VALUES($1, $2)
+	`, addr, reward)
+	return err
+}
+
+func (s pg) GetRewardsQueueItemList(ctx context.Context) ([]*storage.RewardsQueueItem, error) {
+	var out []*storage.RewardsQueueItem
+
+	if err := sqlx.SelectContext(ctx, s.ext, &out, `
+		SELECT address, reward FROM rewards_queue ORDER BY created_at
+	`); err != nil {
+		return nil, fmt.Errorf("failed to select: %w", err)
+	}
+
+	return out, nil
+}
+
+func (s pg) DeleteRewardsQueueItem(ctx context.Context, addr string) error {
+	_, err := s.ext.ExecContext(ctx, `
+	DELETE FROM rewards_queue WHERE address = $1
+	`, addr)
+	return err
+}
+
 func stringsUnique(s []string) []string {
 	m := make(map[string]struct{}, len(s))
 	out := make([]string, 0, len(s))

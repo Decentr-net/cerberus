@@ -11,6 +11,7 @@ RUN apk update && apk add ca-certificates
 COPY --from=0 /go/src/github.com/Decentr-net/cerberus/build/cerberus-linux-amd64 /cerberusd
 COPY --from=0 /go/src/github.com/Decentr-net/cerberus/build/processor-linux-amd64 /processord
 COPY --from=0 /go/src/github.com/Decentr-net/cerberus/build/sync-linux-amd64 /syncd
+COPY --from=0 /go/src/github.com/Decentr-net/cerberus/build/rewards-linux-amd64 /rewardsd
 COPY static /static
 COPY configs/rewards.yml /configs/rewards.yml
 COPY scripts/migrations /migrations

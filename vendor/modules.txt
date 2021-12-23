@@ -78,6 +78,9 @@ github.com/armon/go-metrics/prometheus
 # github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 ## explicit
 github.com/asaskevich/govalidator
+# github.com/avast/retry-go v3.0.0+incompatible
+## explicit
+github.com/avast/retry-go
 # github.com/aws/aws-sdk-go v1.36.30
 ## explicit
 github.com/aws/aws-sdk-go/aws

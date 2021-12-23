@@ -398,6 +398,55 @@ func TestPg_GetPDVDelta(t *testing.T) {
 	})
 }
 
+func TestPg_GetPDVDeltaList(t *testing.T) {
+	t.Cleanup(cleanup)
+
+	deltas, err := s.GetPDVDeltaList(ctx)
+	require.NoError(t, err)
+	require.Len(t, deltas, 0)
+
+	require.NoError(t, s.SetPDVMeta(ctx, "address1", 1, "trx1", &entities.PDVMeta{
+		Reward: sdk.NewDecWithPrec(1, 6),
+	}))
+	require.NoError(t, s.SetPDVMeta(ctx, "address2", 1, "trx2", &entities.PDVMeta{
+		Reward: sdk.NewDecWithPrec(2, 6),
+	}))
+	require.NoError(t, s.SetPDVMeta(ctx, "address2", 2, "trx22", &entities.PDVMeta{
+		Reward: sdk.NewDecWithPrec(20, 6),
+	}))
+	require.NoError(t, s.SetPDVMeta(ctx, "address3", 1, "trx3", &entities.PDVMeta{
+		Reward: sdk.NewDecWithPrec(3, 6),
+	}))
+
+	deltas, err = s.GetPDVDeltaList(ctx)
+	require.NoError(t, err)
+	require.Len(t, deltas, 3)
+
+	require.Equal(t, &storage.PDVDelta{Address: "address1", Delta: 0.000001}, deltas[0])
+	require.Equal(t, &storage.PDVDelta{Address: "address2", Delta: 0.000022}, deltas[1])
+	require.Equal(t, &storage.PDVDelta{Address: "address3", Delta: 0.000003}, deltas[2])
+}
+
+func TestPg_RewardsQueue(t *testing.T) {
+	t.Cleanup(cleanup)
+
+	require.NoError(t, s.CreateRewardsQueueItem(ctx, "address1", 5))
+	require.NoError(t, s.CreateRewardsQueueItem(ctx, "address2", 10))
+	require.NoError(t, s.CreateRewardsQueueItem(ctx, "address3", 15))
+
+	items, err := s.GetRewardsQueueItemList(ctx)
+	require.NoError(t, err)
+	require.Len(t, items, 3)
+
+	require.NoError(t, s.DeleteRewardsQueueItem(ctx, "address1"))
+	require.NoError(t, s.DeleteRewardsQueueItem(ctx, "address2"))
+	require.NoError(t, s.DeleteRewardsQueueItem(ctx, "address3"))
+
+	items, err = s.GetRewardsQueueItemList(ctx)
+	require.NoError(t, err)
+	require.Len(t, items, 0)
+}
+
 func TestPg_ListPDV(t *testing.T) {
 	t.Cleanup(cleanup)
 
