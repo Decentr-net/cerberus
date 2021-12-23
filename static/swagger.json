@@ -16,7 +16,7 @@
   },
   "basePath": "/v1",
   "paths": {
-    "/v1/accounts/{owner}/pdv-delta": {
+    "/accounts/{owner}/pdv-delta": {
       "get": {
         "description": "Returns PDV reward delta with reward pool",
         "produces": [
@@ -58,7 +58,7 @@
         }
       }
     },
-    "/v1/configs/blacklist": {
+    "/configs/blacklist": {
       "get": {
         "description": "Returns blacklist.",
         "tags": [
@@ -82,7 +82,7 @@
         }
       }
     },
-    "/v1/configs/rewards": {
+    "/configs/rewards": {
       "get": {
         "description": "Returns rewards config.",
         "tags": [
@@ -106,7 +106,7 @@
         }
       }
     },
-    "/v1/images": {
+    "/images": {
       "post": {
         "security": [
           {
@@ -141,7 +141,7 @@
         }
       }
     },
-    "/v1/pdv": {
+    "/pdv": {
       "post": {
         "security": [
           {
@@ -199,7 +199,7 @@
         }
       }
     },
-    "/v1/pdv-rewards/pool": {
+    "/pdv-rewards/pool": {
       "get": {
         "description": "Returns rewards pool.",
         "produces": [
@@ -226,7 +226,7 @@
         }
       }
     },
-    "/v1/pdv/{owner}": {
+    "/pdv/{owner}": {
       "get": {
         "description": "Lists PDV",
         "produces": [
@@ -287,7 +287,7 @@
         }
       }
     },
-    "/v1/pdv/{owner}/{id}": {
+    "/pdv/{owner}/{id}": {
       "get": {
         "security": [
           {
@@ -346,7 +346,7 @@
         }
       }
     },
-    "/v1/pdv/{owner}/{id}/meta": {
+    "/pdv/{owner}/{id}/meta": {
       "get": {
         "description": "Returns metadata of PDV",
         "tags": [
@@ -391,7 +391,7 @@
         }
       }
     },
-    "/v1/profiles": {
+    "/profiles": {
       "get": {
         "description": "Returns profiles by addresses",
         "tags": [
