@@ -8,6 +8,8 @@ PROCESSOR_OUT := $(OUT_DIR)/processor
 PROCESSOR_MAIN_PKG := ./cmd/processor
 SYNC_OUT := $(OUT_DIR)/sync
 SYNC_MAIN_PKG := ./cmd/sync
+REWARDS_OUT := $(OUT_DIR)/rewards
+REWARDS_MAIN_PKG := ./cmd/rewards
 
 GOBIN := $(shell go env GOPATH)/bin
 
@@ -38,6 +40,8 @@ build:
 	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(PROCESSOR_OUT) $(PROCESSOR_MAIN_PKG)
 	@echo BUILDING $(SYNC_OUT)
 	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(SYNC_OUT) $(SYNC_MAIN_PKG)
+	@echo BUILDING $(REWARDS_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(REWARDS_OUT) $(REWARDS_MAIN_PKG)
 	@echo DONE
 
 .PHONY: linux
@@ -46,6 +50,7 @@ linux: export GOARCH := amd64
 linux: LINUX_CERBERUS_OUT := $(CERBERUS_OUT)-$(GOOS)-$(GOARCH)
 linux: LINUX_PROCESSOR_OUT := $(PROCESSOR_OUT)-$(GOOS)-$(GOARCH)
 linux: LINUX_SYNC_OUT := $(SYNC_OUT)-$(GOOS)-$(GOARCH)
+linux: LINUX_REWARDS_OUT := $(REWARDS_OUT)-$(GOOS)-$(GOARCH)
 linux:
 	@echo BUILDING $(LINUX_CERBERUS_OUT)
 	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_CERBERUS_OUT) $(CERBERUS_MAIN_PKG)
@@ -53,6 +58,8 @@ linux:
 	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_PROCESSOR_OUT) $(PROCESSOR_MAIN_PKG)
 	@echo BUILDING $(LINUX_SYNC_OUT)
 	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_SYNC_OUT) $(SYNC_MAIN_PKG)
+	@echo BUILDING $(LINUX_REWARDS_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_REWARDS_OUT) $(REWARDS_MAIN_PKG)
 	@echo DONE
 
 .PHONY: image

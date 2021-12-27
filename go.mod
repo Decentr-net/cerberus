@@ -9,6 +9,7 @@ require (
 	github.com/Decentr-net/go-broadcaster v0.1.0
 	github.com/Decentr-net/logrus v0.7.2
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-sdk-go v1.36.30
 	github.com/cosmos/cosmos-sdk v0.44.3
 	github.com/disintegration/imaging v1.6.2

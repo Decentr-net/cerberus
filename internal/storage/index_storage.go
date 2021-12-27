@@ -28,8 +28,26 @@ type IndexStorage interface {
 
 	GetPDVDelta(ctx context.Context, address string) (float64, error)
 	GetPDVTotalDelta(ctx context.Context) (float64, error)
+	GetPDVDeltaList(ctx context.Context) ([]*PDVDelta, error)
+
+	CreateRewardsQueueItem(ctx context.Context, addr string, reward int64) error
+	GetRewardsQueueItemList(ctx context.Context) ([]*RewardsQueueItem, error)
+	DeleteRewardsQueueItem(ctx context.Context, addr string) error
+
 	GetPDVRewardsDistributedDate(ctx context.Context) (time.Time, error)
 	SetPDVRewardsDistributedDate(ctx context.Context, date time.Time) error
+}
+
+// PDVDelta ...
+type PDVDelta struct {
+	Address string
+	Delta   float64
+}
+
+// RewardsQueueItem ...
+type RewardsQueueItem struct {
+	Address string
+	Reward  int64
 }
 
 // Profile ...
