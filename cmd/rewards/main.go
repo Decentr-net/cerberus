@@ -8,7 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jessevdk/go-flags"
+	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
