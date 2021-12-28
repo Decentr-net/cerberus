@@ -35,6 +35,7 @@ type profileDTO struct {
 	Bio       string         `db:"bio"`
 	Avatar    string         `db:"avatar"`
 	Gender    string         `db:"gender"`
+	Banned    bool           `db:"banned"`
 	Birthday  pq.NullTime    `db:"birthday"`
 	UpdatedAt pq.NullTime    `db:"updated_at"`
 	CreatedAt time.Time      `db:"created_at"`
@@ -361,6 +362,7 @@ func toStorageProfile(p *profileDTO) *storage.Profile {
 		Emails:    p.Emails,
 		Bio:       p.Bio,
 		Avatar:    p.Avatar,
+		Banned:    p.Banned,
 		Gender:    p.Gender,
 		CreatedAt: p.CreatedAt,
 	}
