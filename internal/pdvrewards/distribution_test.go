@@ -82,3 +82,23 @@ func TestDistributor_distributeRewardsIfExist(t *testing.T) {
 	//act
 	d.distributeRewardsIfExist()
 }
+
+func TestChunkSlice(t *testing.T) {
+	items := make([]*storage.RewardsQueueItem, 50)
+	for i := 0; i < 50; i++ {
+		items[i] = &storage.RewardsQueueItem{
+			Address: fmt.Sprint("address", i+1),
+			Reward:  int64(i + 1),
+		}
+	}
+
+	chunks := chunkSlice(items, 10)
+	require.Len(t, chunks, 5)
+
+	for _, c := range chunks {
+		for _, item := range c {
+			require.NotEmpty(t, item.Address)
+			require.NotZero(t, item.Reward)
+		}
+	}
+}

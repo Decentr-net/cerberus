@@ -105,6 +105,8 @@ func (d *Distributor) distributeRewardsIfExist() {
 		return
 	}
 
+	log.Infof("%d rewards to distribute", len(items))
+
 	chunks := chunkSlice(items, chunkSize)
 	for _, chunk := range chunks {
 		if err := d.sendStakes(chunk); err != nil {
@@ -126,11 +128,11 @@ func (d *Distributor) distributeRewardsIfExist() {
 
 func (d *Distributor) sendStakes(items []*storage.RewardsQueueItem) error {
 	stakes := make([]blockchain.Stake, len(items))
-	for _, item := range items {
-		stakes = append(stakes, blockchain.Stake{
+	for idx, item := range items {
+		stakes[idx] = blockchain.Stake{
 			Address: item.Address,
 			Amount:  sdk.NewInt(item.Reward),
-		})
+		}
 	}
 	return d.b.SendStakes(stakes, rewardsMemo)
 }
