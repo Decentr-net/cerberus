@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -82,6 +83,10 @@ func main() {
 	})
 
 	logrus.Info("service started")
+
+	if err := gr.Wait(); err != nil && !errors.Is(err, errTerminated) && !errors.Is(err, http.ErrServerClosed) {
+		logrus.WithError(err).Fatal("service unexpectedly closed")
+	}
 }
 
 func setupLogger() {
