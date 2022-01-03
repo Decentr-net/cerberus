@@ -62,6 +62,11 @@ func (d *Distributor) prepareRewardsQueue() {
 
 	if total == 0 {
 		log.Info("total PDV delta is zero")
+
+		if err := d.is.SetPDVRewardsDistributedDate(ctx, time.Now().UTC()); err != nil {
+			log.WithError(err).Error("failed to set PDV rewards distributed date")
+		}
+
 		return
 	}
 
