@@ -184,6 +184,9 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, e
 	if txf.Gas() == 0 {
 		_, gas, err := tx.CalculateGas(b.ctx, txf, msgs...)
 		if err != nil {
+			if strings.Contains(err.Error(), "account sequence mismatch") {
+				return nil, errInvalidSequence
+			}
 			return nil, fmt.Errorf("failed to calculate gas: %w", err)
 		}
 		txf = txf.WithGas(gas)

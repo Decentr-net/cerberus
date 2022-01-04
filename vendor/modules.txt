@@ -37,7 +37,7 @@ github.com/Decentr-net/decentr/x/token/types
 ## explicit
 github.com/Decentr-net/go-api
 github.com/Decentr-net/go-api/test
-# github.com/Decentr-net/go-broadcaster v0.1.0
+# github.com/Decentr-net/go-broadcaster v0.1.1
 ## explicit
 github.com/Decentr-net/go-broadcaster
 # github.com/Decentr-net/logrus v0.7.2
