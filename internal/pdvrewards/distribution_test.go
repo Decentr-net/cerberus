@@ -14,6 +14,25 @@ import (
 	"github.com/Decentr-net/cerberus/internal/storage/mock"
 )
 
+func TestDistributor_prepareRewardsQueue_EmptyGetPDVDeltaList(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	is := mock.NewMockIndexStorage(ctrl)
+	is.EXPECT().GetPDVDeltaList(gomock.Any()).Return([]*storage.PDVDelta{}, nil)
+
+	// asset distributed date is set
+	is.EXPECT().SetPDVRewardsDistributedDate(gomock.Any(), gomock.Any()).Do(func(_ context.Context, date time.Time) {
+		require.Equal(t, time.UTC, date.Location())
+	})
+
+	b := blockchainmock.NewMockBlockchain(ctrl)
+	d := NewDistributor(1000, b, is)
+
+	//act
+	d.prepareRewardsQueue()
+}
+
 func TestDistributor_prepareRewardsQueue(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
