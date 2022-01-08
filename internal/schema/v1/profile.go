@@ -47,9 +47,14 @@ func (d Profile) Validate() bool { // nolint: gocritic
 		}
 	}
 
+	isBirthdayValid := true
+	if d.Birthday != nil {
+		isBirthdayValid = d.Birthday.Year() > 1900 && d.Birthday.Year() < time.Now().Year()
+	}
+
 	return types.IsValidGender(d.Gender) &&
 		types.IsValidAvatar(d.Avatar) &&
 		utf8.RuneCountInString(d.FirstName) <= maxFirstNameLength &&
 		utf8.RuneCountInString(d.LastName) <= maxLastNameLength &&
-		d.Birthday.Year() > 1900 && d.Birthday.Year() < time.Now().Year()
+		isBirthdayValid
 }

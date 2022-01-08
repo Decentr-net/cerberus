@@ -91,6 +91,19 @@ func TestProfile_Validate(t *testing.T) {
 			valid: false,
 		},
 		{
+			name: "nil birthday",
+			p: Profile{
+				FirstName: "First",
+				LastName:  "Last",
+				Emails:    []string{"email1@decentr.net", "email2@decentr.xyz"},
+				Bio:       "Some BIO",
+				Gender:    "male",
+				Avatar:    "https://decentr.xyz/avatar.jpeg",
+				Birthday:  nil,
+			},
+			valid: true,
+		},
+		{
 			name: "empty email",
 			p: Profile{
 				FirstName: "First",
