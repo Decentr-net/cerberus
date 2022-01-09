@@ -183,6 +183,10 @@ func IsValidGender(s Gender) bool {
 
 // IsValidAvatar checks if avatar url is valid.
 func IsValidAvatar(str string) bool {
+	if str == "" {
+		return true
+	}
+
 	if len(str) > 4*1024 {
 		return false
 	}
