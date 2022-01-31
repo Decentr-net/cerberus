@@ -239,7 +239,7 @@ func (b *Broadcaster) refreshSequence() error {
 		return fmt.Errorf("failed to get GetAccountNumberSequence: %w", err)
 	}
 
-	b.txf = b.txf.WithAccountNumber(num).WithSequence(seq)
+	b.txf = b.txf.WithAccountNumber(num).WithSequence(seq + 1)
 
 	return nil
 }

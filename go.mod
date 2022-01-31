@@ -6,12 +6,13 @@ require (
 	github.com/Decentr-net/ariadne v1.1.1
 	github.com/Decentr-net/decentr v1.5.7
 	github.com/Decentr-net/go-api v0.1.0
-	github.com/Decentr-net/go-broadcaster v0.1.1
+	github.com/Decentr-net/go-broadcaster v0.1.2
 	github.com/Decentr-net/logrus v0.7.2
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-sdk-go v1.36.30
 	github.com/cosmos/cosmos-sdk v0.44.3
+	github.com/davecgh/go-spew v1.1.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-chi/cors v1.1.1
