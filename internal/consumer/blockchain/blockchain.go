@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Decentr-net/ariadne"
@@ -76,7 +77,7 @@ func (b blockchain) processBlockFunc(ctx context.Context) func(block ariadne.Blo
 				case *operationstypes.MsgResetAccount:
 					err = processMsgResetAccount(ctx, is, b.fs, msg)
 				default:
-					log.WithField("msg", msg.String()).Debug("skip message")
+					log.WithField("msg", spew.Sdump(msg)).Debug("skip message")
 				}
 
 				if err != nil {

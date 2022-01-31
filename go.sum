@@ -94,6 +94,8 @@ github.com/Decentr-net/ariadne v1.1.1/go.mod h1:nHIdoOWUKqM3jh2To+NmNcvTLW1FK5Lj
 github.com/Decentr-net/decentr v1.5.0/go.mod h1:lDTMpDxM1VYIyZVwv78qqxfv9lpFUphL3JhuyUKOJy0=
 github.com/Decentr-net/decentr v1.5.5 h1:QccOEvjP8SXZoiAJ1hi0Jycvdf2hksYjuRbXLRF8HPo=
 github.com/Decentr-net/decentr v1.5.5/go.mod h1:yae5oJUGrZLm6C9b8/Mnrbd5JzF6mlnpzIdqO5A+bAc=
+github.com/Decentr-net/decentr v1.5.7 h1:cC1CWjjU0mp9uy5NTXfcZZXyNmxam0RJ39bVAy5hQLU=
+github.com/Decentr-net/decentr v1.5.7/go.mod h1:yae5oJUGrZLm6C9b8/Mnrbd5JzF6mlnpzIdqO5A+bAc=
 github.com/Decentr-net/go-api v0.1.0 h1:aF2T6pd0N3TX0KgNe5EmEgqnQBHSGnAQonYmwP5nd74=
 github.com/Decentr-net/go-api v0.1.0/go.mod h1:nEj17MvZcZqnjyyMOYsQpBjKneKIVE2IFUFMp9BLhYA=
 github.com/Decentr-net/go-broadcaster v0.1.0 h1:L+FDrDR5FrmYIDOE68Tjvin5Q31lgZIHb4gwnyQSZzM=
