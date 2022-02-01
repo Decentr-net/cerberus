@@ -6,7 +6,7 @@ require (
 	github.com/Decentr-net/ariadne v1.1.1
 	github.com/Decentr-net/decentr v1.5.7
 	github.com/Decentr-net/go-api v0.1.0
-	github.com/Decentr-net/go-broadcaster v0.1.2
+	github.com/Decentr-net/go-broadcaster v0.1.1
 	github.com/Decentr-net/logrus v0.7.2
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/avast/retry-go v3.0.0+incompatible
