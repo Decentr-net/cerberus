@@ -123,6 +123,8 @@ func (d *Distributor) distributeRewardsIfExist() {
 			return
 		}
 
+		time.Sleep(6 * time.Second)
+
 		for _, item := range chunk {
 			log.Infof("%s got %d uDEC", item.Address, item.Reward)
 		}
