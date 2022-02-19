@@ -89,6 +89,11 @@ func (s *server) saveImageHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if errors.Is(err, service.ErrUploadTimeout) {
+			api.WriteInternalError(r.Context(), w, "upload image timeout")
+			return
+		}
+
 		api.WriteInternalErrorf(r.Context(), w, "failed to save image: %s", err.Error())
 		return
 	}

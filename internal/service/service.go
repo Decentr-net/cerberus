@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -35,6 +36,7 @@ import (
 var (
 	ErrNotFound           = errors.New("not found")
 	ErrImageInvalidFormat = errors.New("image invalid format")
+	ErrUploadTimeout      = errors.New("upload timeout")
 )
 
 // RewardMap contains dictionary with PDV types and rewards for them.
@@ -190,7 +192,15 @@ func (s *service) SaveImage(ctx context.Context, r io.Reader, owner string) (str
 			return "", fmt.Errorf("failed to encode image: %w", err)
 		}
 
-		return s.fs.Write(ctx, &buf, int64(buf.Len()), p, contentType, true)
+		path, err1 := s.fs.Write(ctx, &buf, int64(buf.Len()), p, contentType, true)
+		if err1 != nil {
+			if os.IsTimeout(err) || errors.Is(err, context.DeadlineExceeded) {
+				return "", ErrUploadTimeout
+			}
+			return "", err1
+		}
+
+		return path, nil
 	}
 
 	// image is stored under the account prefix therefore images will be deleted as soon as account folder is deleted
