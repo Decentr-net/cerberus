@@ -46,11 +46,11 @@ type Blockchain interface {
 }
 
 type blockchain struct {
-	b *broadcaster.Broadcaster
+	b broadcaster.Broadcaster
 }
 
 // New returns new instance of Blockchain.
-func New(b *broadcaster.Broadcaster) *blockchain { // nolint:golint
+func New(b broadcaster.Broadcaster) *blockchain { // nolint:golint
 	return &blockchain{
 		b: b,
 	}

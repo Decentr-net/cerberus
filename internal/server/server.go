@@ -92,6 +92,13 @@ type Profile struct {
 	CreatedAt int64    `json:"createdAt"`
 }
 
+// ValidatePDVResponse ...
+// swagger:model ValidatePDVResponse
+type ValidatePDVResponse struct {
+	Valid      bool  `json:"bool"`
+	InvalidPDV []int `json:"invalidPDV,omitempty"`
+}
+
 // SetupRouter setups handlers to chi router.
 func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBodySize int64,
 	spt throttler.Throttler, minPDVCount, maxPDVCount uint16, pdvRewardsPoolSize sdk.Dec) {
@@ -117,6 +124,7 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 	}
 
 	r.Post("/v1/pdv", srv.savePDVHandler)
+	r.Post("/v1/pdv/validate", srv.validatePDVHandler)
 	r.Get("/v1/pdv/{owner}", srv.listPDVHandler)
 	r.Get("/v1/pdv/{owner}/{id}", srv.getPDVHandler)
 	r.Get("/v1/pdv/{owner}/{id}/meta", srv.getPDVMetaHandler)

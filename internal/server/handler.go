@@ -193,6 +193,54 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	api.WriteOK(w, http.StatusCreated, SavePDVResponse{ID: id})
 }
 
+// validatePDVHandler validates pdv and returns indexes of invalid.
+func (s *server) validatePDVHandler(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation POST /pdv/validate PDV Save
+	//
+	// Encrypts and saves PDV
+	//
+	// ---
+	// produces:
+	// - application/json
+	// consumes:
+	// - application/json
+	// parameters:
+	// - name: request
+	//   description: batch of pdv
+	//   in: body
+	//   required: true
+	//   schema:
+	//     "$ref": "#/definitions/PDV"
+	// responses:
+	//   '200':
+	//     description: all pdv are valid
+	//     schema:
+	//       "$ref": "#/definitions/ValidatePDVResponse"
+	//   '400':
+	//      description: bad request
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+	//   '500':
+	//      description: internal server error
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		api.WriteError(w, http.StatusBadRequest, fmt.Sprintf("failed to read body: %s", err.Error()))
+		return
+	}
+	r.Body.Close() // nolint:errcheck,gosec
+
+	invalidPDV, err := schema.GetInvalidPDV(data)
+	if err != nil {
+		api.WriteError(w, http.StatusBadRequest, fmt.Sprintf("failed to validate pdv: %s", err.Error()))
+		return
+	}
+
+	api.WriteOK(w, http.StatusCreated, ValidatePDVResponse{Valid: len(invalidPDV) == 0, InvalidPDV: invalidPDV})
+}
+
 // listPDVHandler lists pdv from storage.
 func (s *server) listPDVHandler(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /pdv/{owner} PDV List

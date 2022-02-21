@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -29,10 +31,26 @@ func init() {
 // ErrTxInMempoolCache is returned when tx is already broadcast and exists in mempool cache.
 var ErrTxInMempoolCache = errors.New("tx is already in mempool cache")
 
-var errInvalidSequence = errors.New("invalid sequence")
+//go:generate mockgen -destination=./mock/broadcaster.go -package=mock -source=blockchain.go
 
 // Broadcaster provides functionality to broadcast messages to cosmos based blockchain node.
-type Broadcaster struct {
+type Broadcaster interface {
+	// From returns address of broadcaster.
+	From() sdk.AccAddress
+	// GetHeight returns current height.
+	GetHeight(ctx context.Context) (uint64, error)
+	// BroadcastMsg broadcasts alone message.
+	BroadcastMsg(msg sdk.Msg, memo string) (*sdk.TxResponse, error)
+	// Broadcast broadcasts messages.
+	Broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, error)
+
+	// PingContext pings node.
+	PingContext(ctx context.Context) error
+}
+
+var accountSequenceMismatchErrorRegExp = regexp.MustCompile(`.+account sequence mismatch, expected (\d+), got \d+:.+`)
+
+type broadcaster struct {
 	ctx client.Context
 	txf tx.Factory
 
@@ -57,7 +75,7 @@ type Config struct {
 }
 
 // New returns new instance of broadcaster
-func New(cfg Config) (*Broadcaster, error) {
+func New(cfg Config) (*broadcaster, error) {
 	kr, err := keyring.New(
 		config.AppName,
 		cfg.KeyringBackend,
@@ -100,7 +118,7 @@ func New(cfg Config) (*Broadcaster, error) {
 		WithGas(cfg.Gas).
 		WithGasAdjustment(cfg.GasAdjust)
 
-	b := &Broadcaster{
+	b := &broadcaster{
 		ctx: ctx,
 		txf: factory,
 
@@ -115,12 +133,12 @@ func New(cfg Config) (*Broadcaster, error) {
 }
 
 // From returns address of broadcaster.
-func (b *Broadcaster) From() sdk.AccAddress {
+func (b *broadcaster) From() sdk.AccAddress {
 	return b.ctx.FromAddress
 }
 
 // GetHeight returns current height.
-func (b *Broadcaster) GetHeight(ctx context.Context) (uint64, error) {
+func (b *broadcaster) GetHeight(ctx context.Context) (uint64, error) {
 	c, err := b.ctx.GetNode()
 	if err != nil {
 		return 0, fmt.Errorf("failed get node: %w", err)
@@ -135,21 +153,13 @@ func (b *Broadcaster) GetHeight(ctx context.Context) (uint64, error) {
 }
 
 // BroadcastMsg broadcasts alone message.
-func (b *Broadcaster) BroadcastMsg(msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
+func (b *broadcaster) BroadcastMsg(msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
 	return b.Broadcast([]sdk.Msg{msg}, memo)
 }
 
 // Broadcast broadcasts messages.
-func (b *Broadcaster) Broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	out, err := b.broadcast(msgs, memo)
-
-	if errors.Is(err, errInvalidSequence) {
-		if err := b.refreshSequence(); err != nil {
-			return nil, fmt.Errorf("failed to refresh sequence: %w", err)
-		}
-
-		out, err = b.broadcast(msgs, memo)
-	}
+func (b *broadcaster) Broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
+	out, err := b.broadcast(msgs, memo, false)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to broadcast: %w", err)
@@ -159,7 +169,7 @@ func (b *Broadcaster) Broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, e
 }
 
 // PingContext pings node.
-func (b *Broadcaster) PingContext(ctx context.Context) error {
+func (b *broadcaster) PingContext(ctx context.Context) error {
 	c, err := b.ctx.GetNode()
 	if err != nil {
 		return fmt.Errorf("failed to get rpc client: %w", err)
@@ -171,11 +181,13 @@ func (b *Broadcaster) PingContext(ctx context.Context) error {
 	return nil
 }
 
-func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	txf := b.txf.WithMemo(memo)
+func (b *broadcaster) broadcast(msgs []sdk.Msg, memo string, isRetry bool) (*sdk.TxResponse, error) {
+	if !isRetry {
+		b.mu.Lock()
+		defer b.mu.Unlock()
+	}
 
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	txf := b.txf.WithMemo(memo)
 
 	if txf.GasAdjustment() == 0 {
 		txf = txf.WithGasAdjustment(1)
@@ -184,9 +196,14 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, e
 	if txf.Gas() == 0 {
 		_, gas, err := tx.CalculateGas(b.ctx, txf, msgs...)
 		if err != nil {
-			if strings.Contains(err.Error(), "account sequence mismatch") {
-				return nil, errInvalidSequence
+			if !isRetry {
+				if seq := getNextSequence(err.Error()); seq != 0 {
+					b.txf = b.txf.WithSequence(seq)
+				}
+
+				return b.broadcast(msgs, memo, true)
 			}
+
 			return nil, fmt.Errorf("failed to calculate gas: %w", err)
 		}
 		txf = txf.WithGas(gas)
@@ -217,8 +234,12 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, e
 			return nil, ErrTxInMempoolCache
 		}
 
-		if sdkerrors.ErrUnauthorized.ABCICode() == resp.Code {
-			return nil, errInvalidSequence
+		if !isRetry {
+			if seq := getNextSequence(resp.RawLog); seq != 0 {
+				b.txf = b.txf.WithSequence(seq)
+			}
+
+			return b.broadcast(msgs, memo, true)
 		}
 
 		return nil, fmt.Errorf("failed to broadcast tx: %s", resp.String())
@@ -229,7 +250,7 @@ func (b *Broadcaster) broadcast(msgs []sdk.Msg, memo string) (*sdk.TxResponse, e
 	return resp, nil
 }
 
-func (b *Broadcaster) refreshSequence() error {
+func (b *broadcaster) refreshSequence() error {
 	if err := b.txf.AccountRetriever().EnsureExists(b.ctx, b.From()); err != nil {
 		return fmt.Errorf("failed to EnsureExists: %w", err)
 	}
@@ -242,4 +263,16 @@ func (b *Broadcaster) refreshSequence() error {
 	b.txf = b.txf.WithAccountNumber(num).WithSequence(seq)
 
 	return nil
+}
+
+func getNextSequence(m string) uint64 {
+	s := accountSequenceMismatchErrorRegExp.FindStringSubmatch(m)
+
+	if len(s) != 2 {
+		return 0
+	}
+
+	seq, _ := strconv.ParseUint(s[1], 10, 64)
+
+	return seq
 }
