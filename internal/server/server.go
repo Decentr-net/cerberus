@@ -95,7 +95,7 @@ type Profile struct {
 // ValidatePDVResponse ...
 // swagger:model ValidatePDVResponse
 type ValidatePDVResponse struct {
-	Valid      bool  `json:"bool"`
+	Valid      bool  `json:"valid"`
 	InvalidPDV []int `json:"invalidPDV,omitempty"`
 }
 

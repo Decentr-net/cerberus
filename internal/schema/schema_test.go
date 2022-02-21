@@ -70,3 +70,46 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 	assert.JSONEq(t, data, string(d))
 	assert.True(t, p.Validate())
 }
+
+func Test_GetInvalidPDV(t *testing.T) {
+	s, err := GetInvalidPDV([]byte(`
+{
+   "version":"v1",
+   "pdv":[
+      {
+         "domain":".xn--j1ail.xn--p1ai",
+         "expirationDate":1708541760,
+         "hostOnly":false,
+         "name":"__utma",
+         "path":"/",
+         "sameSite":"unspecified",
+         "secure":false,
+         "source":{
+            "host":".xn--j1ail.xn--p1ai",
+            "path":"/"
+         },
+         "timestamp":"2022-02-21T18:56:00.444Z",
+         "type":"cookie",
+         "value":"127263044.1244664020.1645459224.1645459224.1645469307.2"
+      },
+      {
+         "domain":"t.tilda.ws",
+         "expirationDate":1708541625,
+         "hostOnly":false,
+         "name":"_ga",
+         "path":"/",
+         "sameSite":"unspecified",
+         "secure":false,
+         "source":{
+            "host":"t.tilda.ws",
+            "path":"/"
+         },
+         "timestamp":"2022-02-21T18:53:45.982Z",
+         "type":"cookie",
+         "value":"GA1.2.214209808.1645469626"
+      }
+   ]
+}`))
+	require.NoError(t, err)
+	require.Equal(t, s, []int{0})
+}

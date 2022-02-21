@@ -243,7 +243,7 @@ func (s *server) validatePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.WriteOK(w, http.StatusCreated, ValidatePDVResponse{Valid: len(invalidPDV) == 0, InvalidPDV: invalidPDV})
+	api.WriteOK(w, http.StatusOK, ValidatePDVResponse{Valid: len(invalidPDV) == 0, InvalidPDV: invalidPDV})
 }
 
 // listPDVHandler lists pdv from storage.

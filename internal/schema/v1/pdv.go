@@ -90,7 +90,8 @@ func GetInvalidPDV(b []byte) ([]int, error) {
 	out := make([]int, 0, len(data))
 
 	for i, v := range data {
-		if _, err := dataSchemes.UnmarshalPDVData(v); err != nil {
+		pdv, err := dataSchemes.UnmarshalPDVData(v)
+		if err != nil || !pdv.Validate() {
 			out = append(out, i)
 		}
 	}
