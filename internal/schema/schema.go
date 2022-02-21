@@ -107,3 +107,23 @@ func (p PDVWrapper) Version() Version {
 func (p PDVWrapper) Data() []Data {
 	return p.pdv.Data()
 }
+
+// GetInvalidPDV return indices  of invalid pdv.
+func GetInvalidPDV(b []byte) ([]int, error) {
+	var i struct {
+		Version Version `json:"version"`
+
+		PDV json.RawMessage `json:"pdv"`
+	}
+
+	if err := json.Unmarshal(b, &i); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal PDV meta: %w", err)
+	}
+
+	switch i.Version {
+	case V1:
+		return v1.GetInvalidPDV(i.PDV)
+	default:
+		return nil, fmt.Errorf("invalid version")
+	}
+}

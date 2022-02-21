@@ -78,3 +78,22 @@ func (o PDV) Validate() bool {
 	}
 	return len(o) > 0
 }
+
+// GetInvalidPDV returns indicies of invalid PDV.
+func GetInvalidPDV(b []byte) ([]int, error) {
+	var data []json.RawMessage
+
+	if err := json.Unmarshal(b, &data); err != nil {
+		return nil, err
+	}
+
+	out := make([]int, 0, len(data))
+
+	for i, v := range data {
+		if _, err := dataSchemes.UnmarshalPDVData(v); err != nil {
+			out = append(out, i)
+		}
+	}
+
+	return out, nil
+}

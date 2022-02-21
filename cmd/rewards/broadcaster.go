@@ -20,7 +20,7 @@ type BlockchainOpts struct {
 	BlockchainFee                string `long:"blockchain.fee" env:"BLOCKCHAIN_FEE" default:"1udec" description:"transaction fee"`
 }
 
-func mustGetBroadcaster() *broadcaster.Broadcaster {
+func mustGetBroadcaster() broadcaster.Broadcaster {
 	fee, err := sdk.ParseCoinNormalized(opts.BlockchainFee)
 	if err != nil {
 		logrus.WithError(err).Error("failed to parse fee")

@@ -226,6 +226,52 @@
         }
       }
     },
+    "/pdv/validate": {
+      "post": {
+        "description": "Encrypts and saves PDV",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "PDV"
+        ],
+        "operationId": "Save",
+        "parameters": [
+          {
+            "description": "batch of pdv",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PDV"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "all pdv are valid",
+            "schema": {
+              "$ref": "#/definitions/ValidatePDVResponse"
+            }
+          },
+          "400": {
+            "description": "bad request",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/pdv/{owner}": {
       "get": {
         "description": "Lists PDV",
@@ -848,6 +894,25 @@
         }
       },
       "x-go-package": "github.com/Decentr-net/cerberus/internal/schema/types"
+    },
+    "ValidatePDVResponse": {
+      "type": "object",
+      "title": "ValidatePDVResponse ...",
+      "properties": {
+        "bool": {
+          "type": "boolean",
+          "x-go-name": "Valid"
+        },
+        "invalidPDV": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "InvalidPDV"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
     },
     "advertiserId": {
       "title": "AdvertiserIDV1 contains id for an advertiser (e.g google, facebook).",

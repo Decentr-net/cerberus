@@ -22,7 +22,7 @@ type SQSOpts struct {
 	SQSQueue          string `long:"sqs.queue" env:"SQS_QUEUE" default:"testnet" description:"SQS queue name"`
 }
 
-func mustGetConsumer(fs storage.FileStorage, is storage.IndexStorage, b *broadcaster.Broadcaster) consumer.Consumer {
+func mustGetConsumer(fs storage.FileStorage, is storage.IndexStorage, b broadcaster.Broadcaster) consumer.Consumer {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region:      aws.String(opts.SQSRegion),
 		Credentials: credentials.NewStaticCredentials(opts.SQSAccessKeyID, opts.SQSecretAccessKey, ""),
