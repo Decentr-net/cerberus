@@ -197,9 +197,18 @@ func (i *impl) processMessages(msgs []*sqs.Message) error {
 		return fmt.Errorf("failed to process messages bulk: %w", err)
 	}
 
-	if len(toDelete) > 0 {
+	for len(toDelete) > 0 {
+		// sqs allows to delete 10 or less messages
+		splitPos := len(toDelete)
+		if splitPos > 9 {
+			splitPos = 9
+		}
+
+		s := toDelete[0:splitPos]
+		toDelete = toDelete[splitPos:]
+
 		if _, err := i.sqs.DeleteMessageBatch(&sqs.DeleteMessageBatchInput{
-			Entries:  toDelete,
+			Entries:  s,
 			QueueUrl: &i.queueURL,
 		}); err != nil {
 			return fmt.Errorf("failed to delete messages from sqs: %w", err)
