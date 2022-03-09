@@ -899,10 +899,6 @@
       "type": "object",
       "title": "ValidatePDVResponse ...",
       "properties": {
-        "bool": {
-          "type": "boolean",
-          "x-go-name": "Valid"
-        },
         "invalidPDV": {
           "type": "array",
           "items": {
@@ -910,6 +906,10 @@
             "format": "int64"
           },
           "x-go-name": "InvalidPDV"
+        },
+        "valid": {
+          "type": "boolean",
+          "x-go-name": "Valid"
         }
       },
       "x-go-package": "github.com/Decentr-net/cerberus/internal/server"
