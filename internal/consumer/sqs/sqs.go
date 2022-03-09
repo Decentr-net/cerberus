@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/Decentr-net/cerberus/internal/blockchain"
 	"github.com/Decentr-net/cerberus/internal/consumer"
@@ -40,26 +42,44 @@ type impl struct {
 
 	sqs      *sqs.SQS
 	queueURL string
+
+	msgsCh chan *sqs.Message
 }
 
 // New return new instance of impl.
 func New(fs storage.FileStorage,
 	is storage.IndexStorage,
 	b blockchain.Blockchain,
-	sqs *sqs.SQS,
+	sqsClient *sqs.SQS,
 	queueURL string,
 ) *impl { // nolint:golint
 	return &impl{
 		fs:       fs,
 		is:       is,
 		b:        b,
-		sqs:      sqs,
+		sqs:      sqsClient,
 		queueURL: queueURL,
+
+		msgsCh: make(chan *sqs.Message, 200),
 	}
 }
 
-// Run consumes messages from SQS, saves PDV to S3 and distributes rewards.
+// Run consumes messages from SQS and sends pdv to users.
 func (i *impl) Run(ctx context.Context) error {
+	wg, ctx := errgroup.WithContext(ctx)
+
+	wg.Go(func() error {
+		return i.runConsumer(ctx)
+	})
+	wg.Go(func() error {
+		return i.runProcessor(ctx)
+	})
+
+	return wg.Wait()
+}
+
+// runConsumer consumes messages from SQS, and put it into the channel.
+func (i *impl) runConsumer(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -78,14 +98,40 @@ func (i *impl) Run(ctx context.Context) error {
 			continue
 		}
 
-		if len(out.Messages) == 0 {
-			continue
+		for _, v := range out.Messages {
+			i.msgsCh <- v
+		}
+	}
+}
+
+// runProcessor consumes messages from the channel, and process it.
+func (i *impl) runProcessor(ctx context.Context) error {
+	for {
+		var messages []*sqs.Message
+
+	collectMessages:
+		for {
+			select {
+			case m := <-i.msgsCh:
+				messages = append(messages, m)
+			default:
+				break collectMessages
+			}
 		}
 
-		log.WithField("msgs", len(out.Messages)).Info("start processing messages")
+		if len(messages) > 0 {
+			log.WithField("msgs", len(messages)).Info("start processing messages")
 
-		if err := i.processMessages(out.Messages); err != nil {
-			log.WithError(err).Error("failed to process messages")
+			if err := i.processMessages(messages); err != nil {
+				log.WithError(err).Error("failed to process messages")
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			time.Sleep(time.Second)
 		}
 	}
 }
