@@ -4,6 +4,7 @@ package blockchain
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/avast/retry-go"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -110,5 +111,5 @@ func (b blockchain) SendStakes(stakes []Stake, memo string) error {
 		return nil
 	}
 
-	return retry.Do(sendStakes, retry.Attempts(3))
+	return retry.Do(sendStakes, retry.Attempts(5), retry.Delay(time.Second))
 }
