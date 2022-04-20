@@ -97,7 +97,7 @@ vendor:
 install-linter: LINTER_INSTALL_PATH := $(GOBIN)/$(LINTER_NAME)
 install-linter:
 	@echo INSTALLING $(LINTER_INSTALL_PATH) $(LINTER_VERSION)
-	$(V)curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | \
+	$(V)curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
 		sh -s -- -b $(GOBIN) $(LINTER_VERSION)
 	@echo DONE
 

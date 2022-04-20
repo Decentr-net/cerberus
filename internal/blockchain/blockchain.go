@@ -77,8 +77,12 @@ func (b blockchain) DistributeRewards(rewards []Reward) (string, error) {
 		return "", err
 	}
 
-	resp, err := b.b.BroadcastMsg(&msg, "")
-	if err != nil {
+	var resp *sdk.TxResponse
+	if err := retry.Do(func() error {
+		var err error
+		resp, err = b.b.BroadcastMsg(&msg, "")
+		return err
+	}, retry.Attempts(5), retry.Delay(200*time.Millisecond)); err != nil {
 		return "", fmt.Errorf("failed to broadcast MsgDistributeRewards: %w", err)
 	}
 
