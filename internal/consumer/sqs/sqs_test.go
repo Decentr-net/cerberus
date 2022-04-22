@@ -26,9 +26,9 @@ import (
 	"github.com/Decentr-net/cerberus/internal/entities"
 	"github.com/Decentr-net/cerberus/internal/producer"
 	sqsproducer "github.com/Decentr-net/cerberus/internal/producer/sqs"
-	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/storage"
 	storagemock "github.com/Decentr-net/cerberus/internal/storage/mock"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 var (
@@ -167,7 +167,7 @@ func TestImpl_ProcessMessage(t *testing.T) {
 			schema.PDVCookieType: 2,
 		},
 		Reward: sdk.NewDecWithPrec(2, 6),
-	})
+	}, "android")
 
 	require.ErrorIs(t, i.Run(ctx), context.Canceled)
 

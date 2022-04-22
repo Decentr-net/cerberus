@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/Decentr-net/cerberus/internal/schema/types"
-	v1 "github.com/Decentr-net/cerberus/internal/schema/v1"
+	"github.com/Decentr-net/cerberus/pkg/schema/types"
+	v1 "github.com/Decentr-net/cerberus/pkg/schema/v1"
 )
 
 // nolint
@@ -56,20 +56,29 @@ var _ types.PDV = PDVWrapper{}
 //
 // It's very usable for composing into request or response.
 type PDVWrapper struct {
-	pdv types.PDV
+	Device string
+	pdv    types.PDV
 }
 
 // MarshalJSON ...
 func (p PDVWrapper) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p.pdv)
+	return json.Marshal(struct {
+		Device  string  `json:"device"`
+		Version Version `json:"version"`
+		PDV     []Data  `json:"pdv"`
+	}{
+		PDV:     p.pdv.Data(),
+		Device:  p.Device,
+		Version: p.Version(),
+	})
 }
 
 // UnmarshalJSON ...
 func (p *PDVWrapper) UnmarshalJSON(b []byte) error {
 	var i struct {
-		Version Version `json:"version"`
-
-		PDV json.RawMessage `json:"pdv"`
+		Version Version         `json:"version"`
+		Device  string          `json:"device"`
+		PDV     json.RawMessage `json:"pdv"`
 	}
 
 	if err := json.Unmarshal(b, &i); err != nil {
@@ -82,6 +91,7 @@ func (p *PDVWrapper) UnmarshalJSON(b []byte) error {
 	}
 
 	p.pdv = reflect.New(reflect.TypeOf(t)).Interface().(PDV) // nolint: errcheck
+	p.Device = i.Device
 
 	if i.PDV == nil {
 		return nil
@@ -93,9 +103,13 @@ func (p *PDVWrapper) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Validate ...
+// Validate returns true if pdv is valid.
 func (p PDVWrapper) Validate() bool {
-	return p.pdv.Validate()
+	switch p.Device {
+	case "", "ios", "android", "desktop":
+		return p.pdv.Validate()
+	}
+	return false
 }
 
 // Version ...

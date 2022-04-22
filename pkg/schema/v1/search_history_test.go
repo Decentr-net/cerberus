@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/Decentr-net/cerberus/internal/schema/types"
+	"github.com/Decentr-net/cerberus/pkg/schema/types"
 )
 
 func TestSearchHistory_Validate(t *testing.T) {

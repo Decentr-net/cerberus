@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Decentr-net/cerberus/internal/schema"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 func TestCookie(t *testing.T) {

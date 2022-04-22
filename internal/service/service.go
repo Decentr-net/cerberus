@@ -25,8 +25,8 @@ import (
 	"github.com/Decentr-net/cerberus/internal/entities"
 	"github.com/Decentr-net/cerberus/internal/producer"
 	"github.com/Decentr-net/cerberus/internal/refine"
-	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/storage"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 	logging "github.com/Decentr-net/logrus/context"
 )
 
@@ -53,7 +53,7 @@ type Service interface {
 	// SaveImage sends Image to storage.
 	SaveImage(ctx context.Context, r io.Reader, owner string) (string, string, error)
 	// SavePDV sends PDV to storage.
-	SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddress) (uint64, *entities.PDVMeta, error)
+	SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddress, device string) (uint64, *entities.PDVMeta, error)
 	// ListPDV lists PDVs.
 	ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error)
 	// ReceivePDV returns slice of bytes of PDV requested by address from storage.
@@ -113,7 +113,7 @@ func New(
 }
 
 // SavePDV sends PDV to storage.
-func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddress) (uint64, *entities.PDVMeta, error) {
+func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddress, device string) (uint64, *entities.PDVMeta, error) {
 	log := logging.GetLogger(ctx)
 
 	meta, err := s.calculateMeta(ctx, owner, p)
@@ -139,6 +139,7 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 	id := uint64(time.Now().Unix())
 	if err := s.p.Produce(ctx, &producer.PDVMessage{
 		ID:      id,
+		Device:  device,
 		Address: owner.String(),
 		Meta:    meta,
 		Data:    enc,

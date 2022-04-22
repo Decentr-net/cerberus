@@ -186,7 +186,7 @@ func (i *impl) processMessages(msgs []*sqs.Message) error {
 			}
 
 			for _, v := range toReward { // nolint:gocritic
-				if err := i.is.SetPDVMeta(ctx, v.Address, v.ID, tx, v.Meta); err != nil {
+				if err := i.is.SetPDVMeta(ctx, v.Address, v.ID, tx, v.Device, v.Meta); err != nil {
 					return fmt.Errorf("failed to set meta in pg: %w", err)
 				}
 			}

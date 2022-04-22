@@ -21,7 +21,7 @@ import (
 
 	"github.com/Decentr-net/cerberus/internal/entities"
 	"github.com/Decentr-net/cerberus/internal/producer"
-	"github.com/Decentr-net/cerberus/internal/schema"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 var (

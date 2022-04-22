@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"github.com/Decentr-net/cerberus/internal/schema/types"
+	"github.com/Decentr-net/cerberus/pkg/schema/types"
 )
 
 // Cookie is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies).

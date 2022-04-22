@@ -12,6 +12,7 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 	data := `
 {
     "version": "v1",
+	"device": "ios",
 	"pdv": [
 		{
 			"type": "advertiserId",
@@ -67,6 +68,8 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 	d, err := json.Marshal(p)
 	require.NoError(t, err)
 
+	println(string(d))
+
 	assert.JSONEq(t, data, string(d))
 	assert.True(t, p.Validate())
 }
@@ -75,6 +78,7 @@ func Test_GetInvalidPDV(t *testing.T) {
 	s, err := GetInvalidPDV([]byte(`
 {
    "version":"v1",
+   "device": "ios",
    "pdv":[
       {
          "domain":".xn--j1ail.xn--p1ai",

@@ -13,6 +13,7 @@ import (
 type PDVMessage struct {
 	ID      uint64
 	Address string
+	Device  string
 	Meta    *entities.PDVMeta
 	Data    []byte
 }

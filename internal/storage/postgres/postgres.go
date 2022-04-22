@@ -232,7 +232,7 @@ func (s pg) GetPDVMeta(ctx context.Context, address string, id uint64) (*entitie
 	return &out, nil
 }
 
-func (s pg) SetPDVMeta(ctx context.Context, address string, id uint64, tx string, m *entities.PDVMeta) error {
+func (s pg) SetPDVMeta(ctx context.Context, address string, id uint64, tx string, device string, m *entities.PDVMeta) error {
 	b, err := json.Marshal(m)
 	if err != nil {
 		return fmt.Errorf("failed to marshal meta: %w", err)
@@ -241,9 +241,9 @@ func (s pg) SetPDVMeta(ctx context.Context, address string, id uint64, tx string
 	reward, _ := m.Reward.Float64()
 
 	if _, err := s.ext.ExecContext(ctx, `
-		INSERT INTO pdv(owner, id, tx, meta, reward) VALUES($1, $2, $3, $4, $5) ON CONFLICT (owner, id) DO UPDATE
+		INSERT INTO pdv(owner, id, tx, meta, reward, device) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (owner, id) DO UPDATE
 			SET tx = EXCLUDED.tx, meta = EXCLUDED.meta, reward = EXCLUDED.reward
-	`, address, id, tx, b, reward); err != nil {
+	`, address, id, tx, b, reward, device); err != nil {
 		return fmt.Errorf("failed to insert: %w", err)
 	}
 

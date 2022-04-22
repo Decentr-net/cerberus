@@ -71,7 +71,7 @@ func main() {
 	var processed uint
 	l.Info("start processing")
 	iterateMeta(context.Background(), s3client, opts.S3Bucket, func(owner string, id uint64, meta *entities.PDVMeta) error {
-		if err := is.SetPDVMeta(context.Background(), owner, id, "", meta); err != nil {
+		if err := is.SetPDVMeta(context.Background(), owner, id, "", "", meta); err != nil {
 			return fmt.Errorf("failed to save meta: %w", err)
 		}
 
