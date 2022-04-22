@@ -12,29 +12,29 @@ import (
 	"testing"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/disintegration/imaging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	_ "github.com/Decentr-net/cerberus/internal/blockchain"
 	cryptomock "github.com/Decentr-net/cerberus/internal/crypto/mock"
 	"github.com/Decentr-net/cerberus/internal/entities"
 	"github.com/Decentr-net/cerberus/internal/producer"
 	producermock "github.com/Decentr-net/cerberus/internal/producer/mock"
-	"github.com/Decentr-net/cerberus/internal/schema"
-	"github.com/Decentr-net/cerberus/internal/schema/types"
-	v1 "github.com/Decentr-net/cerberus/internal/schema/v1"
 	"github.com/Decentr-net/cerberus/internal/storage"
 	storagemock "github.com/Decentr-net/cerberus/internal/storage/mock"
+	"github.com/Decentr-net/cerberus/pkg/schema"
+	"github.com/Decentr-net/cerberus/pkg/schema/types"
+	v1 "github.com/Decentr-net/cerberus/pkg/schema/v1"
 )
 
 var (
 	ctx                 = context.Background()
 	testOwner           = "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz"
 	testOwnerSdkAddr, _ = sdk.AccAddressFromBech32(testOwner)
+	testDevice          = "ios"
 	testID              = uint64(1)
 	testData            = []byte("data")
 	testEncryptedData   = []byte("data_encrypted")
@@ -150,10 +150,11 @@ func TestService_SavePDV(t *testing.T) {
 		ID:      expectedID,
 		Address: testOwner,
 		Meta:    expectedMeta,
+		Device:  testDevice,
 		Data:    testEncryptedData,
 	}))
 
-	id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
+	id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr, testDevice)
 	require.Equal(t, expectedID, id)
 	require.Equal(t, expectedMeta, meta)
 	require.NoError(t, err)
@@ -185,6 +186,7 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 		ID:      expectedID,
 		Address: testOwner,
 		Meta:    expectedMeta,
+		Device:  testDevice,
 		Data:    testEncryptedData,
 	}))
 
@@ -203,7 +205,7 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 			SameSite:       "None",
 			ExpirationDate: 1861920000,
 		},
-	}, testOwnerSdkAddr)
+	}, testOwnerSdkAddr, testDevice)
 	require.Equal(t, expectedID, id)
 	require.Equal(t, expectedMeta, meta)
 	require.NoError(t, err)
@@ -300,10 +302,11 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				ID:      expectedID,
 				Address: testOwner,
 				Meta:    tc.meta,
+				Device:  testDevice,
 				Data:    testEncryptedData,
 			}).Return(nil)
 
-			id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
+			id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr, testDevice)
 			require.Equal(t, expectedID, id)
 			require.Equal(t, tc.meta, meta)
 			require.NoError(t, err)
@@ -324,7 +327,7 @@ func TestService_SavePDV_EncryptError(t *testing.T) {
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, errTest)
 
-	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
+	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr, testDevice)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }
@@ -344,7 +347,7 @@ func TestService_SavePDV_ProducerError(t *testing.T) {
 
 	p.EXPECT().Produce(gomock.Any(), gomock.Any()).Return(errTest)
 
-	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr)
+	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr, testDevice)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }

@@ -1,9 +1,9 @@
 package swagger
 
 import (
-	"github.com/Decentr-net/cerberus/internal/schema"
-	"github.com/Decentr-net/cerberus/internal/schema/types"
-	v1 "github.com/Decentr-net/cerberus/internal/schema/v1"
+	"github.com/Decentr-net/cerberus/pkg/schema"
+	"github.com/Decentr-net/cerberus/pkg/schema/types"
+	v1 "github.com/Decentr-net/cerberus/pkg/schema/v1"
 )
 
 // swagger:model PDV

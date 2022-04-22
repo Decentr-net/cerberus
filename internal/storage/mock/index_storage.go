@@ -182,17 +182,17 @@ func (mr *MockIndexStorageMockRecorder) GetPDVMeta(ctx, address, id interface{})
 }
 
 // SetPDVMeta mocks base method
-func (m_2 *MockIndexStorage) SetPDVMeta(ctx context.Context, address string, id uint64, tx string, m *entities.PDVMeta) error {
+func (m_2 *MockIndexStorage) SetPDVMeta(ctx context.Context, address string, id uint64, tx, device string, m *entities.PDVMeta) error {
 	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SetPDVMeta", ctx, address, id, tx, m)
+	ret := m_2.ctrl.Call(m_2, "SetPDVMeta", ctx, address, id, tx, device, m)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetPDVMeta indicates an expected call of SetPDVMeta
-func (mr *MockIndexStorageMockRecorder) SetPDVMeta(ctx, address, id, tx, m interface{}) *gomock.Call {
+func (mr *MockIndexStorageMockRecorder) SetPDVMeta(ctx, address, id, tx, device, m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPDVMeta", reflect.TypeOf((*MockIndexStorage)(nil).SetPDVMeta), ctx, address, id, tx, m)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPDVMeta", reflect.TypeOf((*MockIndexStorage)(nil).SetPDVMeta), ctx, address, id, tx, device, m)
 }
 
 // GetPDVDelta mocks base method

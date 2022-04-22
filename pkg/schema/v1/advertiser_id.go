@@ -1,6 +1,6 @@
 package schema
 
-import "github.com/Decentr-net/cerberus/internal/schema/types"
+import "github.com/Decentr-net/cerberus/pkg/schema/types"
 
 const (
 	maxAdvertiserLength      = 20

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/Decentr-net/cerberus/internal/schema/types"
+	"github.com/Decentr-net/cerberus/pkg/schema/types"
 )
 
 // Version ...

@@ -21,16 +21,15 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"golang.org/x/net/context"
 
-	"github.com/Decentr-net/go-api"
-	apitest "github.com/Decentr-net/go-api/test"
-	logging "github.com/Decentr-net/logrus/context"
-
 	_ "github.com/Decentr-net/cerberus/internal/blockchain"
 	"github.com/Decentr-net/cerberus/internal/entities"
-	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/internal/service/mock"
 	"github.com/Decentr-net/cerberus/internal/throttler"
+	"github.com/Decentr-net/cerberus/pkg/schema"
+	"github.com/Decentr-net/go-api"
+	apitest "github.com/Decentr-net/go-api/test"
+	logging "github.com/Decentr-net/logrus/context"
 )
 
 const testOwner = "decentr1u9slwz3sje8j94ccpwlslflg0506yc8y2ylmtz"
@@ -152,7 +151,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 				var pdv schema.PDVWrapper
 				require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
 
-				srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner sdk.AccAddress) (uint64, *entities.PDVMeta, error) {
+				srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner sdk.AccAddress, _ string) (uint64, *entities.PDVMeta, error) {
 					if tc.err != nil {
 						return 0, nil, tc.err
 					}
@@ -194,7 +193,7 @@ func TestServerSavePDV_Throttler(t *testing.T) {
 
 	var pdv schema.PDVWrapper
 	require.NoError(t, json.Unmarshal(body, &pdv))
-	srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner sdk.AccAddress) (uint64, *entities.PDVMeta, error) {
+	srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner sdk.AccAddress, _ string) (uint64, *entities.PDVMeta, error) {
 		assert.Equal(t, testOwner, owner.String())
 		return 1, &entities.PDVMeta{}, nil
 	})
@@ -879,7 +878,7 @@ func Test_savePDVHander_Amount(t *testing.T) {
 
 			srv := mock.NewMockService(ctrl)
 
-			srv.EXPECT().SavePDV(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			srv.EXPECT().SavePDV(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 			router := chi.NewRouter()
 

@@ -14,8 +14,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 
-	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/service"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 	"github.com/Decentr-net/go-api"
 	logging "github.com/Decentr-net/logrus/context"
 )
@@ -187,7 +187,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, _, err := s.s.SavePDV(r.Context(), p, owner)
+	id, _, err := s.s.SavePDV(r.Context(), p, owner, p.Device)
 	if err != nil {
 		api.WriteInternalErrorf(r.Context(), w, "failed to save pdv: %s", err.Error())
 		return

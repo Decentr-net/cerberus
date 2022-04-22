@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/Decentr-net/cerberus/internal/schema"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 // PDVMeta contains info about PDV.

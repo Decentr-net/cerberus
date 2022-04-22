@@ -24,8 +24,8 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/Decentr-net/cerberus/internal/entities"
-	"github.com/Decentr-net/cerberus/internal/schema"
 	"github.com/Decentr-net/cerberus/internal/storage"
+	"github.com/Decentr-net/cerberus/pkg/schema"
 )
 
 var (
@@ -301,7 +301,7 @@ func TestPg_SetPDVMeta(t *testing.T) {
 		Reward: sdk.NewDecWithPrec(1, 6),
 	}
 
-	require.NoError(t, s.SetPDVMeta(ctx, "1", 1, "tx", exp))
+	require.NoError(t, s.SetPDVMeta(ctx, "1", 1, "tx", "ios", exp))
 
 	var tx string
 	require.NoError(t, db.GetContext(ctx, &tx, `SELECT tx FROM pdv WHERE id = 1`))
@@ -343,13 +343,13 @@ func TestPg_GetPDVDeltaTotal(t *testing.T) {
 	})
 
 	t.Run("3 different accounts", func(t *testing.T) {
-		require.NoError(t, s.SetPDVMeta(ctx, "address1", 1, "trx1", &entities.PDVMeta{
+		require.NoError(t, s.SetPDVMeta(ctx, "address1", 1, "trx1", "ios", &entities.PDVMeta{
 			Reward: sdk.NewDecWithPrec(1, 6),
 		}))
-		require.NoError(t, s.SetPDVMeta(ctx, "address2", 1, "trx2", &entities.PDVMeta{
+		require.NoError(t, s.SetPDVMeta(ctx, "address2", 1, "trx2", "desktop", &entities.PDVMeta{
 			Reward: sdk.NewDecWithPrec(2, 6),
 		}))
-		require.NoError(t, s.SetPDVMeta(ctx, "address3", 1, "trx3", &entities.PDVMeta{
+		require.NoError(t, s.SetPDVMeta(ctx, "address3", 1, "trx3", "android", &entities.PDVMeta{
 			Reward: sdk.NewDecWithPrec(3, 6),
 		}))
 
@@ -377,10 +377,10 @@ func TestPg_GetPDVDelta(t *testing.T) {
 	t.Run("2 pdvs", func(t *testing.T) {
 		const addr = "address"
 
-		require.NoError(t, s.SetPDVMeta(ctx, addr, 1, "trx1", &entities.PDVMeta{
+		require.NoError(t, s.SetPDVMeta(ctx, addr, 1, "trx1", "ios", &entities.PDVMeta{
 			Reward: sdk.NewDecWithPrec(1, 6),
 		}))
-		require.NoError(t, s.SetPDVMeta(ctx, addr, 2, "trx2", &entities.PDVMeta{
+		require.NoError(t, s.SetPDVMeta(ctx, addr, 2, "trx2", "ios", &entities.PDVMeta{
 			Reward: sdk.NewDecWithPrec(2, 6),
 		}))
 
@@ -405,16 +405,16 @@ func TestPg_GetPDVDeltaList(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, deltas, 0)
 
-	require.NoError(t, s.SetPDVMeta(ctx, "address1", 1, "trx1", &entities.PDVMeta{
+	require.NoError(t, s.SetPDVMeta(ctx, "address1", 1, "trx1", "ios", &entities.PDVMeta{
 		Reward: sdk.NewDecWithPrec(1, 6),
 	}))
-	require.NoError(t, s.SetPDVMeta(ctx, "address2", 1, "trx2", &entities.PDVMeta{
+	require.NoError(t, s.SetPDVMeta(ctx, "address2", 1, "trx2", "ios", &entities.PDVMeta{
 		Reward: sdk.NewDecWithPrec(2, 6),
 	}))
-	require.NoError(t, s.SetPDVMeta(ctx, "address2", 2, "trx22", &entities.PDVMeta{
+	require.NoError(t, s.SetPDVMeta(ctx, "address2", 2, "trx22", "ios", &entities.PDVMeta{
 		Reward: sdk.NewDecWithPrec(20, 6),
 	}))
-	require.NoError(t, s.SetPDVMeta(ctx, "address3", 1, "trx3", &entities.PDVMeta{
+	require.NoError(t, s.SetPDVMeta(ctx, "address3", 1, "trx3", "ios", &entities.PDVMeta{
 		Reward: sdk.NewDecWithPrec(3, 6),
 	}))
 
@@ -451,7 +451,7 @@ func TestPg_ListPDV(t *testing.T) {
 	t.Cleanup(cleanup)
 
 	for i := 1; i <= 10; i++ {
-		require.NoError(t, s.SetPDVMeta(ctx, "1", uint64(i), "tx", &entities.PDVMeta{
+		require.NoError(t, s.SetPDVMeta(ctx, "1", uint64(i), "tx", "ios", &entities.PDVMeta{
 			ObjectTypes: map[schema.Type]uint16{
 				"cookie": 1,
 			},
@@ -476,7 +476,7 @@ func TestPg_DeletePDV(t *testing.T) {
 	t.Cleanup(cleanup)
 
 	for i := 1; i <= 10; i++ {
-		require.NoError(t, s.SetPDVMeta(ctx, "1", uint64(i), "tx", &entities.PDVMeta{
+		require.NoError(t, s.SetPDVMeta(ctx, "1", uint64(i), "tx", "ios", &entities.PDVMeta{
 			ObjectTypes: map[schema.Type]uint16{
 				"cookie": 1,
 			},
