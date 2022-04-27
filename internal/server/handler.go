@@ -187,8 +187,14 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, _, err := s.s.SavePDV(r.Context(), p, owner, p.Device)
+	id, _, err := s.s.SavePDV(r.Context(), p, owner)
 	if err != nil {
+		if errors.Is(err, service.ErrPDVFraud) {
+			logging.GetLogger(r.Context()).WithField("owner", owner.String()).Warn("pdv fraud detected")
+			api.WriteError(w, http.StatusForbidden, "pdv fraud detected")
+			return
+		}
+
 		api.WriteInternalErrorf(r.Context(), w, "failed to save pdv: %s", err.Error())
 		return
 	}

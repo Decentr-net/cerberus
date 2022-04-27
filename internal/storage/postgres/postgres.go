@@ -143,6 +143,13 @@ func (s pg) GetProfiles(ctx context.Context, addr []string) ([]*storage.Profile,
 	return out, nil
 }
 
+func (s pg) SetProfileBanned(ctx context.Context, addr string) error {
+	if _, err := s.ext.ExecContext(ctx, `UPDATE profile SET banned = true WHERE address = $1`, addr); err != nil {
+		return fmt.Errorf("failed to update: %w", err)
+	}
+	return nil
+}
+
 func (s pg) SetProfile(ctx context.Context, p *storage.SetProfileParams) error {
 	profile := profileDTO{
 		Address:   p.Address,

@@ -56,9 +56,9 @@ func (mr *MockServiceMockRecorder) SaveImage(ctx, r, owner interface{}) *gomock.
 }
 
 // SavePDV mocks base method
-func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, owner types.AccAddress, device string) (uint64, *entities.PDVMeta, error) {
+func (m *MockService) SavePDV(ctx context.Context, p schema.PDVWrapper, owner types.AccAddress) (uint64, *entities.PDVMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePDV", ctx, p, owner, device)
+	ret := m.ctrl.Call(m, "SavePDV", ctx, p, owner)
 	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(*entities.PDVMeta)
 	ret2, _ := ret[2].(error)
@@ -66,9 +66,9 @@ func (m *MockService) SavePDV(ctx context.Context, p schema.PDV, owner types.Acc
 }
 
 // SavePDV indicates an expected call of SavePDV
-func (mr *MockServiceMockRecorder) SavePDV(ctx, p, owner, device interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) SavePDV(ctx, p, owner interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePDV", reflect.TypeOf((*MockService)(nil).SavePDV), ctx, p, owner, device)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePDV", reflect.TypeOf((*MockService)(nil).SavePDV), ctx, p, owner)
 }
 
 // ListPDV mocks base method

@@ -60,6 +60,14 @@ type PDVWrapper struct {
 	pdv    types.PDV
 }
 
+// NewPDVWrapper create a new PDV wrapper.
+func NewPDVWrapper(device string, pdv types.PDV) PDVWrapper {
+	return PDVWrapper{
+		Device: device,
+		pdv:    pdv,
+	}
+}
+
 // MarshalJSON ...
 func (p PDVWrapper) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {

@@ -18,6 +18,7 @@ type IndexStorage interface {
 	GetProfile(ctx context.Context, addr string) (*Profile, error)
 	GetProfiles(ctx context.Context, addr []string) ([]*Profile, error)
 	SetProfile(ctx context.Context, p *SetProfileParams) error
+	SetProfileBanned(ctx context.Context, addr string) error
 	DeleteProfile(ctx context.Context, addr string) error
 
 	ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error)

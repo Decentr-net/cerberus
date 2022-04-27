@@ -153,6 +153,24 @@ func TestPg_InTx(t *testing.T) {
 	require.EqualValues(t, 1, h)
 }
 
+func TestPg_SetProfileBanned(t *testing.T) {
+	t.Cleanup(cleanup)
+
+	p := storage.SetProfileParams{
+		Address:   "address_1",
+		FirstName: "first_name",
+		LastName:  "last_name",
+		Emails:    []string{"email1", "email2"},
+		Bio:       "bio",
+		Avatar:    "avatar",
+		Gender:    "male",
+		Birthday:  date("2009-01-02"),
+	}
+
+	require.NoError(t, s.SetProfile(ctx, &p))
+	require.NoError(t, s.SetProfileBanned(ctx, p.Address))
+}
+
 func TestPg_SetProfile(t *testing.T) {
 	t.Cleanup(cleanup)
 
