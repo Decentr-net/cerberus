@@ -21,6 +21,8 @@ import (
 	_ "github.com/Decentr-net/cerberus/internal/blockchain"
 	cryptomock "github.com/Decentr-net/cerberus/internal/crypto/mock"
 	"github.com/Decentr-net/cerberus/internal/entities"
+	hadesclient "github.com/Decentr-net/cerberus/internal/hades"
+	hadesmock "github.com/Decentr-net/cerberus/internal/hades/mock"
 	"github.com/Decentr-net/cerberus/internal/producer"
 	producermock "github.com/Decentr-net/cerberus/internal/producer/mock"
 	"github.com/Decentr-net/cerberus/internal/storage"
@@ -131,8 +133,9 @@ func TestService_SavePDV(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	expectedID := uint64(time.Now().Unix())
 
@@ -146,6 +149,13 @@ func TestService_SavePDV(t *testing.T) {
 		Reward: sdk.NewDecWithPrec(6, 6),
 	}
 
+	hades.EXPECT().AntiFraud(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, req *hadesclient.AntiFraudRequest) (*hadesclient.AntiFraudResponse, error) {
+		require.Equal(t, expectedID, req.ID)
+		require.Equal(t, testOwner, req.Address)
+		require.Equal(t, testDevice, req.Data.Device)
+		return &hadesclient.AntiFraudResponse{IsFraud: false}, nil
+	})
+
 	p.EXPECT().Produce(ctx, gomock.Eq(&producer.PDVMessage{
 		ID:      expectedID,
 		Address: testOwner,
@@ -154,7 +164,7 @@ func TestService_SavePDV(t *testing.T) {
 		Data:    testEncryptedData,
 	}))
 
-	id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr, testDevice)
+	id, meta, err := s.SavePDV(ctx, schema.NewPDVWrapper(testDevice, pdv), testOwnerSdkAddr)
 	require.Equal(t, expectedID, id)
 	require.Equal(t, expectedMeta, meta)
 	require.NoError(t, err)
@@ -168,8 +178,9 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	expectedID := uint64(time.Now().Unix())
 
@@ -182,6 +193,13 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 		Reward: sdk.ZeroDec(),
 	}
 
+	hades.EXPECT().AntiFraud(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, req *hadesclient.AntiFraudRequest) (*hadesclient.AntiFraudResponse, error) {
+		require.Equal(t, expectedID, req.ID)
+		require.Equal(t, testOwner, req.Address)
+		require.Equal(t, testDevice, req.Data.Device)
+		return &hadesclient.AntiFraudResponse{IsFraud: false}, nil
+	})
+
 	p.EXPECT().Produce(ctx, gomock.Eq(&producer.PDVMessage{
 		ID:      expectedID,
 		Address: testOwner,
@@ -190,7 +208,7 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 		Data:    testEncryptedData,
 	}))
 
-	id, meta, err := s.SavePDV(ctx, v1.PDV{
+	id, meta, err := s.SavePDV(ctx, schema.NewPDVWrapper(testDevice, v1.PDV{
 		&v1.Cookie{
 			Source: schema.Source{
 				Host: "youtube.com",
@@ -205,7 +223,7 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 			SameSite:       "None",
 			ExpirationDate: 1861920000,
 		},
-	}, testOwnerSdkAddr, testDevice)
+	}), testOwnerSdkAddr)
 	require.Equal(t, expectedID, id)
 	require.Equal(t, expectedMeta, meta)
 	require.NoError(t, err)
@@ -272,8 +290,9 @@ func TestService_SavePDV_Profile(t *testing.T) {
 			is := storagemock.NewMockIndexStorage(ctrl)
 			cr := cryptomock.NewMockCrypto(ctrl)
 			p := producermock.NewMockProducer(ctrl)
+			hades := hadesmock.NewMockHades(ctrl)
 
-			s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+			s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 			is.EXPECT().GetProfile(ctx, testOwner).DoAndReturn(func(_ context.Context, _ string) (*storage.Profile, error) {
 				if tc.exist {
@@ -298,6 +317,13 @@ func TestService_SavePDV_Profile(t *testing.T) {
 
 			cr.EXPECT().Encrypt(gomock.Any()).Return(testEncryptedData, nil)
 
+			hades.EXPECT().AntiFraud(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, req *hadesclient.AntiFraudRequest) (*hadesclient.AntiFraudResponse, error) {
+				require.Equal(t, expectedID, req.ID)
+				require.Equal(t, testOwner, req.Address)
+				require.Equal(t, testDevice, req.Data.Device)
+				return &hadesclient.AntiFraudResponse{IsFraud: false}, nil
+			})
+
 			p.EXPECT().Produce(ctx, &producer.PDVMessage{
 				ID:      expectedID,
 				Address: testOwner,
@@ -306,7 +332,7 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				Data:    testEncryptedData,
 			}).Return(nil)
 
-			id, meta, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr, testDevice)
+			id, meta, err := s.SavePDV(ctx, schema.NewPDVWrapper(testDevice, pdv), testOwnerSdkAddr)
 			require.Equal(t, expectedID, id)
 			require.Equal(t, tc.meta, meta)
 			require.NoError(t, err)
@@ -322,14 +348,46 @@ func TestService_SavePDV_EncryptError(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, errTest)
 
-	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr, testDevice)
+	_, _, err := s.SavePDV(ctx, schema.NewPDVWrapper(testDevice, pdv), testOwnerSdkAddr)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
+}
+
+func TestService_SavePDV_Fraud(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	fs := storagemock.NewMockFileStorage(ctrl)
+	is := storagemock.NewMockIndexStorage(ctrl)
+	cr := cryptomock.NewMockCrypto(ctrl)
+	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
+
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
+
+	expectedID := uint64(time.Now().Unix())
+
+	cr.EXPECT().Encrypt(gomock.Any()).Return(testEncryptedData, nil)
+
+	hades.EXPECT().AntiFraud(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, req *hadesclient.AntiFraudRequest) (*hadesclient.AntiFraudResponse, error) {
+		require.Equal(t, expectedID, req.ID)
+		require.Equal(t, testOwner, req.Address)
+		require.Equal(t, testDevice, req.Data.Device)
+		return &hadesclient.AntiFraudResponse{IsFraud: true}, nil
+	})
+
+	is.EXPECT().SetProfileBanned(gomock.Any(), testOwnerSdkAddr.String()).Return(nil)
+
+	id, meta, err := s.SavePDV(ctx, schema.NewPDVWrapper(testDevice, pdv), testOwnerSdkAddr)
+	require.Equal(t, expectedID, id)
+	require.Nil(t, meta)
+	require.Equal(t, err, ErrPDVFraud)
 }
 
 func TestService_SavePDV_ProducerError(t *testing.T) {
@@ -340,14 +398,21 @@ func TestService_SavePDV_ProducerError(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(testEncryptedData, nil)
 
+	hades.EXPECT().AntiFraud(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, req *hadesclient.AntiFraudRequest) (*hadesclient.AntiFraudResponse, error) {
+		require.Equal(t, testOwner, req.Address)
+		require.Equal(t, testDevice, req.Data.Device)
+		return &hadesclient.AntiFraudResponse{IsFraud: false}, nil
+	})
+
 	p.EXPECT().Produce(gomock.Any(), gomock.Any()).Return(errTest)
 
-	_, _, err := s.SavePDV(ctx, pdv, testOwnerSdkAddr, testDevice)
+	_, _, err := s.SavePDV(ctx, schema.NewPDVWrapper(testDevice, pdv), testOwnerSdkAddr)
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, errTest))
 }
@@ -360,8 +425,9 @@ func TestService_ReceivePDV(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
 
@@ -386,8 +452,9 @@ func TestService_ReceivePDV_StorageError(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(nil, errTest)
 
@@ -405,8 +472,9 @@ func TestService_ReceivePDV_StorageError_NotFound(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(nil, storage.ErrNotFound)
 
@@ -424,8 +492,9 @@ func TestService_ReceivePDV_DecryptError(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	fs.EXPECT().Read(ctx, getPDVFilePath(testOwner, testID)).Return(ioutil.NopCloser(bytes.NewReader(testEncryptedData)), nil)
 
@@ -445,8 +514,9 @@ func TestService_GetPDVMeta(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	exp := &entities.PDVMeta{
 		ObjectTypes: map[schema.Type]uint16{
@@ -470,8 +540,9 @@ func TestService_GetPDVMeta_StorageError(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	is.EXPECT().GetPDVMeta(gomock.Any(), testOwner, testID).Return(nil, errTest)
 
@@ -488,8 +559,9 @@ func TestService_GetPDVMeta_NotFound(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	is.EXPECT().GetPDVMeta(gomock.Any(), testOwner, testID).Return(nil, storage.ErrNotFound)
 
@@ -510,8 +582,9 @@ func TestService_ListPDV(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	is.EXPECT().ListPDV(gomock.Any(), "owner", uint64(5), uint16(10)).Return([]uint64{1, 2, 3}, nil)
 
@@ -528,8 +601,9 @@ func TestService_GetProfiles(t *testing.T) {
 	is := storagemock.NewMockIndexStorage(ctrl)
 	cr := cryptomock.NewMockCrypto(ctrl)
 	p := producermock.NewMockProducer(ctrl)
+	hades := hadesmock.NewMockHades(ctrl)
 
-	s := New(cr, fs, is, p, rewardsMap, pdvRewardsInterval)
+	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
 	is.EXPECT().GetProfiles(ctx, []string{"1", "2"}).Return([]*storage.Profile{
 		{

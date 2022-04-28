@@ -23,6 +23,7 @@ import (
 
 	"github.com/Decentr-net/cerberus/internal/crypto"
 	"github.com/Decentr-net/cerberus/internal/entities"
+	"github.com/Decentr-net/cerberus/internal/hades"
 	"github.com/Decentr-net/cerberus/internal/producer"
 	"github.com/Decentr-net/cerberus/internal/refine"
 	"github.com/Decentr-net/cerberus/internal/storage"
@@ -37,6 +38,7 @@ var (
 	ErrNotFound           = errors.New("not found")
 	ErrImageInvalidFormat = errors.New("image invalid format")
 	ErrUploadTimeout      = errors.New("upload timeout")
+	ErrPDVFraud           = errors.New("PDV fraud detected")
 )
 
 // RewardMap contains dictionary with PDV types and rewards for them.
@@ -53,7 +55,7 @@ type Service interface {
 	// SaveImage sends Image to storage.
 	SaveImage(ctx context.Context, r io.Reader, owner string) (string, string, error)
 	// SavePDV sends PDV to storage.
-	SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddress, device string) (uint64, *entities.PDVMeta, error)
+	SavePDV(ctx context.Context, p schema.PDVWrapper, owner sdk.AccAddress) (uint64, *entities.PDVMeta, error)
 	// ListPDV lists PDVs.
 	ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error)
 	// ReceivePDV returns slice of bytes of PDV requested by address from storage.
@@ -82,10 +84,11 @@ type Service interface {
 
 // service is Service interface implementation.
 type service struct {
-	c  crypto.Crypto
-	is storage.IndexStorage
-	fs storage.FileStorage
-	p  producer.Producer
+	c     crypto.Crypto
+	is    storage.IndexStorage
+	fs    storage.FileStorage
+	p     producer.Producer
+	hades hades.Hades
 
 	rewardMap RewardMap
 
@@ -98,14 +101,16 @@ func New(
 	fs storage.FileStorage,
 	is storage.IndexStorage,
 	p producer.Producer,
+	hades hades.Hades,
 	rewardMap RewardMap,
 	pdvRewardsInterval time.Duration,
 ) Service {
 	return &service{
-		c:  c,
-		fs: fs,
-		is: is,
-		p:  p,
+		c:     c,
+		fs:    fs,
+		is:    is,
+		p:     p,
+		hades: hades,
 
 		rewardMap:          rewardMap,
 		pdvRewardsInterval: pdvRewardsInterval,
@@ -113,8 +118,8 @@ func New(
 }
 
 // SavePDV sends PDV to storage.
-func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddress, device string) (uint64, *entities.PDVMeta, error) {
-	log := logging.GetLogger(ctx)
+func (s *service) SavePDV(ctx context.Context, p schema.PDVWrapper, owner sdk.AccAddress) (uint64, *entities.PDVMeta, error) {
+	log := logging.GetLogger(ctx).WithField("owner", owner)
 
 	meta, err := s.calculateMeta(ctx, owner, p)
 	if err != nil {
@@ -137,9 +142,27 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDV, owner sdk.AccAddres
 	}
 
 	id := uint64(time.Now().Unix())
+
+	fraudCheck, err := s.hades.AntiFraud(ctx, &hades.AntiFraudRequest{
+		ID:      id,
+		Address: owner.String(),
+		Data:    p,
+	})
+	if err != nil {
+		log.WithError(err).Warn("failed to anti fraud")
+	}
+
+	if fraudCheck.IsFraud {
+		// autoban for fraud
+		if err := s.is.SetProfileBanned(context.Background(), owner.String()); err != nil {
+			log.WithError(err).Error("failed to ban")
+		}
+		return id, nil, ErrPDVFraud
+	}
+
 	if err := s.p.Produce(ctx, &producer.PDVMessage{
 		ID:      id,
-		Device:  device,
+		Device:  p.Device,
 		Address: owner.String(),
 		Meta:    meta,
 		Data:    enc,

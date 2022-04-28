@@ -123,6 +123,20 @@ func (mr *MockIndexStorageMockRecorder) SetProfile(ctx, p interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetProfile", reflect.TypeOf((*MockIndexStorage)(nil).SetProfile), ctx, p)
 }
 
+// SetProfileBanned mocks base method
+func (m *MockIndexStorage) SetProfileBanned(ctx context.Context, addr string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetProfileBanned", ctx, addr)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetProfileBanned indicates an expected call of SetProfileBanned
+func (mr *MockIndexStorageMockRecorder) SetProfileBanned(ctx, addr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetProfileBanned", reflect.TypeOf((*MockIndexStorage)(nil).SetProfileBanned), ctx, addr)
+}
+
 // DeleteProfile mocks base method
 func (m *MockIndexStorage) DeleteProfile(ctx context.Context, addr string) error {
 	m.ctrl.T.Helper()

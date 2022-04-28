@@ -22,6 +22,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/Decentr-net/cerberus/internal/crypto/sio"
+	"github.com/Decentr-net/cerberus/internal/hades"
 	"github.com/Decentr-net/cerberus/internal/health"
 	"github.com/Decentr-net/cerberus/internal/producer"
 	"github.com/Decentr-net/cerberus/internal/server"
@@ -49,6 +50,8 @@ var opts = struct {
 
 	PDVRewardsPoolSize int64         `long:"pdv-rewards.pool-size" env:"PDV_REWARDS_POOL_SIZE" default:"100000000000" description:"PDV rewards (uDEC)"`
 	PDVRewardsInterval time.Duration `long:"pdv-rewards.interval" env:"PDV_REWARDS_INTERVAL" default:"720h" description:"how often to pay PDV rewards"`
+
+	HadesURL string `long:"hades.url" env:"HADES_URL"  description:"Hades service url"`
 
 	S3Opts
 	SQSOpts
@@ -146,7 +149,9 @@ func newServiceOrDie(fs storage.FileStorage, is storage.IndexStorage, p producer
 	if err := json.Unmarshal(b, &rewardMap); err != nil {
 		logrus.WithError(err).Fatal("failed to unmarshal reward map config")
 	}
-	return service.New(sio.NewCrypto(mustExtractEncryptKey()), fs, is, p, rewardMap, opts.PDVRewardsInterval)
+	return service.New(sio.NewCrypto(mustExtractEncryptKey()), fs, is, p,
+		hades.New(opts.HadesURL),
+		rewardMap, opts.PDVRewardsInterval)
 }
 
 func mustExtractEncryptKey() [32]byte {

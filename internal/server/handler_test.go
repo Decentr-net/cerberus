@@ -151,7 +151,7 @@ func TestServer_SavePDVHandler(t *testing.T) {
 				var pdv schema.PDVWrapper
 				require.NoError(t, json.Unmarshal(tc.reqBody, &pdv))
 
-				srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner sdk.AccAddress, _ string) (uint64, *entities.PDVMeta, error) {
+				srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner sdk.AccAddress) (uint64, *entities.PDVMeta, error) {
 					if tc.err != nil {
 						return 0, nil, tc.err
 					}
@@ -193,7 +193,7 @@ func TestServerSavePDV_Throttler(t *testing.T) {
 
 	var pdv schema.PDVWrapper
 	require.NoError(t, json.Unmarshal(body, &pdv))
-	srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner sdk.AccAddress, _ string) (uint64, *entities.PDVMeta, error) {
+	srv.EXPECT().SavePDV(gomock.Any(), pdv, gomock.Any()).DoAndReturn(func(_ context.Context, _ schema.PDV, owner sdk.AccAddress) (uint64, *entities.PDVMeta, error) {
 		assert.Equal(t, testOwner, owner.String())
 		return 1, &entities.PDVMeta{}, nil
 	})
@@ -878,7 +878,7 @@ func Test_savePDVHander_Amount(t *testing.T) {
 
 			srv := mock.NewMockService(ctrl)
 
-			srv.EXPECT().SavePDV(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			srv.EXPECT().SavePDV(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 			router := chi.NewRouter()
 
