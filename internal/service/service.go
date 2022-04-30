@@ -149,10 +149,10 @@ func (s *service) SavePDV(ctx context.Context, p schema.PDVWrapper, owner sdk.Ac
 		Data:    p,
 	})
 	if err != nil {
-		log.WithError(err).Warn("failed to anti fraud")
+		log.WithError(err).Error("failed to anti fraud")
 	}
 
-	if fraudCheck.IsFraud {
+	if fraudCheck != nil && fraudCheck.IsFraud {
 		// autoban for fraud
 		if err := s.is.SetProfileBanned(context.Background(), owner.String()); err != nil {
 			log.WithError(err).Error("failed to ban")
