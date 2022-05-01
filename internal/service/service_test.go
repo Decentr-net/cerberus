@@ -149,6 +149,8 @@ func TestService_SavePDV(t *testing.T) {
 		Reward: sdk.NewDecWithPrec(6, 6),
 	}
 
+	is.EXPECT().IsProfileBanned(gomock.Any(), testOwnerSdkAddr.String()).Return(false, nil)
+
 	hades.EXPECT().AntiFraud(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, req *hadesclient.AntiFraudRequest) (*hadesclient.AntiFraudResponse, error) {
 		require.Equal(t, expectedID, req.ID)
 		require.Equal(t, testOwner, req.Address)
@@ -192,6 +194,8 @@ func TestService_SavePDV_Blacklist(t *testing.T) {
 		},
 		Reward: sdk.ZeroDec(),
 	}
+
+	is.EXPECT().IsProfileBanned(gomock.Any(), testOwnerSdkAddr.String()).Return(false, nil)
 
 	hades.EXPECT().AntiFraud(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, req *hadesclient.AntiFraudRequest) (*hadesclient.AntiFraudResponse, error) {
 		require.Equal(t, expectedID, req.ID)
@@ -313,6 +317,8 @@ func TestService_SavePDV_Profile(t *testing.T) {
 				Birthday:  &pdv[0].(*schema.V1Profile).Birthday.Time,
 			})).Return(nil)
 
+			is.EXPECT().IsProfileBanned(gomock.Any(), testOwnerSdkAddr.String()).Return(false, nil)
+
 			expectedID := uint64(time.Now().Unix())
 
 			cr.EXPECT().Encrypt(gomock.Any()).Return(testEncryptedData, nil)
@@ -352,6 +358,8 @@ func TestService_SavePDV_EncryptError(t *testing.T) {
 
 	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
 
+	is.EXPECT().IsProfileBanned(gomock.Any(), testOwnerSdkAddr.String()).Return(false, nil)
+
 	cr.EXPECT().Encrypt(gomock.Any()).Return(nil, errTest)
 
 	_, _, err := s.SavePDV(ctx, schema.NewPDVWrapper(testDevice, pdv), testOwnerSdkAddr)
@@ -383,6 +391,7 @@ func TestService_SavePDV_Fraud(t *testing.T) {
 	})
 
 	is.EXPECT().SetProfileBanned(gomock.Any(), testOwnerSdkAddr.String()).Return(nil)
+	is.EXPECT().IsProfileBanned(gomock.Any(), testOwnerSdkAddr.String()).Return(false, nil)
 
 	id, meta, err := s.SavePDV(ctx, schema.NewPDVWrapper(testDevice, pdv), testOwnerSdkAddr)
 	require.Equal(t, expectedID, id)
@@ -401,6 +410,8 @@ func TestService_SavePDV_ProducerError(t *testing.T) {
 	hades := hadesmock.NewMockHades(ctrl)
 
 	s := New(cr, fs, is, p, hades, rewardsMap, pdvRewardsInterval)
+
+	is.EXPECT().IsProfileBanned(gomock.Any(), testOwnerSdkAddr.String()).Return(false, nil)
 
 	cr.EXPECT().Encrypt(gomock.Any()).Return(testEncryptedData, nil)
 

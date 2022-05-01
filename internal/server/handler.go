@@ -138,6 +138,10 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 	//      description: bad request
 	//      schema:
 	//        "$ref": "#/definitions/Error"
+	//   '403':
+	//      description: profile is banned or fraud detected
+	//      schema:
+	//        "$ref": "#/definitions/Error"
 	//   '500':
 	//      description: internal server error
 	//      schema:
@@ -192,6 +196,12 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, service.ErrPDVFraud) {
 			logging.GetLogger(r.Context()).WithField("owner", owner.String()).Warn("pdv fraud detected")
 			api.WriteError(w, http.StatusForbidden, "pdv fraud detected")
+			return
+		}
+
+		if errors.Is(err, service.ErrProfileBanned) {
+			logging.GetLogger(r.Context()).WithField("owner", owner.String()).Warn("profile banned")
+			api.WriteError(w, http.StatusForbidden, "profile banned")
 			return
 		}
 

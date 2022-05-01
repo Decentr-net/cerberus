@@ -70,6 +70,10 @@ func NewPDVWrapper(device string, pdv types.PDV) PDVWrapper {
 
 // MarshalJSON ...
 func (p PDVWrapper) MarshalJSON() ([]byte, error) {
+	if p.pdv == nil {
+		return nil, errors.New("pdv is not specified")
+	}
+
 	return json.Marshal(struct {
 		Device  string  `json:"device"`
 		Version Version `json:"version"`

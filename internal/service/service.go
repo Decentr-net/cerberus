@@ -39,6 +39,7 @@ var (
 	ErrImageInvalidFormat = errors.New("image invalid format")
 	ErrUploadTimeout      = errors.New("upload timeout")
 	ErrPDVFraud           = errors.New("PDV fraud detected")
+	ErrProfileBanned      = errors.New("profile banned")
 )
 
 // RewardMap contains dictionary with PDV types and rewards for them.
@@ -120,6 +121,15 @@ func New(
 // SavePDV sends PDV to storage.
 func (s *service) SavePDV(ctx context.Context, p schema.PDVWrapper, owner sdk.AccAddress) (uint64, *entities.PDVMeta, error) {
 	log := logging.GetLogger(ctx).WithField("owner", owner)
+
+	banned, err := s.is.IsProfileBanned(ctx, owner.String())
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to check if profile banned: %w", err)
+	}
+
+	if banned {
+		return 0, nil, ErrProfileBanned
+	}
 
 	meta, err := s.calculateMeta(ctx, owner, p)
 	if err != nil {

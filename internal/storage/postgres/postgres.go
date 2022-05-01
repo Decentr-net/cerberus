@@ -150,6 +150,12 @@ func (s pg) SetProfileBanned(ctx context.Context, addr string) error {
 	return nil
 }
 
+func (s pg) IsProfileBanned(ctx context.Context, addr string) (bool, error) {
+	var banned bool
+	err := sqlx.GetContext(ctx, s.ext, &banned, `SELECT EXISTS (SELECT * FROM profile WHERE address = $1 AND banned = true)`, addr)
+	return banned, err
+}
+
 func (s pg) SetProfile(ctx context.Context, p *storage.SetProfileParams) error {
 	profile := profileDTO{
 		Address:   p.Address,
