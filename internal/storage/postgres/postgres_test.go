@@ -168,7 +168,16 @@ func TestPg_SetProfileBanned(t *testing.T) {
 	}
 
 	require.NoError(t, s.SetProfile(ctx, &p))
+
+	banned, err := s.IsProfileBanned(ctx, p.Address)
+	require.NoError(t, err)
+	require.False(t, banned)
+
 	require.NoError(t, s.SetProfileBanned(ctx, p.Address))
+
+	banned, err = s.IsProfileBanned(ctx, p.Address)
+	require.NoError(t, err)
+	require.True(t, banned)
 }
 
 func TestPg_SetProfile(t *testing.T) {

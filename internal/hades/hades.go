@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"path"
+	"net/url"
 	"time"
 
 	"github.com/Decentr-net/cerberus/pkg/schema"
@@ -51,13 +51,20 @@ func New(baseURL string) Hades {
 
 // AntiFraud check the given PDV for fraud.
 func (c *client) AntiFraud(ctx context.Context, r *AntiFraudRequest) (*AntiFraudResponse, error) {
+	path, err := url.Parse(c.baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse base url: %w", err)
+	}
+
+	path.Path = "/v1/pdv"
+
 	reqBody := new(bytes.Buffer)
 	if err := json.NewEncoder(reqBody).Encode(r); err != nil {
 		return nil, fmt.Errorf("failed to encode request: %w", err)
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx,
-		http.MethodPost, path.Join(c.baseURL, "/v1/pdv"), reqBody)
+		http.MethodPost, path.String(), reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
