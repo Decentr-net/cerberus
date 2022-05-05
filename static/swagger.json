@@ -222,12 +222,6 @@
             "schema": {
               "$ref": "#/definitions/PDVRewardsPool"
             }
-          },
-          "500": {
-            "description": "internal server error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
           }
         }
       }
