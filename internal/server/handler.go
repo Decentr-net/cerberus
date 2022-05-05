@@ -44,8 +44,8 @@ type PDVRewardsPool struct {
 // PDVRewardDelta ...
 // swagger:model PDVRewardDelta
 type PDVRewardDelta struct {
-	Delta sdk.Dec        `json:"delta"`
-	Pool  PDVRewardsPool `json:"pool"`
+	Delta sdk.Dec         `json:"delta"`
+	Pool  *PDVRewardsPool `json:"pool"`
 }
 
 // saveImageHandler resizes and saves the given message into storage.
@@ -632,17 +632,8 @@ func (s *server) getPDVRewardsPool(w http.ResponseWriter, r *http.Request) {
 	//     description: pool
 	//     schema:
 	//       "$ref": "#/definitions/PDVRewardsPool"
-	//   '500':
-	//     description: internal server error
-	//     schema:
-	//       "$ref": "#/definitions/Error"
-	pool, err := s.preparePDVRewardsPool(r.Context())
-	if err != nil {
-		api.WriteInternalError(r.Context(), w, err.Error())
-		return
-	}
 
-	api.WriteOK(w, http.StatusOK, pool)
+	api.WriteOK(w, http.StatusOK, s.rewardsPool)
 }
 
 func (s *server) getAccountPDVDelta(w http.ResponseWriter, r *http.Request) {
@@ -686,15 +677,9 @@ func (s *server) getAccountPDVDelta(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pool, err := s.preparePDVRewardsPool(r.Context())
-	if err != nil {
-		api.WriteInternalError(r.Context(), w, err.Error())
-		return
-	}
-
 	api.WriteOK(w, http.StatusOK, PDVRewardDelta{
 		Delta: delta,
-		Pool:  *pool,
+		Pool:  s.rewardsPool,
 	})
 }
 

@@ -38,20 +38,21 @@
 package server
 
 import (
+	"context"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
-
-	"github.com/Decentr-net/decentr/config"
-	"github.com/Decentr-net/go-api"
+	log "github.com/sirupsen/logrus"
 
 	_ "github.com/Decentr-net/cerberus/internal/blockchain"     // set address prefix for addresses validation
 	_ "github.com/Decentr-net/cerberus/internal/server/swagger" // import models to be generated into swagger.json
 	"github.com/Decentr-net/cerberus/internal/service"
 	"github.com/Decentr-net/cerberus/internal/throttler"
+	"github.com/Decentr-net/decentr/config"
+	"github.com/Decentr-net/go-api"
 )
 
 //go:generate swagger generate spec -t swagger -m -c . -o ../../static/swagger.json
@@ -75,6 +76,8 @@ type server struct {
 	maxPDVCount uint16
 
 	pdvRewardsPoolSize sdk.Dec
+
+	rewardsPool *PDVRewardsPool
 }
 
 // Profile ...
@@ -123,6 +126,8 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 		pdvRewardsPoolSize: pdvRewardsPoolSize,
 	}
 
+	srv.startPolling()
+
 	r.Post("/v1/pdv", srv.savePDVHandler)
 	r.Post("/v1/pdv/validate", srv.validatePDVHandler)
 	r.Get("/v1/pdv/{owner}", srv.listPDVHandler)
@@ -142,4 +147,24 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration, maxBody
 func isOwnerValid(s string) bool {
 	_, err := sdk.AccAddressFromBech32(s)
 	return err == nil
+}
+
+func (s *server) startPolling() {
+	refresh := func() {
+		val, err := s.preparePDVRewardsPool(context.Background())
+		if err != nil {
+			log.WithError(err).Error("failed to get PDV rewards pool")
+			return
+		}
+		s.rewardsPool = val
+	}
+
+	refresh()
+
+	ticker := time.NewTicker(time.Hour)
+	go func() {
+		for range ticker.C {
+			refresh()
+		}
+	}()
 }
