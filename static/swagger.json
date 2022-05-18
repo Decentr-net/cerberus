@@ -238,7 +238,7 @@
         "tags": [
           "PDV"
         ],
-        "operationId": "Save",
+        "operationId": "Validate",
         "parameters": [
           {
             "description": "batch of pdv",
