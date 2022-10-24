@@ -216,7 +216,7 @@ func (s *server) savePDVHandler(w http.ResponseWriter, r *http.Request) {
 
 // validatePDVHandler validates pdv and returns indexes of invalid.
 func (s *server) validatePDVHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /pdv/validate PDV Save
+	// swagger:operation POST /pdv/validate PDV Validate
 	//
 	// Encrypts and saves PDV
 	//
