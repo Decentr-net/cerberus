@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/avast/retry-go"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -21,6 +23,8 @@ func init() {
 }
 
 var _ Blockchain = &blockchain{}
+
+var log = logrus.WithField("package", "blockchain")
 
 //go:generate mockgen -destination=./mock/blockchain.go -package=mock -source=blockchain.go
 
@@ -77,12 +81,21 @@ func (b blockchain) DistributeRewards(rewards []Reward) (string, error) {
 		return "", err
 	}
 
+	log := log.WithFields(logrus.Fields{
+		"rewards": rr,
+	})
+
+	log.Info("DistributeRewards")
+
 	var resp *sdk.TxResponse
 	if err := retry.Do(func() error {
-		var err error
-		resp, err = b.b.BroadcastMsg(&msg, "")
-		return err
-	}, retry.Attempts(5), retry.Delay(200*time.Millisecond)); err != nil {
+		var err1 error
+		resp, err1 = b.b.BroadcastMsg(&msg, "")
+		if err1 != nil {
+			log.WithError(err1).Warn("attempt to  broadcast MsgDistributeRewards failed")
+		}
+		return err1
+	}, retry.Attempts(3), retry.Delay(200*time.Millisecond)); err != nil {
 		return "", fmt.Errorf("failed to broadcast MsgDistributeRewards: %w", err)
 	}
 
