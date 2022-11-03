@@ -22,22 +22,6 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			"timestamp": "2021-05-11T11:05:18Z",
-			"type": "cookie",
-			"source": {
-				"host": "https://decentr.xyz",
-				"path": "/"
-			},
-            "name": "my cookie",
-            "value": "some value",
-            "domain": "*",
-            "hostOnly": true,
-            "path": "*",
-            "secure": true,
-            "sameSite": "None",
-            "expirationDate": 1861920000
-        },
-		{
-			"timestamp": "2021-05-11T11:05:18Z",
 			"type": "location",
 			"latitude": 37.24064741897542,
 			"longitude": -115.81599314492902,
@@ -67,8 +51,6 @@ func TestPDV_UnmarshalJSON(t *testing.T) {
 
 	d, err := json.Marshal(p)
 	require.NoError(t, err)
-
-	println(string(d))
 
 	assert.JSONEq(t, data, string(d))
 	assert.True(t, p.Validate())
