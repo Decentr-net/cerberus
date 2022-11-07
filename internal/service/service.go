@@ -386,7 +386,12 @@ func (s *service) calculateMeta(ctx context.Context, owner sdk.AccAddress, p sch
 				return nil, fmt.Errorf("failed to check profile: %w", err)
 			}
 		case schema.PDVCookieType:
-			continue
+			cookie, ok := d.(*schema.V1Cookie)
+			if !ok {
+				log.WithField("cookie", p).Error("failed to cast cookie to V1Cookie")
+			} else if s.isCookieBlacklisted(cookie) || !refine.Cookie(cookie) {
+				continue
+			}
 		case schema.PDVSearchHistoryType:
 			sh, ok := d.(*schema.V1SearchHistory)
 			if !ok {

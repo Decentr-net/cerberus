@@ -126,8 +126,6 @@ func TestService_SaveImage(t *testing.T) {
 }
 
 func TestService_SavePDV(t *testing.T) {
-	t.Skip()
-
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 

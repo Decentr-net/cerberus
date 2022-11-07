@@ -74,19 +74,12 @@ func (p PDVWrapper) MarshalJSON() ([]byte, error) {
 		return nil, errors.New("pdv is not specified")
 	}
 
-	var data []Data
-	for _, d := range p.Data() {
-		if d.Type() != PDVCookieType {
-			data = append(data, d)
-		}
-	}
-
 	return json.Marshal(struct {
 		Device  string  `json:"device"`
 		Version Version `json:"version"`
 		PDV     []Data  `json:"pdv"`
 	}{
-		PDV:     data,
+		PDV:     p.pdv.Data(),
 		Device:  p.Device,
 		Version: p.Version(),
 	})
